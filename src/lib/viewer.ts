@@ -16,7 +16,10 @@ export interface Viewer {
 
 /** Quem está fazendo a requisição (sessão do Discord + cadastro no clã), ou null. */
 export async function getViewer(): Promise<Viewer | null> {
-  const session = await getServerSession(authOptions);
+  // Sem NEXTAUTH_SECRET o NextAuth lança erro em produção e derrubaria todas as páginas:
+  // o site segue funcionando, só sem login, até a variável ser configurada.
+  if (!process.env.NEXTAUTH_SECRET) return null;
+  const session = await getServerSession(authOptions).catch(() => null);
   const discordId = session?.user?.discordId;
   if (!discordId) return null;
 
