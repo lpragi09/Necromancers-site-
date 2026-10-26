@@ -9,6 +9,8 @@ export const authOptions: NextAuthOptions = {
       clientId: process.env.DISCORD_CLIENT_ID || "",
       clientSecret: process.env.DISCORD_CLIENT_SECRET || "",
       authorization: { params: { scope: "identify" } },
+      // O Discord devolve `iss` no callback (RFC 9207); sem issuer o openid-client recusa o login.
+      issuer: "https://discord.com",
     }),
   ],
   callbacks: {
