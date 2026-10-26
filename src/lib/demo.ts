@@ -1,0 +1,89 @@
+import type { DropItem, Giveaway, Member, Post, RankingRow, Season } from "@/lib/types";
+
+// Dados de exemplo mostrados enquanto o Supabase não está configurado (modo demonstração).
+const ago = (days: number) => new Date(Date.now() - days * 86400000).toISOString();
+const ahead = (days: number) => new Date(Date.now() + days * 86400000).toISOString();
+
+export const DEMO_MEMBERS: Member[] = [
+  ["Lorde Haunter", "lider", 312],
+  ["Kuroshi", "vice", 298],
+  ["Morte Rubra", "veterano", 276],
+  ["Sombra de Gengar", "veterano", 251],
+  ["Duskull Eterno", "membro", 233],
+  ["Nyx Banette", "membro", 219],
+  ["Velho Spiritomb", "membro", 205],
+  ["Chandelure", "membro", 188],
+  ["Lápide Fria", "recruta", 152],
+  ["Misdreavus", "recruta", 140],
+].map(([char_name, role, level], i) => ({
+  id: `demo-m${i}`,
+  discord_id: `${i}`,
+  discord_name: String(char_name).toLowerCase().replace(/\s/g, ""),
+  avatar_url: null,
+  char_name: String(char_name),
+  level: Number(level),
+  role: role as Member["role"],
+  status: "active",
+  created_at: ago(120 - i * 9),
+}));
+
+export const DEMO_POSTS: Post[] = [
+  {
+    id: "demo-p1", kind: "aviso", pinned: true, published: true, image_url: null, event_at: null, created_at: ago(1),
+    title: "Hunt obrigatória de sábado",
+    body: "Todos os membros ativos na hunt de Ghost Tower no sábado às 21h. Levem revive e potions, a quest só abre com 8 na party.",
+  },
+  {
+    id: "demo-p2", kind: "evento", pinned: false, published: true, image_url: null, event_at: ahead(4), created_at: ago(2),
+    title: "Torneio PvP Necromancers",
+    body: "Chaveamento 1x1, level livre. O campeão leva 50kk e a tag de Ceifador por um mês. Inscrição com o Kuroshi no Discord.",
+  },
+  {
+    id: "demo-p3", kind: "novidade", pinned: false, published: true, image_url: null, event_at: null, created_at: ago(5),
+    title: "Ranking de drops: Temporada 1 aberta",
+    body: "Todo drop raro agora vale ponto. Mandem o print pelo site, a liderança aprova e o ranking atualiza na hora. Top 3 leva prêmio no fim do mês.",
+  },
+  {
+    id: "demo-p4", kind: "novidade", pinned: false, published: true, image_url: null, event_at: null, created_at: ago(9),
+    title: "Novas regras de recrutamento",
+    body: "Recrutas passam 2 semanas em período de teste. Level mínimo 120 e presença em pelo menos duas hunts por semana.",
+  },
+];
+
+export const DEMO_SEASON: Season = {
+  id: "demo-s1", name: "Temporada 1 · Lua de Sangue", starts_at: ago(12), ends_at: ahead(18), status: "active", created_at: ago(12),
+  prizes: ["1º lugar: 100kk + Shiny Gengar", "2º lugar: 50kk + Dusk Stone", "3º lugar: 25kk"],
+};
+
+export const DEMO_ITEMS: DropItem[] = [
+  { id: "demo-i1", name: "Shiny Gengar", points: 500, rarity: "shiny", image_url: null, active: true },
+  { id: "demo-i2", name: "Darkrai Essence", points: 300, rarity: "lendario", image_url: null, active: true },
+  { id: "demo-i3", name: "Reaper Cloth", points: 120, rarity: "epico", image_url: null, active: true },
+  { id: "demo-i4", name: "Dusk Stone", points: 60, rarity: "raro", image_url: null, active: true },
+  { id: "demo-i5", name: "Ghost Essence", points: 10, rarity: "comum", image_url: null, active: true },
+];
+
+export const DEMO_RANKING: RankingRow[] = [
+  [0, 1420, 9, 0], [2, 1180, 12, 1], [1, 960, 7, 1], [3, 720, 11, 2], [5, 540, 6, 2],
+  [4, 410, 8, 3], [7, 300, 5, 3], [6, 180, 4, 3], [8, 90, 3, 4], [9, 40, 2, 4],
+].map(([m, points, drops, item]) => ({
+  member_id: DEMO_MEMBERS[m].id,
+  char_name: DEMO_MEMBERS[m].char_name,
+  avatar_url: null,
+  points,
+  drops,
+  best: { item_name: DEMO_ITEMS[item].name, rarity: DEMO_ITEMS[item].rarity },
+}));
+
+export const DEMO_GIVEAWAYS: Giveaway[] = [
+  {
+    id: "demo-g1", title: "Sorteio da Lua Nova", prize: "Shiny Mismagius + 20kk", status: "open", ends_at: ahead(3), created_at: ago(2),
+    description: "Todo membro ativo pode participar. Uma chance por pessoa, resultado comprovado pelo drand.",
+    image_url: null, winner_member_id: null, winner_name: null, fair_draw_id: null, entries_count: 27,
+  },
+  {
+    id: "demo-g2", title: "Sorteio de boas-vindas", prize: "Kit de 100 Ultra Balls", status: "drawn", ends_at: ago(6), created_at: ago(14),
+    description: "Comemoração dos 30 membros do clã.",
+    image_url: null, winner_member_id: DEMO_MEMBERS[6].id, winner_name: DEMO_MEMBERS[6].char_name, fair_draw_id: null, entries_count: 30,
+  },
+];
