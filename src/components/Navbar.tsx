@@ -4,15 +4,16 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signIn, signOut } from "next-auth/react";
-import { LogOut, Menu, Shield, Skull, User, X } from "lucide-react";
+import { Gift, Home, LogOut, Megaphone, Menu, Shield, Trophy, User, Users, X } from "lucide-react";
 import Avatar from "@/components/Avatar";
+import GhostIcon from "@/components/GhostIcon";
 
 const LINKS = [
-  { href: "/", label: "Início" },
-  { href: "/avisos", label: "Avisos" },
-  { href: "/sorteios", label: "Sorteios" },
-  { href: "/ranking", label: "Ranking" },
-  { href: "/membros", label: "Membros" },
+  { href: "/", label: "Início", icon: Home },
+  { href: "/avisos", label: "Avisos", icon: Megaphone },
+  { href: "/sorteios", label: "Sorteios", icon: Gift },
+  { href: "/ranking", label: "Ranking", icon: Trophy },
+  { href: "/membros", label: "Membros", icon: Users },
 ];
 
 export interface NavViewer {
@@ -26,71 +27,73 @@ export default function Navbar({ viewer }: { viewer: NavViewer | null }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const [menu, setMenu] = useState(false);
-  const [scrolled, setScrolled] = useState(false);
 
-  useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 8);
-    onScroll();
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
-  }, []);
   useEffect(() => { setOpen(false); setMenu(false); }, [pathname]);
 
   const active = (href: string) => (href === "/" ? pathname === "/" : pathname?.startsWith(href));
 
   return (
-    <header className={`fixed top-0 inset-x-0 z-50 transition-colors duration-300 ${scrolled || open ? "bg-void/85 backdrop-blur-xl border-b border-spirit/10" : "bg-transparent"}`}>
+    <header className="fixed top-0 inset-x-0 z-50 bg-black/85 backdrop-blur-xl border-b border-spirit/20">
       <nav className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
-        <Link href="/" className="flex items-center gap-2.5 group">
-          <span className="relative w-9 h-9 rounded-xl bg-tomb border border-spirit/30 flex items-center justify-center shadow-[0_0_20px_rgba(167,139,250,0.25)] group-hover:shadow-[0_0_24px_rgba(110,242,200,0.4)] transition-shadow">
-            <Skull className="w-5 h-5 text-ecto" />
+        <Link href="/" className="flex items-center gap-2.5 group shrink-0">
+          <span className="w-9 h-9 rounded-full bg-gradient-to-br from-spirit to-hex p-[2px] shadow-[0_0_18px_rgba(168,85,247,0.45)] group-hover:shadow-[0_0_26px_rgba(168,85,247,0.7)] transition-shadow">
+            <span className="w-full h-full rounded-full bg-black flex items-center justify-center">
+              <GhostIcon className="w-4 h-[18px] text-bone" />
+            </span>
           </span>
-          <span className="font-title text-lg font-bold tracking-[0.18em] text-bone">NECROMANCERS</span>
+          <span className="font-title text-lg bg-gradient-to-r from-[#e879f9] via-spirit to-[#818cf8] bg-clip-text text-transparent">Necromancers</span>
         </Link>
 
-        <div className="hidden md:flex items-center gap-1">
+        <div className="hidden lg:flex items-center">
           {LINKS.map((l) => (
-            <Link key={l.href} href={l.href}
-              className={`px-3.5 py-2 rounded-lg text-sm font-semibold transition-colors ${active(l.href) ? "text-ecto bg-ecto/10" : "text-bone/70 hover:text-bone hover:bg-white/5"}`}>
-              {l.label}
+            <Link key={l.href} href={l.href} data-active={active(l.href)}
+              className={`hover-underline flex items-center gap-1.5 px-3 py-2 text-[13px] font-black italic uppercase tracking-wide transition-colors ${active(l.href) ? "text-bone" : "text-bone/60 hover:text-bone"}`}>
+              <l.icon className={`w-3.5 h-3.5 ${active(l.href) ? "text-spirit" : ""}`} /> {l.label}
             </Link>
           ))}
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
+          {viewer?.isAdmin && (
+            <Link href="/admin" data-active={active("/admin")}
+              className={`hover-underline hidden lg:flex items-center gap-1.5 px-3 py-2 text-[13px] font-black italic uppercase tracking-wide transition-colors ${active("/admin") ? "text-bone" : "text-bone/60 hover:text-bone"}`}>
+              <Shield className="w-3.5 h-3.5 text-spirit" /> Painel
+            </Link>
+          )}
+          <span className="hidden lg:block w-px h-7 bg-white/10" />
           {viewer ? (
             <div className="relative">
-              <button onClick={() => setMenu(!menu)} className="flex items-center gap-2 rounded-full pl-1 pr-3 py-1 bg-white/5 border border-spirit/20 hover:border-spirit/40 transition-colors">
-                <Avatar src={viewer.image} name={viewer.charName ?? viewer.name} size={30} />
-                <span className="hidden sm:block text-sm font-semibold max-w-32 truncate">{viewer.charName ?? viewer.name}</span>
+              <button onClick={() => setMenu(!menu)} className="flex items-center gap-2 rounded-full pl-1 pr-3 py-1 bg-white/5 border border-white/10 hover:border-spirit/50 transition-colors">
+                <Avatar src={viewer.image} name={viewer.charName ?? viewer.name} size={30} className="ring-2 ring-spirit/50" />
+                <span className="hidden sm:block text-sm font-black italic uppercase max-w-32 truncate">{viewer.charName ?? viewer.name}</span>
               </button>
               {menu && (
-                <div className="absolute right-0 mt-2 w-52 crypt-card p-1.5 animate-scale-up">
-                  <Link href="/perfil" className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm hover:bg-white/5"><User className="w-4 h-4 text-spirit" /> Meu perfil</Link>
+                <div className="absolute right-0 mt-2 w-56 crypt-card p-1.5 animate-scale-up">
+                  <Link href="/perfil" className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-bold hover:bg-white/5"><User className="w-4 h-4 text-spirit" /> Meu perfil</Link>
                   {viewer.isAdmin && (
-                    <Link href="/admin" className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm hover:bg-white/5"><Shield className="w-4 h-4 text-ecto" /> Painel da liderança</Link>
+                    <Link href="/admin" className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-bold hover:bg-white/5"><Shield className="w-4 h-4 text-spirit" /> Painel da liderança</Link>
                   )}
-                  <button onClick={() => signOut({ callbackUrl: "/" })} className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-left hover:bg-white/5 text-bone/70"><LogOut className="w-4 h-4" /> Sair</button>
+                  <button onClick={() => signOut({ callbackUrl: "/" })} className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-bold text-left hover:bg-white/5 text-bone/60"><LogOut className="w-4 h-4" /> Sair</button>
                 </div>
               )}
             </div>
           ) : (
-            <button onClick={() => signIn("discord")} className="btn-ghost !py-2 !px-3.5">
-              <DiscordIcon className="w-4 h-4" /> <span className="hidden sm:inline">Entrar</span>
+            <button onClick={() => signIn("discord")} className="btn-neon !py-2 !px-4">
+              <DiscordIcon className="w-4 h-4" /> Entrar
             </button>
           )}
-          <button onClick={() => setOpen(!open)} className="md:hidden p-2 rounded-lg text-bone/80 hover:bg-white/5" aria-label="Menu">
+          <button onClick={() => setOpen(!open)} className="lg:hidden p-2 rounded-lg text-bone/80 hover:bg-white/5" aria-label="Menu">
             {open ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </button>
         </div>
       </nav>
 
       {open && (
-        <div className="md:hidden border-t border-spirit/10 px-4 py-3 grid gap-1 animate-fade-in">
-          {LINKS.map((l) => (
+        <div className="lg:hidden border-t border-white/5 px-4 py-3 grid gap-1 animate-fade-in">
+          {[...LINKS, ...(viewer?.isAdmin ? [{ href: "/admin", label: "Painel", icon: Shield }] : [])].map((l) => (
             <Link key={l.href} href={l.href}
-              className={`px-3 py-2.5 rounded-lg text-sm font-semibold ${active(l.href) ? "text-ecto bg-ecto/10" : "text-bone/80"}`}>
-              {l.label}
+              className={`flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm font-black italic uppercase ${active(l.href) ? "text-bone bg-spirit/15" : "text-bone/70"}`}>
+              <l.icon className="w-4 h-4 text-spirit" /> {l.label}
             </Link>
           ))}
         </div>

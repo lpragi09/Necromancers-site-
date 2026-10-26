@@ -12,7 +12,7 @@ export default async function AdminPage() {
   const viewer = await getViewer();
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6">
-      <PageHeader icon={Shield} eyebrow="Só liderança" title="Painel" />
+      <PageHeader icon={Shield} eyebrow="Só liderança" title="Painel da" accent="liderança" />
       {!viewer ? (
         <div className="crypt-card p-6"><LoginPrompt text="Entre com o Discord para acessar o painel." /></div>
       ) : isDemo() ? (

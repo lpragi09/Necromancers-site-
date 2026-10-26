@@ -37,7 +37,7 @@ export default function ProfileForm({ charName, level, isNew }: { charName: stri
         <input type="number" min={1} max={1000} value={lvl} onChange={(e) => setLvl(e.target.value)} placeholder="Ex.: 250" className="field" />
       </div>
       <div className="sm:col-span-2">
-        <button disabled={busy} className="btn-ecto">
+        <button disabled={busy} className="btn-neon">
           {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />} {isNew ? "Pedir entrada no clã" : "Salvar"}
         </button>
       </div>

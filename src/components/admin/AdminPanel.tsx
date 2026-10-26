@@ -187,7 +187,7 @@ function DropsTab({ data, reload }: { data: Overview; reload: () => Promise<void
       <div className="flex sm:flex-col gap-2 shrink-0">
         {pending ? (
           <>
-            <button disabled={busy} onClick={() => run("reviewDrop", { id: d.id, status: "approved" })} className="btn-ecto !py-2"><Check className="w-4 h-4" /> Aprovar</button>
+            <button disabled={busy} onClick={() => run("reviewDrop", { id: d.id, status: "approved" })} className="btn-neon !py-2"><Check className="w-4 h-4" /> Aprovar</button>
             <button disabled={busy} onClick={() => run("reviewDrop", { id: d.id, status: "rejected" })} className="btn-ghost !py-2 !text-rose-300"><X className="w-4 h-4" /> Recusar</button>
           </>
         ) : (
@@ -257,7 +257,7 @@ function MembersTab({ members, reload }: { members: Member[]; reload: () => Prom
             </div>
             {m.status === "pending" ? (
               <div className="flex gap-2">
-                <button disabled={busy} onClick={() => save(m, { status: "active" })} className="btn-ecto !py-2"><Check className="w-4 h-4" /> Aprovar</button>
+                <button disabled={busy} onClick={() => save(m, { status: "active" })} className="btn-neon !py-2"><Check className="w-4 h-4" /> Aprovar</button>
                 <IconBtn title="Recusar e remover" danger disabled={busy} onClick={() => run("deleteMember", { id: m.id }, { title: `Recusar ${m.char_name}?` })}><X className="w-4 h-4" /></IconBtn>
               </div>
             ) : (
@@ -325,11 +325,11 @@ function PostsTab({ posts, reload }: { posts: Post[]; reload: () => Promise<void
           </div>
           <ImageField value={form.image_url} onChange={(url) => setForm({ ...form, image_url: url })} />
           <div className="flex flex-wrap gap-5 text-sm">
-            <label className="flex items-center gap-2"><input type="checkbox" checked={form.pinned} onChange={(e) => setForm({ ...form, pinned: e.target.checked })} className="accent-[#6ef2c8]" /> Fixar no topo</label>
-            <label className="flex items-center gap-2"><input type="checkbox" checked={form.published} onChange={(e) => setForm({ ...form, published: e.target.checked })} className="accent-[#6ef2c8]" /> Publicado</label>
+            <label className="flex items-center gap-2"><input type="checkbox" checked={form.pinned} onChange={(e) => setForm({ ...form, pinned: e.target.checked })} className="accent-[#a855f7]" /> Fixar no topo</label>
+            <label className="flex items-center gap-2"><input type="checkbox" checked={form.published} onChange={(e) => setForm({ ...form, published: e.target.checked })} className="accent-[#a855f7]" /> Publicado</label>
           </div>
           <div className="flex gap-3">
-            <button disabled={busy} className="btn-ecto">{busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />} {form.id ? "Salvar" : "Publicar"}</button>
+            <button disabled={busy} className="btn-neon">{busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />} {form.id ? "Salvar" : "Publicar"}</button>
             {form.id && <button type="button" onClick={() => setForm(EMPTY_POST)} className="btn-ghost">Cancelar</button>}
           </div>
         </form>
@@ -419,7 +419,7 @@ function GiveawaysTab({ giveaways, reload }: { giveaways: Giveaway[]; reload: ()
           </div>
           <ImageField value={form.image_url} onChange={(url) => setForm({ ...form, image_url: url })} />
           <div className="flex gap-3">
-            <button disabled={busy} className="btn-ecto"><Plus className="w-4 h-4" /> {form.id ? "Salvar" : "Criar sorteio"}</button>
+            <button disabled={busy} className="btn-neon"><Plus className="w-4 h-4" /> {form.id ? "Salvar" : "Criar sorteio"}</button>
             {form.id && <button type="button" onClick={() => setForm(EMPTY_GIVEAWAY)} className="btn-ghost">Cancelar</button>}
           </div>
         </form>
@@ -446,7 +446,7 @@ function GiveawaysTab({ giveaways, reload }: { giveaways: Giveaway[]; reload: ()
                       {g.status === "open" ? <Lock className="w-4 h-4" /> : <LockOpen className="w-4 h-4" />}
                     </IconBtn>
                     <IconBtn title="Editar" onClick={() => edit(g)}><Pencil className="w-4 h-4" /></IconBtn>
-                    <button onClick={() => startDraw(g)} disabled={busy || !g.entries_count} className="btn-ecto !py-2"><Dices className="w-4 h-4" /> Sortear</button>
+                    <button onClick={() => startDraw(g)} disabled={busy || !g.entries_count} className="btn-neon !py-2"><Dices className="w-4 h-4" /> Sortear</button>
                   </>
                 )}
                 <IconBtn title="Excluir" danger disabled={busy} onClick={() => run("deleteGiveaway", { id: g.id }, { title: "Excluir este sorteio?" })}><Trash2 className="w-4 h-4" /></IconBtn>
@@ -523,7 +523,7 @@ function RankingTab({ seasons, items, reload }: { seasons: Season[]; items: Drop
               <textarea value={season.prizes} onChange={(e) => setSeason({ ...season, prizes: e.target.value })} rows={3} className="field resize-y" placeholder={"1º lugar: 100kk\n2º lugar: 50kk\n3º lugar: 25kk"} />
             </div>
             <div className="flex gap-3">
-              <button disabled={busy} className="btn-ecto"><Plus className="w-4 h-4" /> {season.id ? "Salvar" : "Criar"}</button>
+              <button disabled={busy} className="btn-neon"><Plus className="w-4 h-4" /> {season.id ? "Salvar" : "Criar"}</button>
               {season.id && <button type="button" onClick={() => setSeason(EMPTY_SEASON)} className="btn-ghost">Cancelar</button>}
             </div>
           </form>
@@ -574,9 +574,9 @@ function RankingTab({ seasons, items, reload }: { seasons: Season[]; items: Drop
                 ))}
               </div>
             </div>
-            <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={item.active} onChange={(e) => setItem({ ...item, active: e.target.checked })} className="accent-[#6ef2c8]" /> Aparece no formulário de drops</label>
+            <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={item.active} onChange={(e) => setItem({ ...item, active: e.target.checked })} className="accent-[#a855f7]" /> Aparece no formulário de drops</label>
             <div className="flex gap-3">
-              <button disabled={busy} className="btn-ecto"><Plus className="w-4 h-4" /> {item.id ? "Salvar" : "Adicionar"}</button>
+              <button disabled={busy} className="btn-neon"><Plus className="w-4 h-4" /> {item.id ? "Salvar" : "Adicionar"}</button>
               {item.id && <button type="button" onClick={() => setItem(EMPTY_ITEM)} className="btn-ghost">Cancelar</button>}
             </div>
           </form>

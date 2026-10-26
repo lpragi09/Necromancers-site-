@@ -47,7 +47,7 @@ const DialogContext = createContext<DialogApi | null>(null);
 const PURPLE = {
   iconClass: "text-ecto bg-ecto/10 border-ecto/40",
   ring: "border-spirit/30",
-  button: "btn-ecto",
+  button: "btn-neon",
 };
 const TONES: Record<Tone, { icon: typeof Info; iconClass: string; ring: string; button: string }> = {
   danger: { icon: Trash2, ...PURPLE },

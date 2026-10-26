@@ -138,7 +138,7 @@ export default function GiveawayDraw({ giveaway, onClose, onConfirmed }: {
             </h2>
 
             <div className="relative w-full h-48 bg-crypt border-y-2 border-spirit/30 overflow-hidden shadow-[0_0_60px_rgba(167,139,250,0.15)] flex items-center">
-              <div className="absolute left-1/2 top-0 bottom-0 w-1 bg-ecto z-50 -translate-x-1/2 shadow-[0_0_18px_rgba(110,242,200,1)]" />
+              <div className="absolute left-1/2 top-0 bottom-0 w-1 bg-ecto z-50 -translate-x-1/2 shadow-[0_0_18px_rgba(192,132,252,1)]" />
               <div className="absolute inset-y-0 left-0 w-24 bg-gradient-to-r from-crypt to-transparent z-40" />
               <div className="absolute inset-y-0 right-0 w-24 bg-gradient-to-l from-crypt to-transparent z-40" />
               <div ref={reelRef} className="flex gap-4 w-full" style={{ paddingLeft: `calc(50% - ${ITEM_W / 2}px)` }}>
@@ -164,14 +164,14 @@ export default function GiveawayDraw({ giveaway, onClose, onConfirmed }: {
               <div className="mt-10 crypt-card w-full max-w-md p-8 text-center animate-scale-up relative overflow-hidden !border-ecto/40">
                 <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-spirit via-ecto to-hex" />
                 <button onClick={cancel} title="Fechar (o giro fica como descartado)" className="absolute top-4 right-4 text-bone/40 hover:text-bone"><X className="w-5 h-5" /></button>
-                <Avatar name={draw.winner_label ?? "?"} size={92} className="mx-auto mb-4 ring-4 ring-ecto/60 shadow-[0_0_30px_rgba(110,242,200,0.45)]" />
+                <Avatar name={draw.winner_label ?? "?"} size={92} className="mx-auto mb-4 ring-4 ring-ecto/60 shadow-[0_0_30px_rgba(192,132,252,0.45)]" />
                 <h3 className="font-title text-3xl font-bold text-bone truncate">{draw.winner_label}</h3>
                 <p className="text-bone/50 mt-1 mb-2 text-xs uppercase tracking-widest">Ganhou · {giveaway.prize}</p>
                 <a href={`/provably-fair?id=${draw.id}`} target="_blank" className="inline-flex items-center gap-1.5 mb-6 text-[11px] font-bold text-spirit hover:text-ecto uppercase tracking-widest">
                   <ShieldCheck className="w-3.5 h-3.5" /> Ver prova do sorteio
                 </a>
                 <div className="flex gap-3">
-                  <button onClick={confirm} disabled={busy} className="btn-ecto flex-1 !text-xs uppercase tracking-widest"><Trophy className="w-4 h-4" /> Confirmar</button>
+                  <button onClick={confirm} disabled={busy} className="btn-neon flex-1 !text-xs uppercase tracking-widest"><Trophy className="w-4 h-4" /> Confirmar</button>
                   <button onClick={discardAndRedraw} disabled={busy} className="btn-ghost flex-1 !text-xs uppercase tracking-widest"><RotateCcw className="w-4 h-4" /> Sortear de novo</button>
                 </div>
                 <p className="mt-4 text-[11px] text-bone/40">Confirmar grava o ganhador no sorteio. &quot;Sortear de novo&quot; fica registrado como descartado.</p>

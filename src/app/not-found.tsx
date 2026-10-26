@@ -7,7 +7,7 @@ export default function NotFound() {
       <GhostIcon className="w-20 h-24 mx-auto text-spirit/60 hover-haunt" />
       <h1 className="font-title text-5xl font-bold mt-6 ecto-text">404</h1>
       <p className="text-bone/60 mt-3">Essa página foi pro outro lado.</p>
-      <Link href="/" className="btn-ecto mt-8">Voltar ao início</Link>
+      <Link href="/" className="btn-neon mt-8">Voltar ao início</Link>
     </div>
   );
 }

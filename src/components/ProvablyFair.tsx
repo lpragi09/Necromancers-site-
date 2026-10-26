@@ -29,14 +29,14 @@ function StatusBadge({ status }: { status: FairDraw["status"] }) {
 
 export default function ProvablyFair({ id, target }: { id: string | null; target: string | null }) {
   return (
-    <div className="pt-28 pb-8">
+    <div className="pt-32 pb-8">
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-12">
-          <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-spirit/10 border border-spirit/30 text-spirit text-xs font-bold uppercase tracking-widest mb-6">
-            <ShieldCheck className="w-4 h-4" /> Provably Fair
+          <span className="inline-flex items-center gap-2 text-[11px] font-black italic uppercase tracking-[0.25em] text-bone/55">
+            <ShieldCheck className="w-3.5 h-3.5 text-spirit" /> Provably fair
           </span>
-          <h1 className="font-title text-4xl sm:text-5xl font-bold ecto-text">Sorteio comprovado</h1>
-          <p className="text-bone/60 mt-4 max-w-2xl mx-auto">
+          <h1 className="font-title text-4xl sm:text-6xl mt-4 text-bone">Sorteio <span className="text-spirit text-glow">comprovado</span></h1>
+          <p className="text-bone/55 italic mt-4 max-w-2xl mx-auto">
             Ninguém escolhe o ganhador, nem a liderança do clã. A conta usa a lista de participantes e um número aleatório público que ainda não existia quando a lista foi fechada. Você pode refazer a conta aqui mesmo.
           </p>
         </div>
@@ -228,7 +228,7 @@ function DrawDetail({ id }: { id: string }) {
 
       {draw.drand_randomness && (
         <div className="crypt-card p-6">
-          <button onClick={verify} disabled={verifying} className="btn-ecto">
+          <button onClick={verify} disabled={verifying} className="btn-neon">
             {verifying ? <Loader2 className="w-5 h-5 animate-spin" /> : <ShieldCheck className="w-5 h-5" />} Verificar agora
           </button>
           {checks && (

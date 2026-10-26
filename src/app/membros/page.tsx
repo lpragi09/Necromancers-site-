@@ -19,7 +19,7 @@ export default async function MembrosPage() {
   const members = await getMembers();
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6">
-      <PageHeader icon={Users} eyebrow={`${members.length} almas no clã`} title="Membros" text="A família Necromancers, da liderança aos recrutas." />
+      <PageHeader icon={Users} eyebrow={`${members.length} almas no clã`} title="Membros" accent="do clã" text="A família Necromancers, da liderança aos recrutas." />
       {members.length === 0 && <Empty text="Nenhum membro aprovado ainda." />}
       <div className="space-y-12">
         {ROLE_ORDER.map((role) => {

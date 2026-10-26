@@ -110,5 +110,5 @@ export const RARITY: Record<Rarity, { label: string; text: string; border: strin
   raro: { label: "Raro", text: "text-sky-300", border: "border-sky-400/40", bg: "bg-sky-400/10", glow: "shadow-[0_0_18px_rgba(56,189,248,0.25)]" },
   epico: { label: "Épico", text: "text-violet-300", border: "border-violet-400/50", bg: "bg-violet-500/10", glow: "shadow-[0_0_18px_rgba(167,139,250,0.35)]" },
   lendario: { label: "Lendário", text: "text-amber-300", border: "border-amber-400/50", bg: "bg-amber-400/10", glow: "shadow-[0_0_22px_rgba(251,191,36,0.35)]" },
-  shiny: { label: "Shiny", text: "text-ecto", border: "border-ecto/60", bg: "bg-ecto/10", glow: "shadow-[0_0_24px_rgba(110,242,200,0.45)]" },
+  shiny: { label: "Shiny", text: "text-pink-300", border: "border-pink-400/60", bg: "bg-pink-500/10", glow: "shadow-[0_0_24px_rgba(236,72,153,0.45)]" },
 };

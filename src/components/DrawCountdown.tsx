@@ -37,7 +37,7 @@ export default function DrawCountdown({ onDone, onStep, until }: {
       ) : (
         <span
           key={n}
-          className="font-title text-[11rem] leading-none text-bone animate-countdown drop-shadow-[0_0_40px_rgba(110,242,200,0.8)]"
+          className="font-title text-[11rem] leading-none text-bone animate-countdown drop-shadow-[0_0_40px_rgba(192,132,252,0.8)]"
         >
           {n}
         </span>

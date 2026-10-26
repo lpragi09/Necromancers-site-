@@ -75,7 +75,7 @@ export default function DropForm({ items }: { items: DropItem[] }) {
           </div>
         </div>
         <p className="text-sm text-bone/55">Vale <b className="text-ecto">{((item?.points ?? 0) * quantity).toLocaleString("pt-BR")} pontos</b> se aprovado.</p>
-        <button disabled={busy} className="btn-ecto">
+        <button disabled={busy} className="btn-neon">
           {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />} Enviar para aprovação
         </button>
       </div>

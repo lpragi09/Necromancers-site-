@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Cinzel, Inter } from "next/font/google";
+import { Lato } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 import Providers from "@/components/Providers";
@@ -10,15 +10,14 @@ import { DemoBanner } from "@/components/ui";
 import { getViewer } from "@/lib/viewer";
 import { isDemo } from "@/lib/data";
 
-const cinzel = Cinzel({ subsets: ["latin"], weight: ["500", "700", "900"], variable: "--font-cinzel" });
-const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
+const lato = Lato({ subsets: ["latin"], weight: ["400", "700", "900"], style: ["normal", "italic"], variable: "--font-lato" });
 
 export const metadata: Metadata = {
   title: { default: "Necromancers · Clã", template: "%s · Necromancers" },
   description: "Portal do clã Necromancers: avisos, sorteios, ranking de drops e membros.",
 };
 
-export const viewport: Viewport = { themeColor: "#05040a" };
+export const viewport: Viewport = { themeColor: "#000000" };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const viewer = await getViewer();
@@ -27,7 +26,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
     : null;
 
   return (
-    <html lang="pt-BR" className={`${cinzel.variable} ${inter.variable}`}>
+    <html lang="pt-BR" className={lato.variable}>
       <body className="antialiased">
         <Providers>
           <HauntBackground />

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { CalendarRange, Gem, Trophy } from "lucide-react";
+import { CalendarRange, Gem, ListOrdered, Trophy } from "lucide-react";
 import RankingTable, { Podium } from "@/components/RankingTable";
 import DropForm from "@/components/DropForm";
 import MyDrops from "@/components/MyDrops";
@@ -24,7 +24,7 @@ export default async function RankingPage({ searchParams }: { searchParams: Prom
 
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6">
-      <PageHeader icon={Trophy} eyebrow="Temporada de drops" title="Ranking" text="Cada drop raro aprovado vale pontos. Quem somar mais até o fim da temporada leva o prêmio." />
+      <PageHeader icon={Trophy} eyebrow="Temporada valendo prêmio" title="Ranking" accent="de drops" text="Cada drop raro aprovado vale pontos. Quem somar mais até o fim da temporada leva o prêmio." />
 
       {seasons.length > 1 && (
         <div className="flex flex-wrap justify-center gap-2 -mt-4 mb-10">
@@ -66,7 +66,7 @@ export default async function RankingPage({ searchParams }: { searchParams: Prom
 
       <div className="grid lg:grid-cols-[1.4fr_1fr] gap-10 mt-16">
         <section id="enviar" className="scroll-mt-24">
-          <SectionTitle title="Registrar drop" />
+          <SectionTitle title="Registrar drop" icon={Gem} />
           <div className="crypt-card p-5 sm:p-6">
             {!viewer ? (
               <LoginPrompt text="Entre com o Discord para registrar seus drops." />
@@ -87,7 +87,7 @@ export default async function RankingPage({ searchParams }: { searchParams: Prom
         </section>
 
         <section>
-          <SectionTitle title="Tabela de pontos" />
+          <SectionTitle title="Tabela de pontos" icon={ListOrdered} />
           {items.length ? (
             <div className="crypt-card divide-y divide-spirit/10">
               {items.map((i) => (

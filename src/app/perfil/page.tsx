@@ -18,7 +18,7 @@ export default async function PerfilPage() {
 
   return (
     <div className="max-w-3xl mx-auto px-4 sm:px-6">
-      <PageHeader icon={User} eyebrow="Sua alma no clã" title="Meu perfil" />
+      <PageHeader icon={User} eyebrow="Sua alma no clã" title="Meu" accent="perfil" />
       {!viewer ? (
         <div className="crypt-card p-6"><LoginPrompt text="Entre com o Discord para ver seu perfil e pedir entrada no clã." /></div>
       ) : (
