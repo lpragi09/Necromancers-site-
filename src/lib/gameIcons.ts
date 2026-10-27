@@ -8,3 +8,11 @@ export const GAME_ICONS: Record<GameIcon, { icon: LucideIcon; label: string }> =
   trophy: { icon: Trophy, label: "Troféu" },
   gamepad: { icon: Gamepad2, label: "Controle" },
 };
+
+/** Imagem que vem com o site para cada ícone (vale enquanto o painel não tiver uma própria). */
+export const GAME_DEFAULT_IMAGE: Partial<Record<GameIcon, string>> = {
+  bomb: "/games/bomberman.webp",
+};
+
+/** Imagem do jogo: a do painel ou, sem ela, a que vem com o site. */
+export const gameImage = (m: { icon: GameIcon; image_url: string | null }) => m.image_url ?? GAME_DEFAULT_IMAGE[m.icon] ?? null;

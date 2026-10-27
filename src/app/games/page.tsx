@@ -6,7 +6,7 @@ import { AutoRefresh, RoomButton } from "@/components/Games";
 import { Empty, PageHeader } from "@/components/ui";
 import { getGames } from "@/lib/data";
 import { canSeeContent, getViewer, isActiveMember } from "@/lib/viewer";
-import { GAME_ICONS } from "@/lib/gameIcons";
+import { GAME_ICONS, gameImage } from "@/lib/gameIcons";
 import type { GameRoom } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -66,20 +66,21 @@ export default async function GamesPage() {
         <div className="space-y-14">
           {modes.map((m) => {
             const Icon = GAME_ICONS[m.icon]?.icon ?? Gamepad2;
+            const modeImage = gameImage(m);
             const playing = m.rooms.reduce((n, r) => n + r.players.length, 0);
             return (
               <section key={m.id}>
                 <div className="flex items-end justify-between gap-4 mb-5">
                   <h2 className="font-title text-2xl sm:text-[1.7rem] text-bone flex items-center gap-3">
-                    {m.image_url
-                      ? <img src={m.image_url} alt="" className="w-16 h-16 sm:w-20 sm:h-20 object-contain drop-shadow-[0_0_14px_rgba(168,85,247,0.5)]" />
+                    {modeImage
+                      ? <img src={modeImage} alt="" className="w-16 h-16 sm:w-20 sm:h-20 object-contain drop-shadow-[0_0_14px_rgba(168,85,247,0.5)]" />
                       : <Icon className="w-6 h-6 text-spirit" />}
                     {m.name}
                   </h2>
                   <span className="text-xs font-black italic uppercase tracking-widest text-bone/45">{playing} {playing === 1 ? "jogador" : "jogadores"} nas salas</span>
                 </div>
                 <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {m.rooms.map((r) => <RoomCard key={r.id} room={r} image={r.image_url ?? m.image_url} icon={Icon} me={me} />)}
+                  {m.rooms.map((r) => <RoomCard key={r.id} room={r} image={r.image_url ?? modeImage} icon={Icon} me={me} />)}
                 </div>
               </section>
             );
