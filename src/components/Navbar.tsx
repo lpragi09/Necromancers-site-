@@ -11,9 +11,9 @@ const LINKS = [
   { href: "/", label: "Início", icon: Home },
   { href: "/avisos", label: "Avisos", icon: Megaphone },
   { href: "/sorteios", label: "Sorteios", icon: Gift },
+  { href: "/loja", label: "Loja", icon: Store },
   { href: "/ranking", label: "Ranking", icon: Trophy },
   { href: "/membros", label: "Membros", icon: Users },
-  { href: "/loja", label: "Loja", icon: Store },
 ];
 
 export interface NavViewer {

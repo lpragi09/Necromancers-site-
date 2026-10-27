@@ -4,9 +4,9 @@ const LINKS = [
   { href: "/", label: "Início" },
   { href: "/avisos", label: "Avisos" },
   { href: "/sorteios", label: "Sorteios" },
+  { href: "/loja", label: "Lojinha" },
   { href: "/ranking", label: "Ranking de drops" },
   { href: "/membros", label: "Membros" },
-  { href: "/loja", label: "Lojinha" },
   { href: "/perfil", label: "Meu perfil" },
   { href: "/provably-fair", label: "Provably Fair" },
 ];
