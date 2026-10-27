@@ -51,6 +51,15 @@ export async function POST(request: Request) {
   const id = str(body?.id);
 
   switch (action) {
+    // Consulta leve que o painel faz a cada poucos segundos: só diz se chegou pedido ou drop novo
+    case "pendingCheck": {
+      const [members, drops] = await Promise.all([
+        db.from("members").select("id").eq("status", "pending").order("id"),
+        db.from("drops").select("id").eq("status", "pending").order("id"),
+      ]);
+      const ids = (r: typeof members) => (r.data ?? []).map((x) => x.id).join(",");
+      return ok({ signature: `${ids(members)}|${ids(drops)}` });
+    }
     case "overview": {
       const [posts, giveaways, entries, seasons, items, members, pending, reviewed] = await Promise.all([
         db.from("posts").select(POST_COLUMNS).order("created_at", { ascending: false }),

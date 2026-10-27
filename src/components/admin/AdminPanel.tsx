@@ -1,7 +1,7 @@
 "use client";
 
 /* eslint-disable @next/next/no-img-element */
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   CalendarClock, CalendarRange, Check, ClipboardCheck, Crown, Dices, Eye, EyeOff, Gem, Gift, Loader2,
@@ -59,6 +59,26 @@ export default function AdminPanel() {
     }
   }, []);
   useEffect(() => { load(); }, [load]);
+
+  // Chegou pedido de entrada ou drop novo? Atualiza sozinho, sem F5.
+  // Confere a cada 15s (só com a aba visível) e quando a pessoa volta para a aba.
+  const lastCheck = useRef<string | null>(null);
+  useEffect(() => {
+    const check = async () => {
+      if (document.visibilityState !== "visible") return;
+      try {
+        const { signature } = await adminApi<{ signature: string }>("pendingCheck");
+        if (lastCheck.current !== null && lastCheck.current !== signature) await load();
+        lastCheck.current = signature;
+      } catch {
+        // sem internet por um instante: tenta de novo na próxima
+      }
+    };
+    check();
+    const timer = setInterval(check, 15_000);
+    document.addEventListener("visibilitychange", check);
+    return () => { clearInterval(timer); document.removeEventListener("visibilitychange", check); };
+  }, [load]);
 
   // Depois de mudar algo: recarrega o painel e as páginas públicas
   const reload = useCallback(async () => {
