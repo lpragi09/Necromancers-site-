@@ -36,8 +36,14 @@ function payload(post: Post, mentionEveryone: boolean) {
     content: mentionEveryone ? "@everyone" : "",
     allowed_mentions: { parse: mentionEveryone ? ["everyone"] : [] },
     embeds: [embed],
+    components: linkButton(post),
   };
 }
+
+// Botão de link embaixo do card (webhook comum pode mandar botão de link com ?with_components=true)
+const linkButton = (post: Post) => [
+  { type: 1, components: [{ type: 2, style: 5, label: "Ver no site", emoji: { name: "👻" }, url: `${SITE_URL}/avisos/${post.id}` }] },
+];
 
 async function call(method: "POST" | "PATCH" | "DELETE", path: string, body?: unknown) {
   const url = process.env.DISCORD_WEBHOOK_URL;
@@ -51,9 +57,20 @@ async function call(method: "POST" | "PATCH" | "DELETE", path: string, body?: un
   return res;
 }
 
+// Se o Discord recusar o botão, manda de novo sem ele: o aviso sempre chega
+const withoutButton = <T extends { components?: unknown }>(body: T) => ({ ...body, components: [] });
+const rejectedButton = (err: unknown) => err instanceof Error && /Discord respondeu 400/.test(err.message);
+
 /** Manda o aviso no canal. Devolve o id da mensagem para editar/apagar depois. */
 export async function sendPost(post: Post, mentionEveryone: boolean): Promise<string | null> {
-  const res = await call("POST", "?wait=true", payload(post, mentionEveryone));
+  const body = payload(post, mentionEveryone);
+  let res: Response | null;
+  try {
+    res = await call("POST", "?wait=true&with_components=true", body);
+  } catch (err) {
+    if (!rejectedButton(err)) throw err;
+    res = await call("POST", "?wait=true", withoutButton(body));
+  }
   if (!res?.ok) return null;
   const json = (await res.json()) as { id?: string };
   return json.id ?? null;
@@ -62,8 +79,15 @@ export async function sendPost(post: Post, mentionEveryone: boolean): Promise<st
 /** Edita a mensagem para ficar igual ao aviso (sem marcar @everyone de novo). Devolve false se ela não existe mais. */
 export async function editPost(messageId: string, post: Post): Promise<boolean> {
   // Na edição o Discord só aceita o conteúdo e o card (nome e foto do autor ficam como foram enviados)
-  const { embeds } = payload(post, false);
-  const res = await call("PATCH", `/messages/${messageId}`, { embeds, allowed_mentions: { parse: [] } });
+  const { embeds, components } = payload(post, false);
+  const body = { embeds, components, allowed_mentions: { parse: [] } };
+  let res: Response | null;
+  try {
+    res = await call("PATCH", `/messages/${messageId}?with_components=true`, body);
+  } catch (err) {
+    if (!rejectedButton(err)) throw err;
+    res = await call("PATCH", `/messages/${messageId}`, withoutButton(body));
+  }
   return !!res?.ok;
 }
 
