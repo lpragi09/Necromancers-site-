@@ -428,7 +428,7 @@ function GiveawaysTab({ giveaways, reload }: { giveaways: Giveaway[]; reload: ()
   const dialog = useDialog();
   const [form, setForm] = useState(EMPTY_GIVEAWAY);
   const [drawing, setDrawing] = useState<Giveaway | null>(null);
-  type Entry = { member_id: string; name: string; status: "ok" | "rejected" };
+  type Entry = { member_id: string; name: string; avatar_url: string | null; status: "ok" | "rejected" };
   const [entries, setEntries] = useState<{ id: string; drawn: boolean; list: Entry[] } | null>(null);
   const pag = usePagination(giveaways);
   const entriesPag = usePagination(entries?.list ?? [], 40);
@@ -447,8 +447,8 @@ function GiveawaysTab({ giveaways, reload }: { giveaways: Giveaway[]; reload: ()
   };
   const loadEntries = async (g: Giveaway) => {
     try {
-      const r = await adminApi<{ entries: { member_id: string; status: Entry["status"]; members: { char_name: string } | null }[] }>("giveawayEntries", { id: g.id });
-      setEntries({ id: g.id, drawn: g.status === "drawn", list: r.entries.map((e) => ({ member_id: e.member_id, name: e.members?.char_name ?? "?", status: e.status ?? "ok" })) });
+      const r = await adminApi<{ entries: { member_id: string; status: Entry["status"]; members: { char_name: string; avatar_url: string | null } | null }[] }>("giveawayEntries", { id: g.id });
+      setEntries({ id: g.id, drawn: g.status === "drawn", list: r.entries.map((e) => ({ member_id: e.member_id, name: e.members?.char_name ?? "?", avatar_url: e.members?.avatar_url ?? null, status: e.status ?? "ok" })) });
     } catch (err) {
       dialog.error(err);
     }
@@ -542,23 +542,26 @@ function GiveawaysTab({ giveaways, reload }: { giveaways: Giveaway[]; reload: ()
                   </p>
                   {entries.list.length ? (
                     <>
-                      <div className="flex flex-wrap gap-1.5">
+                      <div className="grid sm:grid-cols-2 gap-2">
                         {entriesPag.pageItems.map((e) => {
                           const out = e.status === "rejected";
-                          const flip = async () => {
-                            if (!out && !(await dialog.confirm({ title: `Tirar ${e.name} do sorteio?`, message: "Ele sai da roleta e não consegue entrar de novo sozinho. Dá pra aprovar de volta depois.", tone: "danger", confirmText: "Tirar" }))) return;
-                            if (await run("setEntryStatus", { giveawayId: g.id, memberId: e.member_id, status: out ? "ok" : "rejected" })) await loadEntries(g);
+                          const set = async (status: Entry["status"]) => {
+                            if (status === "rejected" && !(await dialog.confirm({ title: `Rejeitar ${e.name}?`, message: "Ele sai da roleta e não consegue entrar de novo sozinho. Dá pra aprovar de volta depois.", tone: "danger", confirmText: "Rejeitar" }))) return;
+                            if (await run("setEntryStatus", { giveawayId: g.id, memberId: e.member_id, status })) await loadEntries(g);
                           };
                           return (
-                            <span key={e.member_id} className={`inline-flex items-center gap-1 pl-2 pr-1 py-1 rounded-md border text-xs font-bold ${out ? "bg-rose-500/10 border-rose-400/30 text-rose-200/70 line-through" : "bg-white/5 border-white/10"}`}>
-                              {e.name}
-                              {!entries.drawn && (
-                                <button type="button" onClick={flip} disabled={busy} title={out ? "Aprovar de volta" : "Tirar do sorteio"}
-                                  className={`ml-0.5 w-5 h-5 rounded flex items-center justify-center no-underline transition-colors ${out ? "text-emerald-300 hover:bg-emerald-400/20" : "text-bone/40 hover:text-rose-300 hover:bg-rose-500/20"}`}>
-                                  {out ? <Check className="w-3.5 h-3.5" /> : <X className="w-3.5 h-3.5" />}
-                                </button>
-                              )}
-                            </span>
+                            <div key={e.member_id} className={`flex items-center gap-2.5 rounded-lg border px-2.5 py-2 ${out ? "bg-rose-500/[0.06] border-rose-400/25" : "bg-white/[0.03] border-white/10"}`}>
+                              <Avatar src={e.avatar_url} name={e.name} size={30} className={out ? "grayscale opacity-60" : ""} />
+                              <div className="min-w-0 flex-1">
+                                <p className={`text-sm font-bold truncate ${out ? "text-bone/45 line-through" : ""}`}>{e.name}</p>
+                                <p className={`text-[10px] font-black italic uppercase tracking-widest ${out ? "text-rose-300/80" : "text-emerald-300/80"}`}>{out ? "Rejeitado" : "Aprovado"}</p>
+                              </div>
+                              {!entries.drawn && (out ? (
+                                <button type="button" onClick={() => set("ok")} disabled={busy} className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-md border border-emerald-400/40 bg-emerald-400/10 text-emerald-200 text-[11px] font-black italic uppercase hover:bg-emerald-400/20 transition-colors"><Check className="w-3.5 h-3.5" /> Aprovar</button>
+                              ) : (
+                                <button type="button" onClick={() => set("rejected")} disabled={busy} className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-md border border-rose-400/40 bg-rose-500/10 text-rose-200 text-[11px] font-black italic uppercase hover:bg-rose-500/20 transition-colors"><X className="w-3.5 h-3.5" /> Rejeitar</button>
+                              ))}
+                            </div>
                           );
                         })}
                       </div>
