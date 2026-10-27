@@ -1,13 +1,13 @@
 /* eslint-disable @next/next/no-img-element */
-import { Clock, Gamepad2, Plus, Users, type LucideIcon } from "lucide-react";
+import { Armchair, Clock, Gamepad2, Plus, Users, type LucideIcon } from "lucide-react";
 import MembersGate from "@/components/MembersGate";
 import Avatar from "@/components/Avatar";
-import { AutoRefresh, RoomButton } from "@/components/Games";
+import { AutoRefresh, BenchButton, RoomButton, ShuffleButton } from "@/components/Games";
 import { Empty, PageHeader } from "@/components/ui";
 import { getGames } from "@/lib/data";
 import { canSeeContent, getViewer, isActiveMember } from "@/lib/viewer";
 import { GAME_ICONS, gameImage } from "@/lib/gameIcons";
-import type { GameRoom } from "@/lib/types";
+import type { GameMode, GameRoom } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Games" };
@@ -47,6 +47,32 @@ function RoomCard({ room, image, icon: Icon, me }: { room: GameRoom; image: stri
   );
 }
 
+// Banco: quem quer jogar e espera a liderança sortear as salas
+function Bench({ mode, me, isAdmin }: { mode: GameMode; me: string | null; isAdmin: boolean }) {
+  const joined = !!me && mode.bench.some((p) => p.member_id === me);
+  const shown = mode.bench.slice(0, 14);
+  return (
+    <div className={`mb-5 rounded-[0.9rem] border p-4 sm:p-5 flex flex-wrap items-center gap-4 ${joined ? "border-amber-300/50 bg-amber-400/[0.07]" : "border-amber-300/20 bg-gradient-to-r from-amber-400/[0.06] to-transparent"}`}>
+      <div className="min-w-[10rem] flex-1">
+        <p className="flex items-center gap-2 font-title text-base"><Armchair className="w-5 h-5 text-amber-300" /> Banco do {mode.name}
+          <span className="text-xs font-black not-italic text-amber-200/80 tabular-nums">{mode.bench.length}</span>
+        </p>
+        <p className="text-[11px] italic text-bone/45 mt-0.5">Entre no banco e a liderança sorteia você numa sala.</p>
+        {mode.bench.length > 0 && (
+          <div className="mt-3 flex flex-wrap items-center gap-1.5">
+            {shown.map((p) => <span key={p.member_id} title={p.char_name}><Avatar src={p.avatar_url} name={p.char_name} size={30} className="ring-2 ring-amber-300/40" /></span>)}
+            {mode.bench.length > shown.length && <span className="text-xs font-black text-bone/50">+{mode.bench.length - shown.length}</span>}
+          </div>
+        )}
+      </div>
+      <div className="flex flex-wrap gap-2">
+        {me && <BenchButton modeId={mode.id} joined={joined} />}
+        {isAdmin && <ShuffleButton modeId={mode.id} modeName={mode.name} count={mode.bench.length} />}
+      </div>
+    </div>
+  );
+}
+
 export default async function GamesPage() {
   const viewer = await getViewer();
   if (!canSeeContent(viewer)) return <MembersGate viewer={viewer} />;
@@ -59,7 +85,7 @@ export default async function GamesPage() {
       <PageHeader icon={Gamepad2} eyebrow="Minigames do jogo" title="Games" accent="do clã" text="Entre numa sala para avisar que vai jogar. Quando lotar, é só encontrar a galera no jogo." />
 
       <p className="-mt-6 mb-10 flex items-center justify-center gap-1.5 text-xs italic text-bone/40">
-        <Clock className="w-3.5 h-3.5 text-spirit" /> A vaga vale 1 hora e você fica em uma sala por vez. A página atualiza sozinha.
+        <Clock className="w-3.5 h-3.5 text-spirit" /> A vaga (na sala ou no banco) vale 1 hora e você fica em um lugar por vez. A página atualiza sozinha.
       </p>
 
       {modes.length ? (
@@ -79,6 +105,7 @@ export default async function GamesPage() {
                   </h2>
                   <span className="text-xs font-black italic uppercase tracking-widest text-bone/45">{playing} {playing === 1 ? "jogador" : "jogadores"} nas salas</span>
                 </div>
+                <Bench mode={m} me={me} isAdmin={!!viewer?.isAdmin} />
                 <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   {m.rooms.map((r) => <RoomCard key={r.id} room={r} image={r.image_url ?? modeImage} icon={Icon} me={me} />)}
                 </div>

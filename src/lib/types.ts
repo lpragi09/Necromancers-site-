@@ -243,4 +243,5 @@ export interface GameMode {
   sort: number;
   active: boolean;
   rooms: GameRoom[];
+  bench: GamePlayer[]; // quem está no banco esperando ser sorteado numa sala
 }

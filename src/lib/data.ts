@@ -417,15 +417,27 @@ export async function getGames(activeOnly = true): Promise<GameMode[]> {
   let modesQ = supabaseAdmin.from("game_modes").select("id, name, icon, image_url, sort, active").order("sort").order("name");
   let roomsQ = supabaseAdmin.from("game_rooms").select("id, mode_id, name, image_url, slots, sort, active").order("sort").order("name");
   if (activeOnly) { modesQ = modesQ.eq("active", true); roomsQ = roomsQ.eq("active", true); }
-  const [modes, rooms, players] = await Promise.all([
+  const since = new Date(Date.now() - GAME_SEAT_MS).toISOString();
+  const [modes, rooms, players, bench] = await Promise.all([
     modesQ,
     roomsQ,
     supabaseAdmin
       .from("game_room_players")
       .select("room_id, member_id, joined_at, members(char_name, avatar_url)")
-      .gte("joined_at", new Date(Date.now() - GAME_SEAT_MS).toISOString())
+      .gte("joined_at", since)
+      .order("joined_at"),
+    supabaseAdmin
+      .from("game_bench")
+      .select("mode_id, member_id, joined_at, members(char_name, avatar_url)")
+      .gte("joined_at", since)
       .order("joined_at"),
   ]);
+  const benchByMode = new Map<string, GamePlayer[]>();
+  for (const b of (bench.data ?? []) as unknown as { mode_id: string; member_id: string; members: { char_name: string; avatar_url: string | null } | null }[]) {
+    const list = benchByMode.get(b.mode_id) ?? [];
+    list.push({ member_id: b.member_id, char_name: b.members?.char_name ?? "?", avatar_url: b.members?.avatar_url ?? null });
+    benchByMode.set(b.mode_id, list);
+  }
   const byRoom = new Map<string, GamePlayer[]>();
   for (const p of (players.data ?? []) as unknown as { room_id: string; member_id: string; members: { char_name: string; avatar_url: string | null } | null }[]) {
     const list = byRoom.get(p.room_id) ?? [];
@@ -438,5 +450,5 @@ export async function getGames(activeOnly = true): Promise<GameMode[]> {
     list.push({ ...r, players: byRoom.get(r.id) ?? [] });
     roomsByMode.set(r.mode_id, list);
   }
-  return ((modes.data ?? []) as Omit<GameMode, "rooms">[]).map((m) => ({ ...m, rooms: roomsByMode.get(m.id) ?? [] }));
+  return ((modes.data ?? []) as Omit<GameMode, "rooms">[]).map((m) => ({ ...m, rooms: roomsByMode.get(m.id) ?? [], bench: benchByMode.get(m.id) ?? [] }));
 }

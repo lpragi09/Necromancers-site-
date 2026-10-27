@@ -136,9 +136,11 @@ export const DEMO_GAMES: GameMode[] = [
   {
     id: "demo-bomb", name: "Bomberman", icon: "bomb", image_url: null, sort: 1, active: true,
     rooms: demoRooms("demo-bomb", ["Components Arena", "Ice Arena", "Crystal Arena", "Volcano Arena", "Desert Arena", "Undersea Arena"], { 0: [1, 3], 3: [0, 2, 4, 5] }),
+    bench: [6, 7, 8].map(gamer),
   },
   {
     id: "demo-kart", name: "Poke Kart", icon: "kart", image_url: null, sort: 2, active: true,
     rooms: demoRooms("demo-kart", ["Racetrack 1", "Racetrack 2", "Racetrack 3", "Racetrack 4", "Racetrack 5", "Racetrack 6"], { 1: [6] }),
+    bench: [],
   },
 ];
