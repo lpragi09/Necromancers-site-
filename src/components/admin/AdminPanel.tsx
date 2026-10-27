@@ -178,7 +178,7 @@ function Panel({ icon: Icon, title, subtitle, action, children, className = "" }
         </span>
         <div className="min-w-0 flex-1">
           <h2 className="font-title text-base sm:text-lg">{title}</h2>
-          {subtitle && <p className="text-xs italic text-bone/45 truncate">{subtitle}</p>}
+          {subtitle && <p className="text-xs italic text-bone/45">{subtitle}</p>}
         </div>
         {action}
       </header>
@@ -724,15 +724,22 @@ function GiveawaysTab({ giveaways, reload }: { giveaways: Giveaway[]; reload: ()
 // ======================= Temporadas & itens =======================
 const EMPTY_SEASON = { id: "", name: "", starts_at: "", ends_at: "", prizes: "" };
 const EMPTY_ITEM = { id: "", name: "", points: "", rarity: "raro" as Rarity, image_url: "", active: true };
-const PLACE = ["text-amber-300", "text-zinc-200", "text-orange-300"];
+const PLACE = [
+  { text: "text-amber-300", ring: "border-amber-300/40 bg-amber-300/[0.07]" },
+  { text: "text-zinc-200", ring: "border-zinc-300/30 bg-zinc-300/[0.05]" },
+  { text: "text-orange-300", ring: "border-orange-300/35 bg-orange-300/[0.06]" },
+];
+// "1º lugar: 100kk" vira "100kk" (a posição já aparece no selo)
+const prizeText = (p: string) => p.replace(/^\s*\d+\s*[º°o]?\s*(lugar)?\s*[:\-–]\s*/i, "").trim() || p;
 
 function RankingTab({ seasons, items, reload }: { seasons: Season[]; items: DropItem[]; reload: () => Promise<void> }) {
   const { run, busy } = useAction(reload);
-  const [season, setSeason] = useState(EMPTY_SEASON);
-  const [item, setItem] = useState(EMPTY_ITEM);
+  const [season, setSeason] = useState<typeof EMPTY_SEASON | null>(null);
+  const [item, setItem] = useState<typeof EMPTY_ITEM | null>(null);
 
   const saveSeason = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!season) return;
     const payload = {
       id: season.id || undefined,
       name: season.name,
@@ -740,82 +747,95 @@ function RankingTab({ seasons, items, reload }: { seasons: Season[]; items: Drop
       ends_at: fromLocalInput(season.ends_at),
       prizes: season.prizes.split("\n").map((p) => p.trim()).filter(Boolean),
     };
-    if (await run("saveSeason", { season: payload })) setSeason(EMPTY_SEASON);
+    if (await run("saveSeason", { season: payload })) setSeason(null);
   };
   const saveItem = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (await run("saveItem", { item: { ...item, id: item.id || undefined, points: Number(item.points) } })) setItem(EMPTY_ITEM);
+    if (!item) return;
+    if (await run("saveItem", { item: { ...item, id: item.id || undefined, points: Number(item.points) } })) setItem(null);
   };
   const toggleItem = (i: DropItem) => run("saveItem", { item: { id: i.id, name: i.name, points: i.points, rarity: i.rarity, image_url: i.image_url ?? "", active: !i.active } });
+  const editSeason = (s: Season) => setSeason({ id: s.id, name: s.name, starts_at: toLocalInput(s.starts_at), ends_at: toLocalInput(s.ends_at), prizes: s.prizes.join("\n") });
 
   return (
-    <div className="grid 2xl:grid-cols-2 gap-6 items-start">
-      <div className="space-y-6">
-        <Panel icon={CalendarRange} title={season.id ? "Editar temporada" : "Nova temporada"} subtitle="Cada temporada tem o seu ranking e os seus prêmios.">
-          <form onSubmit={saveSeason} className="grid gap-5">
-            <Field label="Nome">
-              <input value={season.name} onChange={(e) => setSeason({ ...season, name: e.target.value })} maxLength={80} required placeholder="Ex.: Temporada 2 · Halloween" className="field" />
-            </Field>
-            <div className="grid sm:grid-cols-2 gap-4">
+    <div className="space-y-6">
+      <Panel icon={Trophy} title="Temporadas" subtitle="Só a temporada atual recebe drops."
+        action={!season && <button onClick={() => setSeason(EMPTY_SEASON)} className="btn-neon !py-2 !px-4 !text-xs"><Plus className="w-4 h-4" /> Nova temporada</button>}>
+        {season && (
+          <form onSubmit={saveSeason} className="mb-6 rounded-xl border border-spirit/30 bg-spirit/[0.05] p-4 sm:p-5 grid gap-4 animate-fade-in">
+            <p className="font-title text-sm">{season.id ? "Editar temporada" : "Nova temporada"}</p>
+            <div className="grid md:grid-cols-[1.4fr_1fr_1fr] gap-4">
+              <Field label="Nome">
+                <input value={season.name} onChange={(e) => setSeason({ ...season, name: e.target.value })} maxLength={80} required autoFocus placeholder="Temporada 2 · Halloween" className="field" />
+              </Field>
               <Field label="Início">
                 <input type="datetime-local" value={season.starts_at} onChange={(e) => setSeason({ ...season, starts_at: e.target.value })} className="field" />
               </Field>
-              <Field label="Fim" hint="Opcional">
+              <Field label="Fim (opcional)">
                 <input type="datetime-local" value={season.ends_at} onChange={(e) => setSeason({ ...season, ends_at: e.target.value })} className="field" />
               </Field>
             </div>
-            <Field label="Prêmios" hint="Um por linha, na ordem: 1º, 2º, 3º...">
+            <Field label="Prêmios · um por linha (1º, 2º, 3º...)">
               <textarea value={season.prizes} onChange={(e) => setSeason({ ...season, prizes: e.target.value })} rows={3} className="field resize-y" placeholder={"100kk + Shiny Gengar\n50kk\n25kk"} />
             </Field>
-            <FormFooter hint={season.id ? undefined : "Nasce encerrada; ative na lista quando começar."}>
-              {season.id && <button type="button" onClick={() => setSeason(EMPTY_SEASON)} className="btn-ghost">Cancelar</button>}
-              <button disabled={busy} className="btn-neon">{season.id ? <Check className="w-4 h-4" /> : <Plus className="w-4 h-4" />} {season.id ? "Salvar" : "Criar temporada"}</button>
-            </FormFooter>
+            <div className="flex justify-end gap-3">
+              <button type="button" onClick={() => setSeason(null)} className="btn-ghost !py-2">Cancelar</button>
+              <button disabled={busy} className="btn-neon !py-2">{busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />} {season.id ? "Salvar" : "Criar"}</button>
+            </div>
           </form>
-        </Panel>
+        )}
 
-        <Panel icon={Trophy} title="Temporadas" subtitle="Só a temporada atual recebe drops. Ativar uma encerra as outras.">
-          {seasons.length === 0 && <EmptyLine text="Nenhuma temporada ainda." />}
-          <div className="space-y-3">
-            {seasons.map((s) => {
-              const active = s.status === "active";
-              return (
-                <div key={s.id} className={`rounded-xl border p-4 transition-colors ${active ? "border-spirit/50 bg-spirit/[0.07] shadow-[0_0_24px_rgba(168,85,247,0.12)]" : "border-white/5 bg-white/[0.015]"}`}>
-                  <div className="flex flex-wrap items-center gap-3">
-                    <div className="min-w-0 flex-1">
-                      <p className="font-black italic truncate flex items-center gap-2">{s.name} {active ? <Pill tone="purple">Atual</Pill> : <Pill tone="gray">Encerrada</Pill>}</p>
-                      <p className="text-[11px] text-bone/40 flex items-center gap-1 mt-0.5"><CalendarRange className="w-3 h-3" /> {fmtDate(s.starts_at)}{s.ends_at ? ` até ${fmtDate(s.ends_at)}` : " · sem data de fim"}</p>
+        {seasons.length === 0 && !season && <EmptyLine text="Nenhuma temporada ainda." />}
+        <div className="space-y-3">
+          {seasons.map((s) => {
+            const active = s.status === "active";
+            return (
+              <div key={s.id} className={`rounded-xl border p-4 sm:p-5 ${active ? "border-spirit/50 bg-gradient-to-r from-spirit/[0.1] to-transparent shadow-[0_0_24px_rgba(168,85,247,0.12)]" : "border-white/5 bg-white/[0.015]"}`}>
+                <div className="flex flex-wrap items-start gap-3">
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="font-title text-lg">{s.name}</p>
+                      {active ? <Pill tone="purple"><span className="w-1.5 h-1.5 rounded-full bg-spirit animate-pulse" /> Atual</Pill> : <Pill tone="gray">Encerrada</Pill>}
                     </div>
+                    <p className="mt-1 text-xs text-bone/45 flex items-center gap-1.5 whitespace-nowrap">
+                      <CalendarRange className="w-3.5 h-3.5 shrink-0" /> {fmtDate(s.starts_at)} → {s.ends_at ? fmtDate(s.ends_at) : "sem fim"}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
                     <button disabled={busy} onClick={() => run("setSeasonStatus", { id: s.id, status: active ? "closed" : "active" })} className={`${active ? "btn-ghost" : "btn-neon"} !py-2 !px-3.5 !text-xs`}>
                       {active ? "Encerrar" : "Ativar"}
                     </button>
-                    <IconBtn title="Editar" onClick={() => setSeason({ id: s.id, name: s.name, starts_at: toLocalInput(s.starts_at), ends_at: toLocalInput(s.ends_at), prizes: s.prizes.join("\n") })}><Pencil className="w-4 h-4" /></IconBtn>
+                    <IconBtn title="Editar" onClick={() => editSeason(s)}><Pencil className="w-4 h-4" /></IconBtn>
                     <IconBtn title="Excluir" danger disabled={busy} onClick={() => run("deleteSeason", { id: s.id }, { title: `Excluir ${s.name}?`, message: "Todos os drops dessa temporada são apagados." })}><Trash2 className="w-4 h-4" /></IconBtn>
                   </div>
-                  {s.prizes.length > 0 ? (
-                    <div className="mt-3 flex flex-wrap gap-1.5">
-                      {s.prizes.map((p, i) => (
-                        <span key={i} className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-black/40 border border-white/10 text-xs">
-                          <Trophy className={`w-3 h-3 ${PLACE[i] ?? "text-bone/40"}`} /> <b className={PLACE[i] ?? "text-bone/60"}>{i + 1}º</b> {p}
-                        </span>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="mt-2 text-[11px] italic text-bone/35">Sem prêmios cadastrados. Clique no lápis para adicionar.</p>
-                  )}
                 </div>
-              );
-            })}
-          </div>
-        </Panel>
-      </div>
+                {s.prizes.length > 0 ? (
+                  <div className="mt-4 grid sm:grid-cols-3 gap-2">
+                    {s.prizes.slice(0, 3).map((p, i) => (
+                      <div key={i} className={`flex items-center gap-2.5 rounded-lg border px-3 py-2 ${PLACE[i].ring}`}>
+                        <Trophy className={`w-4 h-4 shrink-0 ${PLACE[i].text}`} />
+                        <span className={`font-title text-sm ${PLACE[i].text}`}>{i + 1}º</span>
+                        <span className="text-sm text-bone/80 truncate">{prizeText(p)}</span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <button onClick={() => editSeason(s)} className="mt-3 text-xs font-bold italic text-spirit hover:text-white">+ Definir prêmios</button>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </Panel>
 
-      <div className="space-y-6">
-        <Panel icon={Gem} title={item.id ? "Editar item" : "Novo item que pontua"} subtitle="Os itens que os membros escolhem ao registrar um drop.">
-          <form onSubmit={saveItem} className="grid gap-5">
-            <div className="grid grid-cols-[1fr_120px] gap-3">
+      <Panel icon={Gem} title={`Itens que pontuam (${items.length})`} subtitle="O que os membros escolhem ao registrar um drop."
+        action={!item && <button onClick={() => setItem(EMPTY_ITEM)} className="btn-neon !py-2 !px-4 !text-xs"><Plus className="w-4 h-4" /> Novo item</button>}>
+        {item && (
+          <form onSubmit={saveItem} className="mb-6 rounded-xl border border-spirit/30 bg-spirit/[0.05] p-4 sm:p-5 grid gap-4 animate-fade-in">
+            <p className="font-title text-sm">{item.id ? "Editar item" : "Novo item"}</p>
+            <div className="grid sm:grid-cols-[1fr_130px] gap-4">
               <Field label="Item">
-                <input value={item.name} onChange={(e) => setItem({ ...item, name: e.target.value })} maxLength={80} required placeholder="Ex.: Reaper Cloth" className="field" />
+                <input value={item.name} onChange={(e) => setItem({ ...item, name: e.target.value })} maxLength={80} required autoFocus placeholder="Reaper Cloth" className="field" />
               </Field>
               <Field label="Pontos">
                 <div className="relative">
@@ -825,47 +845,51 @@ function RankingTab({ seasons, items, reload }: { seasons: Season[]; items: Drop
               </Field>
             </div>
             <Field label="Raridade">
-              <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
+              <div className="flex flex-wrap gap-2">
                 {(Object.keys(RARITY) as Rarity[]).map((r) => {
                   const on = item.rarity === r;
                   return (
                     <button type="button" key={r} onClick={() => setItem({ ...item, rarity: r })}
-                      className={`px-2 py-2.5 rounded-lg border text-[11px] font-black italic uppercase tracking-widest transition-all ${RARITY[r].text} ${RARITY[r].border} ${RARITY[r].bg} ${on ? `scale-[1.04] ${RARITY[r].glow} ring-1 ring-white/30` : "opacity-45 hover:opacity-90"}`}>
+                      className={`px-3.5 py-2 rounded-lg border text-[11px] font-black italic uppercase tracking-widest transition-all ${RARITY[r].text} ${RARITY[r].border} ${RARITY[r].bg} ${on ? `${RARITY[r].glow} ring-1 ring-white/30` : "opacity-40 hover:opacity-90"}`}>
                       {RARITY[r].label}
                     </button>
                   );
                 })}
               </div>
             </Field>
-            <Toggle checked={item.active} onChange={(active) => setItem({ ...item, active })} label="Aparece no formulário de drops" hint="Desligado, o item some da lista mas os drops antigos continuam valendo" />
-            <FormFooter>
-              {item.id && <button type="button" onClick={() => setItem(EMPTY_ITEM)} className="btn-ghost">Cancelar</button>}
-              <button disabled={busy} className="btn-neon">{item.id ? <Check className="w-4 h-4" /> : <Plus className="w-4 h-4" />} {item.id ? "Salvar" : "Adicionar item"}</button>
-            </FormFooter>
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <Toggle checked={item.active} onChange={(active) => setItem({ ...item, active })} label="Disponível no formulário" />
+              <div className="flex gap-3">
+                <button type="button" onClick={() => setItem(null)} className="btn-ghost !py-2">Cancelar</button>
+                <button disabled={busy} className="btn-neon !py-2">{busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />} {item.id ? "Salvar" : "Adicionar"}</button>
+              </div>
+            </div>
           </form>
-        </Panel>
+        )}
 
-        <Panel icon={Sparkles} title={`Itens (${items.length})`} subtitle="Do que vale mais para o que vale menos.">
-          {items.length === 0 && <EmptyLine text="Nenhum item cadastrado. Sem itens, ninguém consegue registrar drop." />}
-          <div className="space-y-2">
-            {items.map((i) => (
-              <Row key={i.id} className={i.active ? "" : "opacity-50"}>
-                <Gem className={`w-4 h-4 shrink-0 ${RARITY[i.rarity].text}`} />
-                <span className="flex-1 min-w-0 font-bold truncate">{i.name}</span>
-                <RarityBadge rarity={i.rarity} />
-                <span className="w-20 text-right font-title text-lg text-spirit tabular-nums">{i.points}<span className="text-[10px] text-bone/35 ml-1">pts</span></span>
-                <div className="flex gap-2">
-                  <IconBtn title={i.active ? "Esconder do formulário" : "Mostrar no formulário"} disabled={busy} onClick={() => toggleItem(i)}>
-                    {i.active ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
-                  </IconBtn>
-                  <IconBtn title="Editar" onClick={() => setItem({ id: i.id, name: i.name, points: String(i.points), rarity: i.rarity, image_url: i.image_url ?? "", active: i.active })}><Pencil className="w-4 h-4" /></IconBtn>
-                  <IconBtn title="Excluir" danger disabled={busy} onClick={() => run("deleteItem", { id: i.id }, { title: `Excluir ${i.name}?`, message: "Drops já enviados continuam valendo." })}><Trash2 className="w-4 h-4" /></IconBtn>
-                </div>
-              </Row>
-            ))}
-          </div>
-        </Panel>
-      </div>
+        {items.length === 0 && !item && <EmptyLine text="Cadastre os itens para a galera conseguir registrar drops." />}
+        <div className="space-y-2">
+          {items.map((i) => (
+            <Row key={i.id} className={i.active ? "" : "opacity-50"}>
+              <span className={`w-9 h-9 shrink-0 rounded-lg border flex items-center justify-center ${RARITY[i.rarity].border} ${RARITY[i.rarity].bg}`}>
+                <Gem className={`w-4 h-4 ${RARITY[i.rarity].text}`} />
+              </span>
+              <div className="min-w-0 flex-1">
+                <p className="font-bold truncate">{i.name}</p>
+                <p className={`text-[10px] font-black italic uppercase tracking-widest ${RARITY[i.rarity].text}`}>{RARITY[i.rarity].label}{!i.active && <span className="text-bone/40"> · oculto</span>}</p>
+              </div>
+              <span className="font-title text-xl text-spirit tabular-nums">{i.points}<span className="text-[10px] text-bone/35 ml-1">pts</span></span>
+              <div className="flex gap-2">
+                <IconBtn title={i.active ? "Esconder do formulário" : "Mostrar no formulário"} disabled={busy} onClick={() => toggleItem(i)}>
+                  {i.active ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+                </IconBtn>
+                <IconBtn title="Editar" onClick={() => setItem({ id: i.id, name: i.name, points: String(i.points), rarity: i.rarity, image_url: i.image_url ?? "", active: i.active })}><Pencil className="w-4 h-4" /></IconBtn>
+                <IconBtn title="Excluir" danger disabled={busy} onClick={() => run("deleteItem", { id: i.id }, { title: `Excluir ${i.name}?`, message: "Drops já enviados continuam valendo." })}><Trash2 className="w-4 h-4" /></IconBtn>
+              </div>
+            </Row>
+          ))}
+        </div>
+      </Panel>
     </div>
   );
 }
