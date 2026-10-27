@@ -25,7 +25,9 @@ export default async function Home() {
   const season = pickSeason(seasons);
   const ranking = await getRanking(season?.id);
   const pinned = posts.find((p) => p.pinned && p.kind === "aviso");
-  const latest = posts.filter((p) => p !== pinned).slice(0, 3);
+  const others = posts.filter((p) => p !== pinned);
+  // Mural nunca fica vazio só porque o único post está fixado lá em cima
+  const latest = (others.length ? others : posts).slice(0, 3);
   const activeGiveaways = giveaways.filter((g) => g.status !== "drawn").slice(0, 3);
   const canJoin = isActiveMember(viewer);
 
