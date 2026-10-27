@@ -48,11 +48,11 @@ export default function Navbar({ viewer }: { viewer: NavViewer | null }) {
 
   return (
     <header className="fixed top-0 inset-x-0 z-50 bg-black/85 backdrop-blur-xl border-b border-spirit/20">
-      <nav className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
-        <Link href="/" className="flex items-center gap-2.5 group shrink-0">
+      <nav className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-2 sm:gap-4">
+        <Link href="/" className="flex items-center gap-2 sm:gap-2.5 group min-w-0">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/logo-160.webp" alt="" width={44} height={44} className="w-11 h-11 drop-shadow-[0_0_10px_rgba(168,85,247,0.55)] group-hover:drop-shadow-[0_0_16px_rgba(168,85,247,0.85)] group-hover:rotate-[-6deg] transition-all duration-300" />
-          <span className="font-title text-lg bg-gradient-to-r from-[#e879f9] via-spirit to-[#818cf8] bg-clip-text text-transparent">Necromancers</span>
+          <img src="/logo-160.webp" alt="" width={44} height={44} className="w-10 h-10 sm:w-11 sm:h-11 shrink-0 drop-shadow-[0_0_10px_rgba(168,85,247,0.55)] group-hover:drop-shadow-[0_0_16px_rgba(168,85,247,0.85)] group-hover:rotate-[-6deg] transition-all duration-300" />
+          <span className="font-title text-base sm:text-lg truncate bg-gradient-to-r from-[#e879f9] via-spirit to-[#818cf8] bg-clip-text text-transparent">Necromancers</span>
         </Link>
 
         <div className="hidden xl:flex items-center">
@@ -64,7 +64,7 @@ export default function Navbar({ viewer }: { viewer: NavViewer | null }) {
           ))}
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
           {viewer?.isAdmin && (
             <Link href="/admin" data-active={active("/admin")}
               className={`hover-underline hidden xl:flex items-center gap-1.5 px-3 py-2 text-[13px] font-black italic uppercase tracking-wide transition-colors ${active("/admin") ? "text-bone" : "text-bone/60 hover:text-bone"}`}>
@@ -92,11 +92,11 @@ export default function Navbar({ viewer }: { viewer: NavViewer | null }) {
               )}
             </div>
           ) : (
-            <button onClick={() => signIn("discord")} className="btn-neon !py-2 !px-4">
+            <button onClick={() => signIn("discord")} className="btn-neon !py-2 !px-3 sm:!px-4">
               <DiscordIcon className="w-4 h-4" /> Entrar
             </button>
           )}
-          <button onClick={() => setOpen(!open)} className="xl:hidden p-2 rounded-lg text-bone/80 hover:bg-white/5" aria-label="Menu">
+          <button onClick={() => setOpen(!open)} className="xl:hidden p-2 -mr-2 rounded-lg text-bone/80 hover:bg-white/5" aria-label="Menu">
             {open ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </button>
         </div>

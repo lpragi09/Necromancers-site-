@@ -5,12 +5,18 @@ import GiveawayCard from "@/components/GiveawayCard";
 import HeroVideo from "@/components/HeroVideo";
 import RankingTable, { Podium } from "@/components/RankingTable";
 import { BandHeader, Empty } from "@/components/ui";
-import { getGiveaways, getPosts, getRanking, getSeasons, getStats, pickSeason } from "@/lib/data";
+import { getGiveawaysPage, getPosts, getPostsPage, getRanking, getSeasons, getStats, pickSeason } from "@/lib/data";
+import PageNav, { pageFrom, slicePage } from "@/components/PageNav";
 import { canSeeContent, getViewer, isActiveMember } from "@/lib/viewer";
 import MembersGate from "@/components/MembersGate";
 import { fmtDate, fmtPoints } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
+
+// Itens por página em cada faixa da home
+const GIVEAWAYS_PAGE = 6;
+const RANKING_PAGE = 10;
+const POSTS_PAGE = 6;
 
 function SeeAll({ href, label }: { href: string; label: string }) {
   return (
@@ -50,7 +56,8 @@ function Hero() {
   );
 }
 
-export default async function Home() {
+export default async function Home({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
+  const params = await searchParams;
   const viewer = await getViewer();
   // Visitante (ou rival) vê só a abertura; os dados do clã nem são buscados
   if (!canSeeContent(viewer)) {
@@ -61,14 +68,21 @@ export default async function Home() {
       </>
     );
   }
-  const [posts, giveaways, seasons, stats] = await Promise.all([getPosts(7), getGiveaways(viewer?.member?.id), getSeasons(), getStats()]);
+  // Cada faixa tem a própria página na URL (?sorteios=2, ?top=2, ?avisos=2)
+  const giveawaysPage = pageFrom(params, "sorteios");
+  const postsPage = pageFrom(params, "avisos");
+  const [recent, posts, giveaways, seasons, stats] = await Promise.all([
+    getPosts(10),
+    getPostsPage(postsPage, POSTS_PAGE),
+    getGiveawaysPage("active", giveawaysPage, GIVEAWAYS_PAGE, viewer?.member?.id),
+    getSeasons(),
+    getStats(),
+  ]);
   const season = pickSeason(seasons);
   const ranking = await getRanking(season?.id);
-  const pinned = posts.find((p) => p.pinned && p.kind === "aviso");
-  const others = posts.filter((p) => p !== pinned);
-  // Mural nunca fica vazio só porque o único post está fixado lá em cima
-  const latest = (others.length ? others : posts).slice(0, 3);
-  const activeGiveaways = giveaways.filter((g) => g.status !== "drawn").slice(0, 3);
+  const rest = slicePage(ranking.slice(3), pageFrom(params, "top"), RANKING_PAGE);
+  // O fixado aparece em destaque no topo e também continua no mural
+  const pinned = recent.find((p) => p.pinned && p.kind === "aviso");
   const canJoin = isActiveMember(viewer);
 
   return (
@@ -110,12 +124,12 @@ export default async function Home() {
       </div>
 
       {/* Sorteios */}
-      <section className="mt-20 py-20 border-t border-white/5">
+      <section id="sorteios-ativos" className="mt-20 py-20 border-t border-white/5 scroll-mt-16">
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
           <BandHeader eyebrow="Sorteios" title="Sorteios" accent="ativos" text="Uma chance por membro ativo, com resultado que qualquer um pode conferir." />
-          {activeGiveaways.length ? (
+          {giveaways.items.length ? (
             <div className="flex flex-wrap justify-start gap-5">
-              {activeGiveaways.map((g) => (
+              {giveaways.items.map((g) => (
                 <div key={g.id} className="w-full sm:w-[calc(50%-0.625rem)] lg:w-[calc(33.333%-0.834rem)] flex">
                   <GiveawayCard giveaway={g} canJoin={canJoin} />
                 </div>
@@ -124,12 +138,13 @@ export default async function Home() {
           ) : (
             <Empty text="Nenhum sorteio aberto agora. Fique de olho nos avisos!" />
           )}
+          <PageNav page={giveawaysPage} pageCount={Math.ceil(giveaways.total / GIVEAWAYS_PAGE)} path="/" params={params} param="sorteios" anchor="sorteios-ativos" />
           <SeeAll href="/sorteios" label="Todos os sorteios" />
         </div>
       </section>
 
       {/* Ranking da temporada */}
-      <section className="py-20 border-t border-white/5 bg-gradient-to-b from-[#0c0614]/80 to-transparent">
+      <section id="top" className="py-20 border-t border-white/5 scroll-mt-16 bg-gradient-to-b from-[#0c0614]/80 to-transparent">
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
           <BandHeader
             eyebrow={season?.name ?? "Ranking"}
@@ -140,7 +155,12 @@ export default async function Home() {
           {ranking.length ? (
             <>
               <Podium rows={ranking} prizes={season?.prizes ?? []} />
-              {ranking.length > 3 && <div className="mt-8 max-w-3xl mx-auto"><RankingTable rows={ranking.slice(3, 8)} start={3} compact /></div>}
+              {ranking.length > 3 && (
+                <div className="mt-8 max-w-3xl mx-auto">
+                  <RankingTable rows={rest.items} start={3 + (rest.page - 1) * RANKING_PAGE} compact />
+                  <PageNav page={rest.page} pageCount={rest.pageCount} path="/" params={params} param="top" anchor="top" />
+                </div>
+              )}
             </>
           ) : (
             <Empty text="Ninguém pontuou ainda nesta temporada." />
@@ -150,12 +170,12 @@ export default async function Home() {
       </section>
 
       {/* Mural */}
-      <section className="py-20 border-t border-white/5">
+      <section id="mural" className="py-20 border-t border-white/5 scroll-mt-16">
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
           <BandHeader eyebrow="Mural do clã" title="Avisos &" accent="novidades" text="Regras, eventos, hunts e novidades do servidor." />
-          {latest.length ? (
+          {posts.items.length ? (
             <div className="flex flex-wrap justify-start gap-5">
-              {latest.map((p) => (
+              {posts.items.map((p) => (
                 <div key={p.id} className="w-full md:w-[calc(50%-0.625rem)] lg:w-[calc(33.333%-0.834rem)] flex">
                   <PostCard post={p} href={`/avisos/${p.id}`} />
                 </div>
@@ -164,6 +184,7 @@ export default async function Home() {
           ) : (
             <Empty text="Nenhuma novidade por enquanto." />
           )}
+          <PageNav page={postsPage} pageCount={Math.ceil(posts.total / POSTS_PAGE)} path="/" params={params} param="avisos" anchor="mural" />
           <SeeAll href="/avisos" label="Ver o mural" />
         </div>
       </section>

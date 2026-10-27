@@ -128,22 +128,22 @@ export default function AdminPanel() {
       </div>
 
       <div className="grid lg:grid-cols-[230px_1fr] gap-6 items-start">
-        {/* Menu: lateral no computador, rolagem horizontal no celular */}
-        <nav className="lg:sticky lg:top-24 crypt-card p-2 flex lg:flex-col gap-1 overflow-x-auto scrollbar-thin">
+        {/* Menu: lateral no computador, grade 4×2 no celular (todas as abas à vista) */}
+        <nav className="lg:sticky lg:top-24 crypt-card p-2 grid grid-cols-4 lg:flex lg:flex-col gap-1">
           {tabs.map((t) => {
             const on = tab === t.id;
             return (
               <button key={t.id} onClick={() => setTab(t.id)}
-                className={`relative shrink-0 flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-colors ${on ? "bg-spirit/15 text-bone" : "text-bone/55 hover:text-bone hover:bg-white/[0.04]"}`}>
+                className={`relative flex flex-col lg:flex-row items-center gap-1 lg:gap-3 px-1 py-2 lg:px-3 lg:py-2.5 rounded-xl text-center lg:text-left transition-colors ${on ? "bg-spirit/15 text-bone" : "text-bone/55 hover:text-bone hover:bg-white/[0.04]"}`}>
                 {on && <span className="hidden lg:block absolute left-0 top-2.5 bottom-2.5 w-1 rounded-full bg-spirit shadow-[0_0_10px_rgba(168,85,247,0.9)]" />}
                 <span className={`w-9 h-9 shrink-0 rounded-lg flex items-center justify-center border ${on ? "bg-spirit border-spirit text-white shadow-[0_0_16px_rgba(168,85,247,0.5)]" : "bg-white/[0.03] border-white/10"}`}>
                   <t.icon className="w-4 h-4" />
                 </span>
-                <span className="min-w-0 flex-1">
-                  <span className="block text-sm font-black italic uppercase tracking-wide">{t.label}</span>
+                <span className="min-w-0 max-w-full lg:flex-1">
+                  <span className="block truncate text-[10px] lg:text-sm font-black italic uppercase lg:tracking-wide">{t.label}</span>
                   <span className="hidden lg:block text-[11px] text-bone/40 truncate">{t.hint}</span>
                 </span>
-                {!!t.badge && <span className="min-w-5 h-5 px-1.5 rounded-full bg-blood text-white text-[11px] font-black flex items-center justify-center shadow-[0_0_10px_rgba(239,68,68,0.6)]">{t.badge}</span>}
+                {!!t.badge && <span className="absolute top-1 right-1 lg:static min-w-5 h-5 px-1.5 rounded-full bg-blood text-white text-[11px] font-black flex items-center justify-center shadow-[0_0_10px_rgba(239,68,68,0.6)]">{t.badge}</span>}
               </button>
             );
           })}
@@ -526,7 +526,7 @@ function GiveawaysTab({ giveaways, reload }: { giveaways: Giveaway[]; reload: ()
                   {g.image_url ? <img src={g.image_url} alt="" className="w-full h-full object-cover" /> : <GhostIcon className="w-5 h-6 text-[#e9e2ff]/80" />}
                 </span>
                 <div className="min-w-0 flex-1">
-                  <p className="font-black italic truncate flex items-center gap-2">{g.title}</p>
+                  <p className="font-black italic flex items-center gap-2 min-w-0"><span className="truncate">{g.title}</span><span className="sm:hidden shrink-0"><Pill tone={g.status === "open" ? "green" : g.status === "closed" ? "amber" : "purple"}>{g.status === "open" ? "Aberto" : g.status === "closed" ? "Fechado" : "Sorteado"}</Pill></span></p>
                   <p className="text-[11px] text-bone/45 truncate flex flex-wrap items-center gap-x-3">
                     <span className="inline-flex items-center gap-1"><Gift className="w-3 h-3 text-spirit" /> {g.prize}</span>
                     <span className="inline-flex items-center gap-1"><Users className="w-3 h-3" /> {g.entries_count ?? 0} inscritos</span>
@@ -534,10 +534,10 @@ function GiveawaysTab({ giveaways, reload }: { giveaways: Giveaway[]; reload: ()
                     {g.status === "drawn" && g.winner_name && <span className="inline-flex items-center gap-1 text-amber-300"><Trophy className="w-3 h-3" /> {g.winner_name}{g.drawn_at ? ` · ${fmtDateTime(g.drawn_at)}` : ""}</span>}
                   </p>
                 </div>
-                <Pill tone={g.status === "open" ? "green" : g.status === "closed" ? "amber" : "purple"}>
+                <span className="hidden sm:inline-flex"><Pill tone={g.status === "open" ? "green" : g.status === "closed" ? "amber" : "purple"}>
                   {g.status === "open" ? "Aberto" : g.status === "closed" ? "Fechado" : "Sorteado"}
-                </Pill>
-                <div className="flex items-center gap-2">
+                </Pill></span>
+                <div className="flex flex-wrap items-center gap-2 max-sm:w-full">
                   <IconBtn title="Ver inscritos" onClick={() => showEntries(g)}><Users className="w-4 h-4" /></IconBtn>
                   {g.status !== "drawn" && (
                     <>
@@ -550,7 +550,7 @@ function GiveawaysTab({ giveaways, reload }: { giveaways: Giveaway[]; reload: ()
                   )}
                   <IconBtn title="Excluir" danger disabled={busy} onClick={() => run("deleteGiveaway", { id: g.id }, { title: "Excluir este sorteio?" })}><Trash2 className="w-4 h-4" /></IconBtn>
                   {g.status !== "drawn" && (
-                    <button onClick={() => startDraw(g)} disabled={busy || !g.entries_count} title={g.entries_count ? "Sortear agora" : "Precisa de pelo menos 1 inscrito"} className="btn-neon !py-2"><Dices className="w-4 h-4" /> Sortear</button>
+                    <button onClick={() => startDraw(g)} disabled={busy || !g.entries_count} title={g.entries_count ? "Sortear agora" : "Precisa de pelo menos 1 inscrito"} className="btn-neon !py-2 max-sm:flex-1"><Dices className="w-4 h-4" /> Sortear</button>
                   )}
                 </div>
               </Row>
@@ -680,7 +680,7 @@ function RankingTab({ seasons, items, reload }: { seasons: Season[]; items: Drop
             return (
               <div key={s.id} className={`rounded-xl border p-4 sm:p-5 ${active ? "border-spirit/50 bg-gradient-to-r from-spirit/[0.1] to-transparent shadow-[0_0_24px_rgba(168,85,247,0.12)]" : "border-white/5 bg-white/[0.015]"}`}>
                 <div className="flex flex-wrap items-start gap-3">
-                  <div className="min-w-0 flex-1">
+                  <div className="min-w-[11rem] flex-1">
                     <div className="flex flex-wrap items-center gap-2">
                       <p className="font-title text-lg">{s.name}</p>
                       {active ? <Pill tone="purple"><span className="w-1.5 h-1.5 rounded-full bg-spirit animate-pulse" /> Atual</Pill> : <Pill tone="gray">Encerrada</Pill>}

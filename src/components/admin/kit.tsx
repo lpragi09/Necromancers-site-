@@ -54,7 +54,7 @@ export function Panel({ icon: Icon, title, subtitle, action, children, className
         <span className="w-9 h-9 shrink-0 rounded-lg bg-spirit/15 border border-spirit/30 flex items-center justify-center">
           <Icon className="w-4 h-4 text-spirit" />
         </span>
-        <div className="min-w-0 flex-1">
+        <div className="min-w-[11rem] flex-1">
           <h2 className="font-title text-base sm:text-lg">{title}</h2>
           {subtitle && <p className="text-xs italic text-bone/45">{subtitle}</p>}
         </div>
@@ -130,8 +130,9 @@ export function IconBtn({ onClick, title, children, danger = false, disabled = f
 }
 
 /** Linha das listas: cartãozinho com borda que acende no hover */
+// No celular o texto principal (o filho flex-1) não encolhe abaixo de 9rem: os botões descem de linha
 export function Row({ children, className = "" }: { children: React.ReactNode; className?: string }) {
-  return <div className={`flex flex-wrap items-center gap-3 sm:gap-4 p-3 sm:p-3.5 rounded-xl border border-white/5 bg-white/[0.015] hover:border-spirit/30 hover:bg-spirit/[0.04] transition-colors ${className}`}>{children}</div>;
+  return <div className={`flex flex-wrap items-center [&>.flex-1]:min-w-[9rem] gap-3 sm:gap-4 p-3 sm:p-3.5 rounded-xl border border-white/5 bg-white/[0.015] hover:border-spirit/30 hover:bg-spirit/[0.04] transition-colors ${className}`}>{children}</div>;
 }
 
 export function EmptyLine({ text }: { text: string }) {
