@@ -73,7 +73,7 @@ export default function Navbar({ viewer }: { viewer: NavViewer | null }) {
           <span className="hidden xl:block w-px h-7 bg-white/10" />
           {viewer ? (
             <div ref={menuRef} className="relative">
-              <button onClick={() => setMenu(!menu)} className="flex items-center gap-2 rounded-full pl-1 pr-3 py-1 bg-white/5 border border-white/10 hover:border-spirit/50 transition-colors">
+              <button onClick={() => setMenu(!menu)} className="flex items-center gap-2 rounded-full p-1 sm:pr-3 bg-white/5 border border-white/10 hover:border-spirit/50 transition-colors">
                 <Avatar src={viewer.image} name={viewer.charName ?? viewer.name} size={30} className="ring-2 ring-spirit/50" />
                 <span className="hidden sm:block text-sm font-black italic uppercase max-w-32 truncate">{viewer.charName ?? viewer.name}</span>
               </button>
