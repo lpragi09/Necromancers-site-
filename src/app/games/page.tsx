@@ -99,7 +99,7 @@ export default async function GamesPage() {
                 <div className="flex items-end justify-between gap-4 mb-5">
                   <h2 className="font-title text-2xl sm:text-[1.7rem] text-bone flex items-center gap-3">
                     {modeImage
-                      ? <img src={modeImage} alt="" className="w-16 h-16 sm:w-20 sm:h-20 object-contain drop-shadow-[0_0_14px_rgba(168,85,247,0.5)]" />
+                      ? <img src={modeImage} alt="" className="w-16 h-16 sm:w-20 sm:h-20 object-contain rounded-2xl drop-shadow-[0_0_14px_rgba(168,85,247,0.5)]" />
                       : <Icon className="w-6 h-6 text-spirit" />}
                     {m.name}
                   </h2>

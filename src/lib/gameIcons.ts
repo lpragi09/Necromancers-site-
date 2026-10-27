@@ -12,6 +12,7 @@ export const GAME_ICONS: Record<GameIcon, { icon: LucideIcon; label: string }> =
 /** Imagem que vem com o site para cada ícone (vale enquanto o painel não tiver uma própria). */
 export const GAME_DEFAULT_IMAGE: Partial<Record<GameIcon, string>> = {
   bomb: "/games/bomberman.webp",
+  kart: "/games/pokekart.webp",
 };
 
 /** Imagem do jogo: a do painel ou, sem ela, a que vem com o site. */
