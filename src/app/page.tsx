@@ -45,10 +45,7 @@ export default async function Home() {
               className="logo-float relative w-60 h-60 sm:w-80 sm:h-80 drop-shadow-[0_0_35px_rgba(168,85,247,0.55)]" />
           </div>
           <h1 className="sr-only">Necromancers</h1>
-          <p className="mt-4 inline-flex items-center gap-2 text-[11px] sm:text-xs font-black italic uppercase tracking-[0.35em] text-parchment/80">
-            <span className="w-1.5 h-1.5 rounded-full bg-blood shadow-[0_0_8px_rgba(239,68,68,0.9)]" /> Clã de PokeTibia <span className="w-1.5 h-1.5 rounded-full bg-blood shadow-[0_0_8px_rgba(239,68,68,0.9)]" />
-          </p>
-          <p className="mt-4 text-base sm:text-lg italic text-bone/60 max-w-xl mx-auto">
+          <p className="mt-6 text-base sm:text-lg italic text-bone/60 max-w-xl mx-auto">
             Onde os treinadores fantasmas se reúnem. Sorteios, ranking de drops e tudo que acontece no clã.
           </p>
           <div className="mt-9 flex flex-wrap gap-4 justify-center">
