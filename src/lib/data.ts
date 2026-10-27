@@ -251,7 +251,7 @@ export const DUNGEON_GRACE_MS = 2 * 3600_000;
 
 export async function getDungeons(activeOnly = true): Promise<Dungeon[]> {
   if (isDemo()) return DEMO_DUNGEONS;
-  let q = supabaseAdmin.from("dungeons").select("id, name, active").order("name");
+  let q = supabaseAdmin.from("dungeons").select("id, name, image_url, active").order("name");
   if (activeOnly) q = q.eq("active", true);
   return ((await q).data as Dungeon[]) ?? [];
 }

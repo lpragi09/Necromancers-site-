@@ -1,8 +1,10 @@
 "use client";
 
+/* eslint-disable @next/next/no-img-element */
+
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2, LogIn, LogOut, Plus, Users, X } from "lucide-react";
+import { Loader2, LogIn, LogOut, Mountain, Plus, Users, X } from "lucide-react";
 import { api } from "@/lib/api";
 import { useDialog } from "@/components/Dialog";
 import type { Dungeon } from "@/lib/types";
@@ -49,12 +51,22 @@ export function DungeonForm({ dungeons }: { dungeons: Dungeon[] }) {
   if (!dungeons.length) return <p className="text-sm italic text-bone/50">A liderança ainda não cadastrou as dungeons.</p>;
 
   return (
-    <form onSubmit={submit} className="grid gap-4 lg:grid-cols-[1.2fr_auto_1fr] lg:items-end">
-      <div>
+    <form onSubmit={submit} className="grid gap-4 sm:grid-cols-[auto_1fr] sm:items-end">
+      <div className="sm:col-span-2">
         <label className="label">Dungeon</label>
-        <select value={dungeonId} onChange={(e) => setDungeonId(e.target.value)} className="field">
-          {dungeons.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}
-        </select>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          {dungeons.map((d) => {
+            const on = d.id === dungeonId;
+            return (
+              <button type="button" key={d.id} onClick={() => setDungeonId(d.id)} aria-pressed={on}
+                className={`group relative aspect-[6/5] rounded-xl overflow-hidden border-2 transition-all ${on ? "border-spirit shadow-[0_0_18px_rgba(168,85,247,0.5)]" : "border-white/10 opacity-60 hover:opacity-100 hover:border-spirit/50"}`}>
+                {d.image_url ? <img src={d.image_url} alt="" className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform" />
+                  : <span className="absolute inset-0 bg-gradient-to-br from-[#2a0f4a] to-black flex items-center justify-center"><Mountain className="w-8 h-8 text-spirit" /></span>}
+                <span className="absolute inset-x-0 bottom-0 px-2 pt-6 pb-2 bg-gradient-to-t from-black/95 to-transparent text-center text-xs sm:text-sm font-black italic uppercase text-bone">{d.name}</span>
+              </button>
+            );
+          })}
+        </div>
       </div>
       <div>
         <label className="label">Jogadores</label>
@@ -71,11 +83,11 @@ export function DungeonForm({ dungeons }: { dungeons: Dungeon[] }) {
         <label className="label">Dia e hora</label>
         <input type="datetime-local" value={startsAt} min={nowLocal()} onChange={(e) => setStartsAt(e.target.value)} required className="field" />
       </div>
-      <div className="lg:col-span-3 flex flex-col sm:flex-row gap-3">
+      <div className="sm:col-span-2 flex flex-col sm:flex-row gap-3">
         <input value={note} onChange={(e) => setNote(e.target.value)} maxLength={120} placeholder="Observação (opcional): ex. levem revive, só level 200+" className="field flex-1" />
         <button disabled={busy} className="btn-neon shrink-0">{busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />} Criar grupo</button>
       </div>
-      <p className="lg:col-span-3 -mt-1 text-[11px] italic text-bone/40 flex items-center gap-1.5">
+      <p className="sm:col-span-2 -mt-1 text-[11px] italic text-bone/40 flex items-center gap-1.5">
         <Users className="w-3.5 h-3.5 text-spirit" />
         {slots === 1 ? "Grupo solo: só você." : `Você ocupa 1 vaga e sobram ${slots - 1} para a galera entrar.`}
       </p>

@@ -192,6 +192,7 @@ export interface TournamentRow {
 export interface Dungeon {
   id: string;
   name: string;
+  image_url: string | null; // imagem do boss
   active: boolean;
 }
 

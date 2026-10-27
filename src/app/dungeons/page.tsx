@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-img-element */
 import { Clock, Crown, Mountain, Plus, StickyNote, Users } from "lucide-react";
 import MembersGate from "@/components/MembersGate";
 import Avatar from "@/components/Avatar";
@@ -32,7 +33,7 @@ function relative(iso: string) {
   return diff >= 0 ? `em ${text}` : `começou há ${text}`;
 }
 
-function RunCard({ run, me, canAct, isAdmin }: { run: DungeonRun; me: string | null; canAct: boolean; isAdmin: boolean }) {
+function RunCard({ run, image, me, canAct, isAdmin }: { run: DungeonRun; image: string | null; me: string | null; canAct: boolean; isAdmin: boolean }) {
   const filled = run.players.length;
   const full = filled >= run.slots;
   const joined = !!me && run.players.some((p) => p.member_id === me);
@@ -42,17 +43,19 @@ function RunCard({ run, me, canAct, isAdmin }: { run: DungeonRun; me: string | n
 
   return (
     <div className={`crypt-card crypt-card-hover flex flex-col overflow-hidden ${joined ? "!border-spirit/50" : ""}`}>
-      <div className="relative px-5 pt-5 pb-4 bg-gradient-to-br from-[#2a0f4a]/70 via-transparent to-transparent">
-        <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0">
+      <div className="relative px-5 pt-5 pb-4 min-h-[136px] overflow-hidden bg-gradient-to-br from-[#2a0f4a]/70 via-transparent to-transparent">
+        {/* Boss da dungeon do lado direito, sumindo para a esquerda */}
+        {image && <img src={image} alt="" className="absolute right-0 top-0 h-full w-[58%] object-cover [mask-image:linear-gradient(to_right,transparent,black_40%)]" />}
+        <div className="relative flex items-start justify-between gap-3">
+          <div className="min-w-0 max-w-[62%]">
             <p className="flex items-center gap-1.5 text-[10px] font-black italic uppercase tracking-[0.25em] text-spirit"><Mountain className="w-3.5 h-3.5" /> Dungeon</p>
-            <h3 className="font-title text-xl mt-1 truncate">{run.dungeon_name}</h3>
+            <h3 className="font-title text-xl mt-1 leading-tight drop-shadow-[0_2px_6px_rgba(0,0,0,0.9)]">{run.dungeon_name}</h3>
           </div>
-          <span className={`shrink-0 px-2 py-0.5 rounded-md border text-[10px] font-black italic uppercase tracking-widest ${full ? "text-rose-200 bg-rose-500/20 border-rose-400/40" : "text-emerald-200 bg-emerald-500/15 border-emerald-400/40"}`}>
+          <span className={`shrink-0 px-2 py-0.5 rounded-md border backdrop-blur text-[10px] font-black italic uppercase tracking-widest ${full ? "text-rose-200 bg-rose-500/20 border-rose-400/40" : "text-emerald-200 bg-emerald-500/15 border-emerald-400/40"}`}>
             {full ? "Lotado" : `${run.slots - filled} ${run.slots - filled === 1 ? "vaga" : "vagas"}`}
           </span>
         </div>
-        <p className="mt-3 flex items-center gap-2 font-black italic text-bone">
+        <p className="relative mt-3 flex flex-wrap items-center gap-x-2 font-black italic text-bone drop-shadow-[0_2px_6px_rgba(0,0,0,0.9)]">
           <Clock className="w-4 h-4 text-spirit" /> {whenLabel(run.starts_at)}
           <span className={`text-xs font-bold not-italic ${started ? "text-amber-300" : "text-bone/45"}`}>· {relative(run.starts_at)}</span>
         </p>
@@ -92,7 +95,9 @@ export default async function DungeonsPage({ searchParams }: { searchParams: Pro
   if (!canSeeContent(viewer)) return <MembersGate viewer={viewer} />;
   const member = isActiveMember(viewer) ? viewer.member : null;
   const page = pageFrom(params);
-  const [dungeons, runs] = await Promise.all([getDungeons(), getDungeonRuns(page, PAGE_SIZE)]);
+  const [dungeons, runs] = await Promise.all([getDungeons(false), getDungeonRuns(page, PAGE_SIZE)]);
+  // Imagem do boss de cada grupo (pelo id; grupos antigos sem id, pelo nome)
+  const imageOf = (r: DungeonRun) => (dungeons.find((d) => d.id === r.dungeon_id) ?? dungeons.find((d) => d.name === r.dungeon_name))?.image_url ?? null;
 
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6">
@@ -101,7 +106,7 @@ export default async function DungeonsPage({ searchParams }: { searchParams: Pro
       {member && (
         <section className="mb-14">
           <SectionTitle title="Montar grupo" icon={Plus} />
-          <div className="crypt-card p-5 sm:p-6"><DungeonForm dungeons={dungeons} /></div>
+          <div className="crypt-card p-5 sm:p-6"><DungeonForm dungeons={dungeons.filter((d) => d.active)} /></div>
         </section>
       )}
 
@@ -109,7 +114,7 @@ export default async function DungeonsPage({ searchParams }: { searchParams: Pro
         <SectionTitle title="Próximos grupos" icon={Users} />
         {runs.items.length ? (
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
-            {runs.items.map((r) => <RunCard key={r.id} run={r} me={member?.id ?? null} canAct={!!member} isAdmin={!!viewer?.isAdmin} />)}
+            {runs.items.map((r) => <RunCard key={r.id} run={r} image={imageOf(r)} me={member?.id ?? null} canAct={!!member} isAdmin={!!viewer?.isAdmin} />)}
           </div>
         ) : (
           <Empty text="Nenhum grupo marcado. Que tal montar o primeiro?" />

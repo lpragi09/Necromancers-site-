@@ -37,7 +37,7 @@ async function syncPostToDiscord(post: Post & { discord_message_id: string | nul
   }
 }
 // Só aceita link http(s) como imagem: um blob:/data: (imagem ainda subindo) não pode ir pro banco
-const imageUrl = (v: unknown) => { const u = cleanText(v, 500); return /^https?:\/\//.test(u) ? u : null; };
+const imageUrl = (v: unknown) => { const u = cleanText(v, 500); return /^https?:\/\//.test(u) || /^\/dungeons\/[\w-]+\.webp$/.test(u) ? u : null; };
 
 // Painel da liderança: UMA rota, com `action`. Confere se é admin antes de tudo.
 export async function POST(request: Request) {
@@ -455,7 +455,7 @@ export async function POST(request: Request) {
     // ---------- Dungeons ----------
     case "dungeonsOverview": {
       const [dungeons, runs] = await Promise.all([
-        db.from("dungeons").select("id, name, active").order("name"),
+        db.from("dungeons").select("id, name, image_url, active").order("name"),
         db.from("dungeon_runs").select(`${DUNGEON_RUN_COLUMNS}, dungeon_participants(member_id), members!dungeon_runs_creator_id_fkey(char_name)`)
           .eq("status", "open").gte("starts_at", new Date(Date.now() - DUNGEON_GRACE_MS).toISOString()).order("starts_at").limit(200),
       ]);
@@ -468,7 +468,7 @@ export async function POST(request: Request) {
     }
     case "saveDungeon": {
       const d = body?.dungeon ?? {};
-      const fields = { name: cleanText(d.name, 60), active: d.active !== false };
+      const fields = { name: cleanText(d.name, 60), image_url: imageUrl(d.image_url), active: d.active !== false };
       if (!fields.name) return fail("Dê o nome da dungeon.");
       const { error } = d.id ? await db.from("dungeons").update(fields).eq("id", d.id) : await db.from("dungeons").insert(fields);
       return error ? fail(error.message, 500) : ok();

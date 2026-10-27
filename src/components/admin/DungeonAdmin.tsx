@@ -1,18 +1,20 @@
 "use client";
 
+/* eslint-disable @next/next/no-img-element */
+
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Check, Clock, Eye, EyeOff, Loader2, Mountain, Pencil, Plus, Trash2, Users, X } from "lucide-react";
 import { adminApi } from "@/lib/api";
 import Pagination, { usePagination } from "@/components/Pagination";
-import { EmptyLine, Field, IconBtn, Panel, Pill, Row, Toggle, useAction } from "@/components/admin/kit";
+import { EmptyLine, Field, IconBtn, ImageField, isUploading, Panel, Pill, Row, Toggle, useAction } from "@/components/admin/kit";
 import { fmtDateTime } from "@/lib/format";
 import type { Dungeon } from "@/lib/types";
 
 type AdminRun = { id: string; dungeon_name: string; slots: number; starts_at: string; note: string | null; filled: number; creator_name: string };
 interface Data { dungeons: Dungeon[]; runs: AdminRun[] }
 
-const EMPTY = { id: "", name: "", active: true };
+const EMPTY = { id: "", name: "", image_url: "", active: true };
 
 export default function DungeonAdmin() {
   const router = useRouter();
@@ -51,11 +53,12 @@ export default function DungeonAdmin() {
             <Field label="Nome da dungeon">
               <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} maxLength={60} required autoFocus placeholder="Ex.: Magma" className="field" />
             </Field>
+            <div className="max-w-xs"><ImageField size="boss" value={form.image_url} onChange={(image_url) => setForm({ ...form, image_url })} /></div>
             <div className="flex flex-wrap items-center justify-between gap-3">
               <Toggle checked={form.active} onChange={(active) => setForm({ ...form, active })} label="Aparece para escolher" />
               <div className="flex gap-3">
                 <button type="button" onClick={() => setForm(null)} className="btn-ghost !py-2">Cancelar</button>
-                <button disabled={busy} className="btn-neon !py-2">{busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />} {form.id ? "Salvar" : "Adicionar"}</button>
+                <button disabled={busy || isUploading(form.image_url)} className="btn-neon !py-2">{busy || isUploading(form.image_url) ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />} {isUploading(form.image_url) ? "Enviando imagem..." : form.id ? "Salvar" : "Adicionar"}</button>
               </div>
             </div>
           </form>
@@ -64,13 +67,15 @@ export default function DungeonAdmin() {
         <div className="space-y-2">
           {dungeonsPag.pageItems.map((d) => (
             <Row key={d.id} className={d.active ? "" : "opacity-50"}>
-              <Mountain className="w-4 h-4 shrink-0 text-spirit" />
+              <span className="w-12 h-10 shrink-0 rounded-lg overflow-hidden border border-white/10 bg-gradient-to-br from-[#2a0f4a] to-black flex items-center justify-center">
+                {d.image_url ? <img src={d.image_url} alt="" className="w-full h-full object-cover" /> : <Mountain className="w-4 h-4 text-spirit" />}
+              </span>
               <p className="flex-1 min-w-0 font-bold truncate">{d.name}{!d.active && <span className="font-normal text-bone/40"> · oculta</span>}</p>
               <div className="flex gap-2">
                 <IconBtn title={d.active ? "Esconder" : "Mostrar"} disabled={busy} onClick={() => run("saveDungeon", { dungeon: { ...d, active: !d.active } })}>
                   {d.active ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
                 </IconBtn>
-                <IconBtn title="Editar" onClick={() => setForm({ id: d.id, name: d.name, active: d.active })}><Pencil className="w-4 h-4" /></IconBtn>
+                <IconBtn title="Editar" onClick={() => setForm({ id: d.id, name: d.name, image_url: d.image_url ?? "", active: d.active })}><Pencil className="w-4 h-4" /></IconBtn>
                 <IconBtn title="Excluir" danger disabled={busy} onClick={() => run("deleteDungeon", { id: d.id }, { title: `Excluir ${d.name}?`, message: "Grupos já marcados continuam na lista." })}><Trash2 className="w-4 h-4" /></IconBtn>
               </div>
             </Row>

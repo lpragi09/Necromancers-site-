@@ -116,14 +116,15 @@ export const DEMO_TOURNAMENT_SCORES: TournamentScore[] = [
 }));
 
 export const DEMO_DUNGEONS: Dungeon[] = [
-  { id: "demo-d1", name: "Magma", active: true },
-  { id: "demo-d2", name: "Caverna Sombria", active: true },
-  { id: "demo-d3", name: "Torre Fantasma", active: true },
+  { id: "demo-d1", name: "Magma", image_url: "/dungeons/magma.webp", active: true },
+  { id: "demo-d2", name: "Nightmare", image_url: "/dungeons/nightmare.webp", active: true },
+  { id: "demo-d3", name: "Sacred Ruins", image_url: "/dungeons/sacred-ruins.webp", active: true },
+  { id: "demo-d4", name: "Undersea Volcano", image_url: "/dungeons/undersea-volcano.webp", active: true },
 ];
 
 const player = (i: number) => ({ member_id: DEMO_MEMBERS[i].id, char_name: DEMO_MEMBERS[i].char_name, avatar_url: null });
 export const DEMO_DUNGEON_RUNS: DungeonRun[] = [
   { id: "demo-r1", dungeon_id: "demo-d1", dungeon_name: "Magma", creator_id: DEMO_MEMBERS[1].id, slots: 4, starts_at: ahead(0.08), note: "Levem revive", status: "open", created_at: ago(0.1), players: [player(1), player(3)] },
-  { id: "demo-r2", dungeon_id: "demo-d2", dungeon_name: "Caverna Sombria", creator_id: DEMO_MEMBERS[0].id, slots: 3, starts_at: ahead(0.4), note: null, status: "open", created_at: ago(0.2), players: [player(0), player(2), player(5)] },
-  { id: "demo-r3", dungeon_id: "demo-d3", dungeon_name: "Torre Fantasma", creator_id: DEMO_MEMBERS[4].id, slots: 2, starts_at: ahead(1.2), note: "Só level 200+", status: "open", created_at: ago(0.3), players: [player(4)] },
+  { id: "demo-r2", dungeon_id: "demo-d2", dungeon_name: "Nightmare", creator_id: DEMO_MEMBERS[0].id, slots: 3, starts_at: ahead(0.4), note: null, status: "open", created_at: ago(0.2), players: [player(0), player(2), player(5)] },
+  { id: "demo-r3", dungeon_id: "demo-d3", dungeon_name: "Sacred Ruins", creator_id: DEMO_MEMBERS[4].id, slots: 2, starts_at: ahead(1.2), note: "Só level 200+", status: "open", created_at: ago(0.3), players: [player(4)] },
 ];
