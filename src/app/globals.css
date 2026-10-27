@@ -12,6 +12,9 @@
   --color-spirit: #a855f7;
   --color-hex: #ec4899;
   --color-bone: #f4f4f5;
+  /* tirados da logo: osso/pergaminho e o vermelho dos olhos do Gengar */
+  --color-parchment: #eadfc4;
+  --color-blood: #ef4444;
   --font-title: var(--font-lato), ui-sans-serif, system-ui, sans-serif;
   --font-sans: var(--font-lato), ui-sans-serif, system-ui, sans-serif;
 }
@@ -134,6 +137,11 @@ body {
   background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 160' preserveAspectRatio='none'><path fill='%23000' d='M0 120 Q150 95 300 112 T600 104 T900 114 T1200 100 V160 H0Z'/><g fill='%23000'><path d='M120 118v-34a16 16 0 0 1 32 0v34z'/><path d='M262 112V76h-12v-8h12V56h8v12h12v8h-12v36z'/><path d='M410 110v-26a12 12 0 0 1 24 0v26z'/><path d='M760 112V70h-14v-9h14V46h9v15h14v9h-14v42z'/><path d='M905 116V86a18 18 0 0 1 36 0v30z'/><path d='M1060 104v-24a11 11 0 0 1 22 0v24z'/></g></svg>") bottom / 100% 100% no-repeat;
 }
 .scroll-cue { animation: cue-bob 2.2s ease-in-out infinite; }
+.logo-float { animation: logo-float 6s ease-in-out infinite; }
+@keyframes logo-float {
+  0%, 100% { transform: translateY(0) rotate(-1deg); }
+  50% { transform: translateY(-12px) rotate(1deg); }
+}
 @keyframes cue-bob {
   0%, 100% { transform: translateY(0); opacity: 0.6; }
   50% { transform: translateY(6px); opacity: 1; }
@@ -346,7 +354,7 @@ input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
 .scrollbar-thin { scrollbar-width: thin; scrollbar-color: #9333ea transparent; }
 
 @media (prefers-reduced-motion: reduce) {
-  .fog, .hero-fog, .flicker, .hover-haunt, .scroll-cue { animation: none !important; }
+  .fog, .hero-fog, .flicker, .hover-haunt, .scroll-cue, .logo-float { animation: none !important; }
   .btn-neon::before { animation: none !important; }
   .ghost-float { display: none; }
   .animate-countdown { animation: none !important; }

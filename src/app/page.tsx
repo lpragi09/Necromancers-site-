@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { ArrowDown, ArrowRight, Gem, Gift, Megaphone, Trophy, Users } from "lucide-react";
-import GhostIcon from "@/components/GhostIcon";
 import PostCard from "@/components/PostCard";
 import GiveawayCard from "@/components/GiveawayCard";
 import RankingTable, { Podium } from "@/components/RankingTable";
@@ -39,14 +38,17 @@ export default async function Home() {
         <div className="hero-fog bottom-[-12%] [animation-duration:65s] [animation-direction:reverse] opacity-70" />
 
         <div className="relative z-10 text-center px-4 rise-in">
-          <div className="hover-haunt specter-glow w-fit mx-auto">
-            <GhostIcon className="specter w-24 h-28 sm:w-32 sm:h-36 text-[#e9e2ff]" />
+          <div className="relative w-fit mx-auto">
+            <div className="absolute inset-[12%] rounded-full bg-spirit/40 blur-[70px]" />
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/logo.webp" alt="Necromancers" width={600} height={600}
+              className="logo-float relative w-60 h-60 sm:w-80 sm:h-80 drop-shadow-[0_0_35px_rgba(168,85,247,0.55)]" />
           </div>
-          <p className="mt-6 text-[11px] sm:text-xs font-black italic uppercase tracking-[0.35em] text-spirit">Clã de PokeTibia</p>
-          <h1 className="font-title text-[clamp(2.75rem,11vw,7.5rem)] leading-[0.9] mt-3 text-bone">
-            Necro<span className="text-spirit text-glow flicker">mancers</span>
-          </h1>
-          <p className="mt-5 text-base sm:text-lg italic text-bone/60 max-w-xl mx-auto">
+          <h1 className="sr-only">Necromancers</h1>
+          <p className="mt-4 inline-flex items-center gap-2 text-[11px] sm:text-xs font-black italic uppercase tracking-[0.35em] text-parchment/80">
+            <span className="w-1.5 h-1.5 rounded-full bg-blood shadow-[0_0_8px_rgba(239,68,68,0.9)]" /> Clã de PokeTibia <span className="w-1.5 h-1.5 rounded-full bg-blood shadow-[0_0_8px_rgba(239,68,68,0.9)]" />
+          </p>
+          <p className="mt-4 text-base sm:text-lg italic text-bone/60 max-w-xl mx-auto">
             Onde os treinadores fantasmas se reúnem. Sorteios, ranking de drops e tudo que acontece no clã.
           </p>
           <div className="mt-9 flex flex-wrap gap-4 justify-center">
@@ -55,7 +57,7 @@ export default async function Home() {
           </div>
         </div>
 
-        <a href="#cla" className="scroll-cue absolute bottom-16 z-10 flex flex-col items-center gap-1 text-[10px] font-black italic uppercase tracking-[0.3em] text-bone/60 hover:text-bone">
+        <a href="#cla" className="scroll-cue absolute bottom-16 z-10 hidden [@media(min-height:760px)]:flex flex-col items-center gap-1 text-[10px] font-black italic uppercase tracking-[0.3em] text-bone/60 hover:text-bone">
           Ver o clã <ArrowDown className="w-4 h-4" />
         </a>
       </section>
@@ -145,7 +147,8 @@ export default async function Home() {
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
           <div className="relative overflow-hidden rounded-[0.9rem] border border-spirit/30 bg-gradient-to-br from-[#1a0b2e] via-crypt to-black p-8 sm:p-12 text-center">
             <div className="absolute -top-24 left-1/2 -translate-x-1/2 w-[32rem] h-48 bg-spirit/25 blur-[90px]" />
-            <GhostIcon className="absolute -right-6 -bottom-8 w-40 h-44 text-white/[0.04] rotate-12" />
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/logo-160.webp" alt="" className="absolute -right-8 -bottom-10 w-48 h-48 opacity-[0.07] rotate-12 grayscale" />
             <p className="relative text-[11px] font-black italic uppercase tracking-[0.3em] text-spirit">Temporada valendo prêmio</p>
             <h2 className="relative font-title text-3xl sm:text-5xl mt-3">Dropou algo <span className="text-spirit text-glow">raro?</span></h2>
             <p className="relative text-bone/60 italic mt-3 max-w-lg mx-auto">Mande o print pelo site. A liderança confere, os pontos entram no ranking e o top 3 da temporada leva prêmio.</p>

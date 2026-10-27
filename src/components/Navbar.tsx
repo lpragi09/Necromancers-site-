@@ -6,7 +6,6 @@ import { usePathname } from "next/navigation";
 import { signIn, signOut } from "next-auth/react";
 import { Gift, Home, LogOut, Megaphone, Menu, Shield, Trophy, User, Users, X } from "lucide-react";
 import Avatar from "@/components/Avatar";
-import GhostIcon from "@/components/GhostIcon";
 
 const LINKS = [
   { href: "/", label: "Início", icon: Home },
@@ -36,11 +35,8 @@ export default function Navbar({ viewer }: { viewer: NavViewer | null }) {
     <header className="fixed top-0 inset-x-0 z-50 bg-black/85 backdrop-blur-xl border-b border-spirit/20">
       <nav className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
         <Link href="/" className="flex items-center gap-2.5 group shrink-0">
-          <span className="w-9 h-9 rounded-full bg-gradient-to-br from-spirit to-hex p-[2px] shadow-[0_0_18px_rgba(168,85,247,0.45)] group-hover:shadow-[0_0_26px_rgba(168,85,247,0.7)] transition-shadow">
-            <span className="w-full h-full rounded-full bg-black flex items-center justify-center">
-              <GhostIcon className="w-4 h-[18px] text-bone" />
-            </span>
-          </span>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/logo-160.webp" alt="" width={44} height={44} className="w-11 h-11 drop-shadow-[0_0_10px_rgba(168,85,247,0.55)] group-hover:drop-shadow-[0_0_16px_rgba(168,85,247,0.85)] group-hover:rotate-[-6deg] transition-all duration-300" />
           <span className="font-title text-lg bg-gradient-to-r from-[#e879f9] via-spirit to-[#818cf8] bg-clip-text text-transparent">Necromancers</span>
         </Link>
 

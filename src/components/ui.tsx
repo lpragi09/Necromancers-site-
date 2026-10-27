@@ -23,7 +23,7 @@ export function BandHeader({ eyebrow, title, accent, text }: { eyebrow: string; 
   return (
     <div className="text-center mb-10">
       <p className="inline-flex items-center gap-2 text-[11px] font-black italic uppercase tracking-[0.3em] text-bone/55">
-        <span className="w-1.5 h-1.5 rounded-full bg-spirit shadow-[0_0_8px_rgba(168,85,247,0.8)]" /> {eyebrow}
+        <span className="w-1.5 h-1.5 rounded-full bg-blood shadow-[0_0_8px_rgba(239,68,68,0.9)]" /> {eyebrow}
       </p>
       <h2 className="font-title text-3xl sm:text-5xl mt-3 text-bone">
         {title} {accent && <span className="text-spirit text-glow">{accent}</span>}
