@@ -3,17 +3,20 @@
 import { useEffect } from "react";
 import { usePathname } from "next/navigation";
 
+export const SECTION_EVENT = "sectionchange";
+
 /**
  * Enquanto a pessoa rola, a URL acompanha a seção da tela (#sorteios, #top, #mural...).
- * Vale para qualquer elemento com data-section e id. Troca sem criar histórico novo.
+ * Vale para qualquer elemento com data-section e id. Troca sem criar histórico novo
+ * e avisa o menu (evento "sectionchange") para ele destacar o link certo.
  */
 export default function ScrollHash() {
   const pathname = usePathname();
 
   useEffect(() => {
-    let frame = 0;
+    let timer: ReturnType<typeof setTimeout> | undefined;
     const update = () => {
-      frame = 0;
+      timer = undefined;
       const sections = [...document.querySelectorAll<HTMLElement>("[data-section][id]")];
       if (!sections.length) return;
       // A seção atual é a última cujo topo já passou de 40% da tela
@@ -23,10 +26,13 @@ export default function ScrollHash() {
       const hash = current ? `#${current}` : "";
       if (hash === window.location.hash) return;
       window.history.replaceState(window.history.state, "", `${window.location.pathname}${window.location.search}${hash}`);
+      window.dispatchEvent(new CustomEvent(SECTION_EVENT, { detail: current }));
     };
-    const onScroll = () => { if (!frame) frame = requestAnimationFrame(update); };
+    // No máximo uma conta a cada 80 ms enquanto rola
+    const onScroll = () => { if (!timer) timer = setTimeout(update, 80); };
     window.addEventListener("scroll", onScroll, { passive: true });
-    return () => { window.removeEventListener("scroll", onScroll); cancelAnimationFrame(frame); };
+    update();
+    return () => { window.removeEventListener("scroll", onScroll); clearTimeout(timer); };
   }, [pathname]);
 
   return null;

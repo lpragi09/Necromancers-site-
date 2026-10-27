@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { signIn, signOut } from "next-auth/react";
 import { Backpack, Gift, Home, LogOut, Megaphone, Menu, Mountain, Shield, Store, Swords, Trophy, User, Users, X } from "lucide-react";
 import Avatar from "@/components/Avatar";
+import { SECTION_EVENT } from "@/components/ScrollHash";
 
 const LINKS = [
   { href: "/", label: "Início", icon: Home },
@@ -17,6 +18,8 @@ const LINKS = [
   { href: "/ranking", label: "Ranking", icon: Trophy },
   { href: "/membros", label: "Membros", icon: Users },
 ];
+
+const HOME_SECTIONS: Record<string, string> = { sorteios: "/sorteios", top: "/ranking", mural: "/avisos" };
 
 export interface NavViewer {
   name: string;
@@ -44,7 +47,16 @@ export default function Navbar({ viewer }: { viewer: NavViewer | null }) {
     return () => { document.removeEventListener("mousedown", onDown); document.removeEventListener("keydown", onKey); };
   }, [menu]);
 
-  const active = (href: string) => (href === "/" ? pathname === "/" : pathname?.startsWith(href));
+  // Na home, o link acompanha a seção da tela: sorteios → Sorteios, top → Ranking, mural → Avisos
+  const [section, setSection] = useState("");
+  useEffect(() => {
+    setSection(window.location.hash.slice(1));
+    const onSection = (e: Event) => setSection((e as CustomEvent<string>).detail);
+    window.addEventListener(SECTION_EVENT, onSection);
+    return () => window.removeEventListener(SECTION_EVENT, onSection);
+  }, [pathname]);
+  const homeLink = pathname === "/" ? HOME_SECTIONS[section] ?? "/" : null;
+  const active = (href: string) => (homeLink ? href === homeLink : href !== "/" && !!pathname?.startsWith(href));
 
   return (
     <header className="fixed top-0 inset-x-0 z-50 bg-black/85 backdrop-blur-xl border-b border-spirit/20">
