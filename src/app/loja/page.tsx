@@ -4,18 +4,25 @@ import MembersGate from "@/components/MembersGate";
 import GhostIcon from "@/components/GhostIcon";
 import { BuyButton, ClaimForm, ShopHistory } from "@/components/Shop";
 import { Empty, PageHeader, SectionTitle } from "@/components/ui";
+import PageNav, { pageFrom, slicePage } from "@/components/PageNav";
 import { getShop } from "@/lib/data";
 import { canSeeContent, getViewer, isActiveMember } from "@/lib/viewer";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Lojinha" };
 
-export default async function LojaPage() {
+const ITEMS_PAGE = 12;
+const ACTIVITIES_PAGE = 8;
+
+export default async function LojaPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
+  const params = await searchParams;
   const viewer = await getViewer();
   if (!canSeeContent(viewer)) return <MembersGate viewer={viewer} />;
   const member = isActiveMember(viewer) ? viewer.member : null;
   const { balance, activities, items, claims, orders } = await getShop(member?.id ?? null);
   const pendingCoins = claims.filter((c) => c.status === "pending").reduce((s, c) => s + c.coins, 0);
+  const itemsPage = slicePage(items, pageFrom(params), ITEMS_PAGE);
+  const activitiesPage = slicePage(activities, pageFrom(params, "atividades"), ACTIVITIES_PAGE);
 
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6">
@@ -41,7 +48,7 @@ export default async function LojaPage() {
           <p className="font-title text-lg flex items-center gap-2"><Sparkles className="w-5 h-5 text-spirit" /> Como ganhar moedas</p>
           {activities.length ? (
             <div className="mt-4 grid sm:grid-cols-2 gap-2">
-              {activities.map((a) => (
+              {activitiesPage.items.map((a) => (
                 <div key={a.id} className="flex items-center justify-between gap-3 rounded-lg border border-white/5 bg-white/[0.02] px-3.5 py-2.5">
                   <span className="font-bold truncate">{a.name}</span>
                   <span className="shrink-0 inline-flex items-center gap-1 font-black text-amber-300 tabular-nums"><Coins className="w-4 h-4" /> {a.coins}</span>
@@ -49,16 +56,17 @@ export default async function LojaPage() {
               ))}
             </div>
           ) : <p className="mt-3 text-sm italic text-bone/45">Nenhuma atividade cadastrada ainda.</p>}
+          <PageNav page={activitiesPage.page} pageCount={activitiesPage.pageCount} path="/loja" params={params} param="atividades" />
           <p className="mt-4 text-xs italic text-bone/40">Mande o print mostrando o dia e a hora. A liderança confere e as moedas caem no seu saldo.</p>
         </div>
       </div>
 
       {/* Itens */}
-      <section className="mt-16">
+      <section id="itens" className="mt-16 scroll-mt-24">
         <SectionTitle title="Itens da loja" icon={Package} />
         {items.length ? (
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
-            {items.map((it) => {
+            {itemsPage.items.map((it) => {
               const soldOut = it.stock !== null && it.stock <= 0;
               return (
                 <div key={it.id} className={`crypt-card crypt-card-hover overflow-hidden flex flex-col ${soldOut ? "opacity-60" : ""}`}>
@@ -92,6 +100,7 @@ export default async function LojaPage() {
         ) : (
           <Empty text="A loja ainda está vazia. Logo a liderança coloca os itens!" />
         )}
+        <PageNav page={itemsPage.page} pageCount={itemsPage.pageCount} path="/loja" params={params} anchor="itens" />
       </section>
 
       {/* Ganhar moedas e histórico (só membro) */}

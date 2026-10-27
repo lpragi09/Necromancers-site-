@@ -63,6 +63,7 @@ export default function ShopAdmin() {
   const itemsPag = usePagination(data?.items ?? [], 8);
   const historyPag = usePagination(data?.reviewedClaims ?? [], 8);
   const orderHistoryPag = usePagination(data?.recentOrders ?? [], 8);
+  const activitiesPag = usePagination(data?.activities ?? [], 10);
 
   if (error) return <p className="crypt-card p-6 text-rose-300 text-sm">{error}</p>;
   if (!data) return <div className="flex justify-center py-20"><Loader2 className="w-8 h-8 text-spirit animate-spin" /></div>;
@@ -248,7 +249,7 @@ export default function ShopAdmin() {
         )}
         {data.activities.length === 0 && !activity && <EmptyLine text="Cadastre as atividades que valem moedas." />}
         <div className="space-y-2">
-          {data.activities.map((a) => (
+          {activitiesPag.pageItems.map((a) => (
             <Row key={a.id} className={a.active ? "" : "opacity-50"}>
               <Sparkles className="w-4 h-4 shrink-0 text-spirit" />
               <p className="flex-1 min-w-0 font-bold truncate">{a.name}{!a.active && <span className="text-bone/40 font-normal"> · oculta</span>}</p>
@@ -263,6 +264,7 @@ export default function ShopAdmin() {
             </Row>
           ))}
         </div>
+        <Pagination {...activitiesPag} />
       </Panel>
 
       {/* Histórico */}

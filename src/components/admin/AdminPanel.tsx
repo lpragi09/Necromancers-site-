@@ -231,6 +231,7 @@ function MembersTab({ members, reload }: { members: Member[]; reload: () => Prom
   const list = members.filter((m) => (filter === "all" || m.status === filter) && (!q || m.char_name.toLowerCase().includes(q.toLowerCase()) || m.discord_name.toLowerCase().includes(q.toLowerCase())));
   const pending = members.filter((m) => m.status === "pending");
   const pag = usePagination(list);
+  const pendingPag = usePagination(pending, 8);
   const save = (m: Member, fields: Partial<Member>) => run("saveMember", { member: { id: m.id, ...fields } });
 
   return (
@@ -238,7 +239,7 @@ function MembersTab({ members, reload }: { members: Member[]; reload: () => Prom
       {pending.length > 0 && (
         <Panel icon={UserCheck} title={`Pedidos de entrada (${pending.length})`} subtitle="Quem se cadastrou no site e está esperando a liderança." className="!border-blood/30">
           <div className="space-y-2">
-            {pending.map((m) => (
+            {pendingPag.pageItems.map((m) => (
               <Row key={m.id}>
                 <Avatar src={m.avatar_url} name={m.char_name} size={42} className="ring-2 ring-blood/40" />
                 <div className="min-w-0 flex-1">
@@ -250,6 +251,7 @@ function MembersTab({ members, reload }: { members: Member[]; reload: () => Prom
               </Row>
             ))}
           </div>
+          <Pagination {...pendingPag} />
         </Panel>
       )}
 
@@ -402,6 +404,7 @@ function GiveawaysTab({ giveaways, reload }: { giveaways: Giveaway[]; reload: ()
   const [drawing, setDrawing] = useState<Giveaway | null>(null);
   const [entries, setEntries] = useState<{ id: string; names: string[] } | null>(null);
   const pag = usePagination(giveaways);
+  const entriesPag = usePagination(entries?.names ?? [], 40);
 
   const edit = (g: Giveaway) => {
     setForm({ id: g.id, title: g.title, prize: g.prize, description: g.description, image_url: g.image_url ?? "", ends_at: toLocalInput(g.ends_at) });
@@ -505,7 +508,10 @@ function GiveawaysTab({ giveaways, reload }: { giveaways: Giveaway[]; reload: ()
                 <div className="mx-3 -mt-1 rounded-b-xl border border-t-0 border-white/5 bg-black/40 px-4 py-3">
                   <p className="text-[10px] font-black italic uppercase tracking-widest text-bone/40 mb-2">Inscritos ({entries.names.length})</p>
                   {entries.names.length ? (
-                    <div className="flex flex-wrap gap-1.5">{entries.names.map((n, i) => <span key={i} className="px-2 py-1 rounded-md bg-white/5 border border-white/10 text-xs font-bold">{n}</span>)}</div>
+                    <>
+                      <div className="flex flex-wrap gap-1.5">{entriesPag.pageItems.map((n, i) => <span key={i} className="px-2 py-1 rounded-md bg-white/5 border border-white/10 text-xs font-bold">{n}</span>)}</div>
+                      <Pagination {...entriesPag} />
+                    </>
                   ) : <p className="text-xs italic text-bone/40">Ninguém inscrito ainda.</p>}
                 </div>
               )}

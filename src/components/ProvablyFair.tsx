@@ -135,6 +135,7 @@ function DrawDetail({ id }: { id: string }) {
       return { ...e, from, to: acc - 1 };
     });
   }, [draw]);
+  const rangesPag = usePagination(ranges, 20);
 
   // Refaz tudo no navegador, buscando o número público direto no drand (sem passar pelo site)
   const verify = async () => {
@@ -257,16 +258,20 @@ function DrawDetail({ id }: { id: string }) {
       <div className="crypt-card p-6">
         <h3 className="font-title text-xl font-bold text-bone mb-1">Lista fechada ({draw.entries.length})</h3>
         <p className="text-xs text-bone/40 mb-4">Cada linha tem uma faixa de bilhetes do tamanho das chances. O texto que vira o hash é cada linha como &quot;nome:chances&quot;, uma embaixo da outra.</p>
-        <div className="max-h-[480px] overflow-y-auto rounded-lg border border-white/5 divide-y divide-white/5">
-          {ranges.map((e, i) => (
+        <div className="rounded-lg border border-white/5 divide-y divide-white/5">
+          {rangesPag.pageItems.map((e, j) => {
+            const i = (rangesPag.page - 1) * rangesPag.pageSize + j; // posição na lista inteira
+            return (
             <div key={i} className={`flex items-center justify-between gap-3 px-3 py-2 text-sm ${i === winnerIndex ? "bg-yellow-500/10" : ""}`}>
               <span className={`truncate ${i === winnerIndex ? "text-yellow-300 font-bold" : "text-bone/85"}`}>{e.label}</span>
               <span className="shrink-0 text-xs text-bone/40 tabular-nums">
                 {e.weight} {e.weight === 1 ? "chance" : "chances"} · bilhete{e.weight > 1 ? `s ${e.from}–${e.to}` : ` ${e.from}`}
               </span>
             </div>
-          ))}
+            );
+          })}
         </div>
+        <Pagination {...rangesPag} />
       </div>
     </div>
   );
