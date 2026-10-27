@@ -341,13 +341,14 @@ function DropsTab({ data, reload }: { data: Overview; reload: () => Promise<void
   const members = useMemo(() => new Map(data.members.map((m) => [m.id, m])), [data.members]);
   const seasons = useMemo(() => new Map(data.seasons.map((s) => [s.id, s.name])), [data.seasons]);
   const reviewedPag = usePagination(data.reviewedDrops);
+  const pendingPag = usePagination(data.pendingDrops, 6);
 
   return (
     <div className="space-y-6">
       <Panel icon={ClipboardCheck} title={`Esperando aprovação (${data.pendingDrops.length})`} subtitle="Confira o print antes de aprovar. Os pontos entram no ranking na hora.">
         {data.pendingDrops.length ? (
           <div className="grid sm:grid-cols-2 gap-4">
-            {data.pendingDrops.map((d) => {
+            {pendingPag.pageItems.map((d) => {
               const m = members.get(d.member_id);
               return (
                 <div key={d.id} className="rounded-xl border border-white/10 bg-black/40 overflow-hidden flex flex-col">
@@ -380,6 +381,7 @@ function DropsTab({ data, reload }: { data: Overview; reload: () => Promise<void
         ) : (
           <EmptyLine text="Nada na fila. Quando alguém mandar um drop, ele aparece aqui." />
         )}
+        <Pagination {...pendingPag} />
       </Panel>
 
       <Panel icon={RotateCcw} title="Últimos conferidos" subtitle="Dá pra voltar um drop para análise ou excluir.">
@@ -736,6 +738,8 @@ function RankingTab({ seasons, items, reload }: { seasons: Season[]; items: Drop
   const { run, busy } = useAction(reload);
   const [season, setSeason] = useState<typeof EMPTY_SEASON | null>(null);
   const [item, setItem] = useState<typeof EMPTY_ITEM | null>(null);
+  const seasonsPag = usePagination(seasons, 5);
+  const itemsPag = usePagination(items, 10);
 
   const saveSeason = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -787,7 +791,7 @@ function RankingTab({ seasons, items, reload }: { seasons: Season[]; items: Drop
 
         {seasons.length === 0 && !season && <EmptyLine text="Nenhuma temporada ainda." />}
         <div className="space-y-3">
-          {seasons.map((s) => {
+          {seasonsPag.pageItems.map((s) => {
             const active = s.status === "active";
             return (
               <div key={s.id} className={`rounded-xl border p-4 sm:p-5 ${active ? "border-spirit/50 bg-gradient-to-r from-spirit/[0.1] to-transparent shadow-[0_0_24px_rgba(168,85,247,0.12)]" : "border-white/5 bg-white/[0.015]"}`}>
@@ -826,6 +830,7 @@ function RankingTab({ seasons, items, reload }: { seasons: Season[]; items: Drop
             );
           })}
         </div>
+        <Pagination {...seasonsPag} />
       </Panel>
 
       <Panel icon={Gem} title={`Itens que pontuam (${items.length})`} subtitle="O que os membros escolhem ao registrar um drop."
@@ -869,7 +874,7 @@ function RankingTab({ seasons, items, reload }: { seasons: Season[]; items: Drop
 
         {items.length === 0 && !item && <EmptyLine text="Cadastre os itens para a galera conseguir registrar drops." />}
         <div className="space-y-2">
-          {items.map((i) => (
+          {itemsPag.pageItems.map((i) => (
             <Row key={i.id} className={i.active ? "" : "opacity-50"}>
               <span className={`w-9 h-9 shrink-0 rounded-lg border flex items-center justify-center ${RARITY[i.rarity].border} ${RARITY[i.rarity].bg}`}>
                 <Gem className={`w-4 h-4 ${RARITY[i.rarity].text}`} />
@@ -889,6 +894,7 @@ function RankingTab({ seasons, items, reload }: { seasons: Season[]; items: Drop
             </Row>
           ))}
         </div>
+        <Pagination {...itemsPag} />
       </Panel>
     </div>
   );

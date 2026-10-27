@@ -1,13 +1,17 @@
+"use client";
+
 /* eslint-disable @next/next/no-img-element */
+import { useState } from "react";
 import GhostIcon from "@/components/GhostIcon";
 
-// Foto do Discord; sem foto, um fantasminha com a cor tirada do nome
+// Foto do Discord; sem foto (ou se o link quebrou porque a pessoa trocou de foto), um fantasminha com a cor tirada do nome
 const HUES = [265, 160, 290, 190, 320, 140];
 const hueOf = (name: string) => HUES[[...name].reduce((s, c) => s + c.charCodeAt(0), 0) % HUES.length];
 
 export default function Avatar({ src, name, size = 40, className = "" }: { src?: string | null; name: string; size?: number; className?: string }) {
-  if (src) {
-    return <img src={src} alt="" width={size} height={size} className={`rounded-full object-cover shrink-0 ${className}`} style={{ width: size, height: size }} />;
+  const [broken, setBroken] = useState<string | null>(null);
+  if (src && broken !== src) {
+    return <img src={src} alt="" width={size} height={size} onError={() => setBroken(src)} className={`rounded-full object-cover shrink-0 ${className}`} style={{ width: size, height: size }} />;
   }
   const hue = hueOf(name || "?");
   return (

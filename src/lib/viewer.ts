@@ -27,6 +27,12 @@ export async function getViewer(): Promise<Viewer | null> {
   if (hasSupabase()) {
     const { data } = await supabaseAdmin.from("members").select(MEMBER_COLUMNS).eq("discord_id", discordId).maybeSingle();
     member = (data as Member | null) ?? null;
+    // Mantém a foto do Discord em dia: se a pessoa trocou de foto, atualiza o cadastro (só grava quando mudou)
+    const image = session.user.image ?? null;
+    if (member && image && member.avatar_url !== image) {
+      member = { ...member, avatar_url: image };
+      await supabaseAdmin.from("members").update({ avatar_url: image }).eq("id", member.id);
+    }
   }
   const isAdmin = isAdminId(discordId) || (member?.status === "active" && ADMIN_ROLES.includes(member.role));
   return { discordId, name: session.user.name ?? "", image: session.user.image ?? null, member, isAdmin };

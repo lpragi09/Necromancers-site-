@@ -119,7 +119,7 @@ export async function POST(request: Request) {
       return error ? fail(error.message, 500) : ok();
     }
     case "giveawayEntries": {
-      const { data } = await db.from("giveaway_entries").select("created_at, members(char_name, status)").eq("giveaway_id", id).order("created_at");
+      const { data } = await db.from("giveaway_entries").select("created_at, members(char_name, status, avatar_url)").eq("giveaway_id", id).order("created_at");
       return ok({ entries: data ?? [] });
     }
     case "fairDraw": {

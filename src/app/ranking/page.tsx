@@ -8,19 +8,28 @@ import { getItems, getMyDrops, getRanking, getSeasons, pickSeason } from "@/lib/
 import { getViewer, isActiveMember } from "@/lib/viewer";
 import { fmtDate } from "@/lib/format";
 import LoginPrompt from "@/components/LoginPrompt";
+import PageNav, { pageFrom, slicePage } from "@/components/PageNav";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Ranking de drops" };
 
-export default async function RankingPage({ searchParams }: { searchParams: Promise<{ temporada?: string }> }) {
-  const { temporada } = await searchParams;
+const RANK_PAGE = 20;
+const ITEMS_PAGE = 10;
+
+export default async function RankingPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
+  const params = await searchParams;
+  const temporada = typeof params.temporada === "string" ? params.temporada : undefined;
   const viewer = await getViewer();
   const [seasons, items] = await Promise.all([getSeasons(), getItems()]);
   const season = pickSeason(seasons, temporada);
+  const activeSeason = seasons.find((s) => s.status === "active");
   const [ranking, myDrops] = await Promise.all([
     getRanking(season?.id),
-    isActiveMember(viewer) ? getMyDrops(viewer.member.id) : Promise.resolve([]),
+    isActiveMember(viewer) ? getMyDrops(viewer.member.id, activeSeason?.id) : Promise.resolve([]),
   ]);
+  // Pódio mostra os 3 primeiros; a tabela pagina do 4º em diante
+  const rest = slicePage(ranking.slice(3), pageFrom(params), RANK_PAGE);
+  const itemsPage = slicePage(items, pageFrom(params, "itens"), ITEMS_PAGE);
 
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6">
@@ -56,7 +65,12 @@ export default async function RankingPage({ searchParams }: { searchParams: Prom
           {ranking.length ? (
             <>
               <Podium rows={ranking} prizes={season.prizes} />
-              {ranking.length > 3 && <div className="mt-8"><RankingTable rows={ranking.slice(3)} start={3} /></div>}
+              {ranking.length > 3 && (
+                <div id="tabela" className="mt-8 scroll-mt-24">
+                  <RankingTable rows={rest.items} start={3 + (rest.page - 1) * RANK_PAGE} />
+                  <PageNav page={rest.page} pageCount={rest.pageCount} path="/ranking" params={params} anchor="tabela" />
+                </div>
+              )}
             </>
           ) : (
             <Empty text="Ninguém pontuou ainda. Seja o primeiro!" />
@@ -81,27 +95,28 @@ export default async function RankingPage({ searchParams }: { searchParams: Prom
           {isActiveMember(viewer) && (
             <div className="crypt-card p-5 sm:p-6 mt-6">
               <h3 className="font-title font-bold mb-2">Meus drops</h3>
-              <MyDrops drops={myDrops} />
+              <MyDrops drops={myDrops} seasonName={activeSeason?.name} />
             </div>
           )}
         </section>
 
-        <section>
+        <section id="pontos" className="scroll-mt-24">
           <SectionTitle title="Tabela de pontos" icon={ListOrdered} />
           {items.length ? (
             <div className="crypt-card divide-y divide-spirit/10">
-              {items.map((i) => (
+              {itemsPage.items.map((i) => (
                 <div key={i.id} className="flex items-center gap-3 px-5 py-3">
                   <Gem className="w-4 h-4 text-spirit shrink-0" />
                   <span className="flex-1 font-semibold truncate">{i.name}</span>
                   <RarityBadge rarity={i.rarity} />
-                  <span className="w-16 text-right font-black text-ecto tabular-nums">{i.points}</span>
+                  <span className="w-16 text-right font-black text-spirit tabular-nums">{i.points}</span>
                 </div>
               ))}
             </div>
           ) : (
             <Empty text="Nenhum item cadastrado ainda." />
           )}
+          <PageNav page={itemsPage.page} pageCount={itemsPage.pageCount} path="/ranking" params={params} param="itens" anchor="pontos" />
         </section>
       </div>
     </div>

@@ -1,6 +1,7 @@
 import { Crown, Shield, Skull, Sparkles, Star, Users } from "lucide-react";
 import Avatar from "@/components/Avatar";
 import { Empty, PageHeader } from "@/components/ui";
+import PageNav, { pageFrom, slicePage } from "@/components/PageNav";
 import { getMembers } from "@/lib/data";
 import { ROLE_LABEL, ROLE_ORDER, type MemberRole } from "@/lib/types";
 
@@ -16,15 +17,22 @@ const ROLE_STYLE: Record<MemberRole, { icon: typeof Crown; badge: string; ring: 
   recruta: { icon: Sparkles, badge: "text-bone/50 border-white/10 bg-white/[0.03]", ring: "ring-white/10", glow: "", text: "text-bone/50" },
 };
 
-export default async function MembrosPage() {
+const PAGE_SIZE = 30;
+
+export default async function MembrosPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
+  const params = await searchParams;
   const members = await getMembers();
+  // Ordem: cargo, depois level. Pagina a lista inteira e agrupa por cargo só o que caiu na página.
+  const sorted = [...members].sort((a, b) => ROLE_ORDER.indexOf(a.role) - ROLE_ORDER.indexOf(b.role) || (b.level ?? 0) - (a.level ?? 0));
+  const pageData = slicePage(sorted, pageFrom(params), PAGE_SIZE);
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6">
       <PageHeader icon={Users} eyebrow={`${members.length} almas no clã`} title="Membros" accent="do clã" text="A família Necromancers, da liderança aos recrutas." />
       {members.length === 0 && <Empty text="Nenhum membro aprovado ainda." />}
       <div className="space-y-14">
         {ROLE_ORDER.map((role) => {
-          const list = members.filter((m) => m.role === role).sort((a, b) => (b.level ?? 0) - (a.level ?? 0));
+          const list = pageData.items.filter((m) => m.role === role);
+          const roleTotal = members.filter((m) => m.role === role).length;
           if (!list.length) return null;
           const st = ROLE_STYLE[role];
           return (
@@ -32,7 +40,7 @@ export default async function MembrosPage() {
               <div className="flex items-center gap-3 mb-5">
                 <st.icon className={`w-5 h-5 ${st.text}`} />
                 <h2 className="font-title text-xl sm:text-2xl">{ROLE_LABEL[role]}</h2>
-                <span className="text-sm font-black italic text-bone/30">{list.length}</span>
+                <span className="text-sm font-black italic text-bone/30">{roleTotal}</span>
                 <span className="flex-1 h-px bg-gradient-to-r from-white/10 to-transparent" />
               </div>
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
@@ -51,6 +59,7 @@ export default async function MembrosPage() {
           );
         })}
       </div>
+      <PageNav page={pageData.page} pageCount={pageData.pageCount} path="/membros" params={params} />
     </div>
   );
 }

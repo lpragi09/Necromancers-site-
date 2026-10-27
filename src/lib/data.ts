@@ -26,6 +26,20 @@ export async function getPosts(limit = 50): Promise<Post[]> {
   return (data as Post[]) ?? [];
 }
 
+/** Mural paginado no banco: só busca as linhas da página pedida. */
+export async function getPostsPage(page: number, size: number): Promise<{ items: Post[]; total: number }> {
+  if (isDemo()) return { items: DEMO_POSTS.slice((page - 1) * size, page * size), total: DEMO_POSTS.length };
+  const from = (page - 1) * size;
+  const { data, count } = await supabaseAdmin
+    .from("posts")
+    .select(POST_COLUMNS, { count: "exact" })
+    .eq("published", true)
+    .order("pinned", { ascending: false })
+    .order("created_at", { ascending: false })
+    .range(from, from + size - 1);
+  return { items: (data as Post[]) ?? [], total: count ?? 0 };
+}
+
 /** Um aviso publicado, para a página do aviso completo. */
 export async function getPost(id: string): Promise<Post | null> {
   if (isDemo()) return DEMO_POSTS.find((p) => p.id === id) ?? null;
@@ -36,7 +50,24 @@ export async function getPost(id: string): Promise<Post | null> {
 export async function getGiveaways(memberId?: string | null): Promise<Giveaway[]> {
   if (isDemo()) return DEMO_GIVEAWAYS;
   const { data } = await supabaseAdmin.from("giveaways").select(GIVEAWAY_COLUMNS).order("created_at", { ascending: false }).limit(30);
-  const list = (data as Giveaway[]) ?? [];
+  return withEntries((data as Giveaway[]) ?? [], memberId);
+}
+
+/** Sorteios paginados no banco: "ativos" (abertos ou esperando sorteio) ou "sorteados". */
+export async function getGiveawaysPage(kind: "active" | "drawn", page: number, size: number, memberId?: string | null): Promise<{ items: Giveaway[]; total: number }> {
+  if (isDemo()) {
+    const all = DEMO_GIVEAWAYS.filter((g) => (kind === "drawn" ? g.status === "drawn" : g.status !== "drawn"));
+    return { items: all.slice((page - 1) * size, page * size), total: all.length };
+  }
+  const from = (page - 1) * size;
+  let q = supabaseAdmin.from("giveaways").select(GIVEAWAY_COLUMNS, { count: "exact" }).order("created_at", { ascending: false });
+  q = kind === "drawn" ? q.eq("status", "drawn") : q.neq("status", "drawn");
+  const { data, count } = await q.range(from, from + size - 1);
+  return { items: await withEntries((data as Giveaway[]) ?? [], memberId), total: count ?? 0 };
+}
+
+/** Junta a contagem de inscritos e se o membro está participando. */
+async function withEntries(list: Giveaway[], memberId?: string | null): Promise<Giveaway[]> {
   if (list.length === 0) return list;
   const { data: entries } = await supabaseAdmin
     .from("giveaway_entries")
@@ -100,9 +131,16 @@ export async function getItems(activeOnly = true): Promise<DropItem[]> {
   return (data as DropItem[]) ?? [];
 }
 
-export async function getMyDrops(memberId: string): Promise<Drop[]> {
-  if (isDemo()) return [];
-  const { data } = await supabaseAdmin.from("drops").select(DROP_COLUMNS).eq("member_id", memberId).order("created_at", { ascending: false }).limit(50);
+/** Drops do membro só na temporada atual: quando a temporada acaba, somem do perfil (o ranking antigo continua). */
+export async function getMyDrops(memberId: string, seasonId: string | null | undefined): Promise<Drop[]> {
+  if (isDemo() || !seasonId) return [];
+  const { data } = await supabaseAdmin
+    .from("drops")
+    .select(DROP_COLUMNS)
+    .eq("member_id", memberId)
+    .eq("season_id", seasonId)
+    .order("created_at", { ascending: false })
+    .limit(500);
   return (data as Drop[]) ?? [];
 }
 

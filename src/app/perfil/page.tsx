@@ -4,7 +4,7 @@ import ProfileForm from "@/components/ProfileForm";
 import MyDrops from "@/components/MyDrops";
 import LoginPrompt from "@/components/LoginPrompt";
 import { PageHeader } from "@/components/ui";
-import { getMyDrops } from "@/lib/data";
+import { getMyDrops, getSeasons } from "@/lib/data";
 import { getViewer } from "@/lib/viewer";
 import { ROLE_LABEL } from "@/lib/types";
 
@@ -14,7 +14,9 @@ export const metadata = { title: "Meu perfil" };
 export default async function PerfilPage() {
   const viewer = await getViewer();
   const member = viewer?.member ?? null;
-  const drops = member ? await getMyDrops(member.id) : [];
+  // Só os drops da temporada atual: quando ela acaba, a lista do perfil zera
+  const activeSeason = member ? (await getSeasons()).find((s) => s.status === "active") : undefined;
+  const drops = member ? await getMyDrops(member.id, activeSeason?.id) : [];
 
   return (
     <div className="max-w-3xl mx-auto px-4 sm:px-6">
@@ -30,7 +32,7 @@ export default async function PerfilPage() {
               <p className="text-sm text-bone/45">Discord: {viewer.name}</p>
             </div>
             {member?.status === "active" && (
-              <span className="flex items-center gap-1.5 px-3 py-1 rounded-full border border-ecto/40 bg-ecto/10 text-ecto text-xs font-bold uppercase tracking-widest">
+              <span className="flex items-center gap-1.5 px-3 py-1 rounded-full border border-spirit/40 bg-spirit/10 text-spirit text-xs font-bold uppercase tracking-widest">
                 <ShieldCheck className="w-3.5 h-3.5" /> {ROLE_LABEL[member.role]}
               </span>
             )}
@@ -56,7 +58,7 @@ export default async function PerfilPage() {
           {member?.status === "active" && (
             <div className="crypt-card p-6">
               <h2 className="font-title font-bold mb-2">Meus drops</h2>
-              <MyDrops drops={drops} />
+              <MyDrops drops={drops} seasonName={activeSeason?.name} />
             </div>
           )}
         </div>

@@ -35,6 +35,13 @@ export default function GiveawayDraw({ giveaway, onClose, onConfirmed }: {
   const spinId = useRef(0);
   const sounds = useSounds();
   const dialog = useDialog();
+  // Foto do Discord de cada inscrito, pelo nome do personagem (a lista do sorteio guarda só o nome)
+  const [photos, setPhotos] = useState<Map<string, string>>(new Map());
+  useEffect(() => {
+    adminApi<{ entries: { members: { char_name: string; avatar_url: string | null } | null }[] }>("giveawayEntries", { id: giveaway.id })
+      .then((r) => setPhotos(new Map(r.entries.flatMap((e) => (e.members?.avatar_url ? [[e.members.char_name, e.members.avatar_url] as [string, string]] : [])))))
+      .catch(() => {});
+  }, [giveaway.id]);
 
   const start = () => {
     sounds.unlock();
@@ -144,7 +151,7 @@ export default function GiveawayDraw({ giveaway, onClose, onConfirmed }: {
               <div ref={reelRef} className="flex gap-4 w-full" style={{ paddingLeft: `calc(50% - ${ITEM_W / 2}px)` }}>
                 {items.map((label, i) => (
                   <div key={i} className="w-[160px] h-[144px] flex-shrink-0 bg-void border border-spirit/15 rounded-xl flex flex-col items-center justify-center gap-2 px-2">
-                    <Avatar name={label} size={52} />
+                    <Avatar src={photos.get(label)} name={label} size={56} className="ring-2 ring-spirit/40" />
                     <span className="text-sm font-bold text-bone text-center truncate w-full">{label}</span>
                   </div>
                 ))}
@@ -164,7 +171,7 @@ export default function GiveawayDraw({ giveaway, onClose, onConfirmed }: {
               <div className="mt-10 crypt-card w-full max-w-md p-8 text-center animate-scale-up relative overflow-hidden !border-ecto/40">
                 <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-spirit via-ecto to-hex" />
                 <button onClick={cancel} title="Fechar (o giro fica como descartado)" className="absolute top-4 right-4 text-bone/40 hover:text-bone"><X className="w-5 h-5" /></button>
-                <Avatar name={draw.winner_label ?? "?"} size={92} className="mx-auto mb-4 ring-4 ring-ecto/60 shadow-[0_0_30px_rgba(192,132,252,0.45)]" />
+                <Avatar src={photos.get(draw.winner_label ?? "")} name={draw.winner_label ?? "?"} size={92} className="mx-auto mb-4 ring-4 ring-ecto/60 shadow-[0_0_30px_rgba(192,132,252,0.45)]" />
                 <h3 className="font-title text-3xl font-bold text-bone truncate">{draw.winner_label}</h3>
                 <p className="text-bone/50 mt-1 mb-2 text-xs uppercase tracking-widest">Ganhou · {giveaway.prize}</p>
                 <a href={`/provably-fair?id=${draw.id}`} target="_blank" className="inline-flex items-center gap-1.5 mb-6 text-[11px] font-bold text-spirit hover:text-ecto uppercase tracking-widest">

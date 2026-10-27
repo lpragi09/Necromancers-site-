@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import Pagination, { usePagination } from "@/components/Pagination";
 import { ArrowLeft, CheckCircle2, ExternalLink, Hash, Loader2, Lock, ShieldCheck, Trophy, XCircle, Zap } from "lucide-react";
 import {
   DRAND_CHAIN, DRAND_RELAYS, drandRandomnessMatches, drandRoundTime, drandRoundUrl, entriesText, FAIR_KIND_LABEL,
@@ -79,6 +80,7 @@ function DrawList({ target }: { target: string | null }) {
       .then((j) => setDraws(j.draws ?? []))
       .catch(() => setDraws([]));
   }, [target]);
+  const pag = usePagination(draws ?? []);
 
   return (
     <div>
@@ -92,7 +94,7 @@ function DrawList({ target }: { target: string | null }) {
         <div className="crypt-card p-10 text-center text-bone/60">Nenhum sorteio registrado ainda.</div>
       ) : (
         <div className="space-y-2">
-          {draws.map((d) => (
+          {pag.pageItems.map((d) => (
             <Link key={d.id} href={`/provably-fair?id=${d.id}`}
               className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 crypt-card crypt-card-hover !rounded-xl px-4 py-3 transition-colors">
               <div className="min-w-0 flex-1">
@@ -103,6 +105,7 @@ function DrawList({ target }: { target: string | null }) {
               <StatusBadge status={d.status} />
             </Link>
           ))}
+          <Pagination {...pag} />
         </div>
       )}
     </div>
