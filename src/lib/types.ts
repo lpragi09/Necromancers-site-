@@ -43,6 +43,7 @@ export interface Giveaway {
   created_at: string;
   entries_count?: number;
   joined?: boolean;
+  drawn_at?: string | null; // quando saiu o ganhador (vem do giro do Provably Fair)
 }
 
 export interface Season {

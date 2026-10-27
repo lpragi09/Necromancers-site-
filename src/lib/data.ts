@@ -79,7 +79,16 @@ async function withEntries(list: Giveaway[], memberId?: string | null): Promise<
     counts.set(e.giveaway_id, (counts.get(e.giveaway_id) ?? 0) + 1);
     if (memberId && e.member_id === memberId) joined.add(e.giveaway_id);
   }
-  return list.map((g) => ({ ...g, entries_count: counts.get(g.id) ?? 0, joined: joined.has(g.id) }));
+  const drawnAt = await getDrawnAt(list);
+  return list.map((g) => ({ ...g, entries_count: counts.get(g.id) ?? 0, joined: joined.has(g.id), drawn_at: g.fair_draw_id ? drawnAt.get(g.fair_draw_id) ?? null : null }));
+}
+
+/** Dia e hora em que cada sorteio teve ganhador (o giro do Provably Fair guarda isso). */
+export async function getDrawnAt(list: Giveaway[]): Promise<Map<string, string>> {
+  const ids = list.map((g) => g.fair_draw_id).filter((id): id is string => !!id);
+  if (!ids.length) return new Map();
+  const { data } = await supabaseAdmin.from("fair_draws").select("id, drawn_at, created_at").in("id", ids);
+  return new Map((data ?? []).map((d) => [d.id, d.drawn_at ?? d.created_at]));
 }
 
 export async function getSeasons(): Promise<Season[]> {

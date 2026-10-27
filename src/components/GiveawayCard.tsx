@@ -1,6 +1,6 @@
 /* eslint-disable @next/next/no-img-element */
 import Link from "next/link";
-import { ShieldCheck, Star, Trophy } from "lucide-react";
+import { CalendarCheck, ShieldCheck, Star, Trophy } from "lucide-react";
 import type { Giveaway } from "@/lib/types";
 import { fmtDateTime } from "@/lib/format";
 import GhostIcon from "@/components/GhostIcon";
@@ -53,6 +53,7 @@ export default function GiveawayCard({ giveaway: g, canJoin }: { giveaway: Givea
             <div className="rounded-xl border border-amber-400/30 bg-amber-400/10 px-4 py-3">
               <p className="text-[10px] font-black italic uppercase tracking-widest text-amber-200/70">Vencedor</p>
               <p className="flex items-center gap-2 text-amber-200 font-black italic"><Trophy className="w-4 h-4" /> {g.winner_name}</p>
+              {g.drawn_at && <p className="mt-1 flex items-center gap-1.5 text-xs text-amber-100/60"><CalendarCheck className="w-3.5 h-3.5" /> Sorteado em {fmtDateTime(g.drawn_at)}</p>}
               {g.fair_draw_id && (
                 <Link href={`/provably-fair?id=${g.fair_draw_id}`} className="mt-1 inline-flex items-center gap-1 text-[11px] font-black italic uppercase tracking-widest text-spirit hover:text-ecto">
                   <ShieldCheck className="w-3.5 h-3.5" /> Ver prova do sorteio

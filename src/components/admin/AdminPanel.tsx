@@ -481,7 +481,7 @@ function GiveawaysTab({ giveaways, reload }: { giveaways: Giveaway[]; reload: ()
                     <span className="inline-flex items-center gap-1"><Gift className="w-3 h-3 text-spirit" /> {g.prize}</span>
                     <span className="inline-flex items-center gap-1"><Users className="w-3 h-3" /> {g.entries_count ?? 0} inscritos</span>
                     {g.ends_at && g.status !== "drawn" && <span className="inline-flex items-center gap-1"><CalendarClock className="w-3 h-3" /> até {fmtDateTime(g.ends_at)}</span>}
-                    {g.status === "drawn" && g.winner_name && <span className="inline-flex items-center gap-1 text-amber-300"><Trophy className="w-3 h-3" /> {g.winner_name}</span>}
+                    {g.status === "drawn" && g.winner_name && <span className="inline-flex items-center gap-1 text-amber-300"><Trophy className="w-3 h-3" /> {g.winner_name}{g.drawn_at ? ` · ${fmtDateTime(g.drawn_at)}` : ""}</span>}
                   </p>
                 </div>
                 <Pill tone={g.status === "open" ? "green" : g.status === "closed" ? "amber" : "purple"}>

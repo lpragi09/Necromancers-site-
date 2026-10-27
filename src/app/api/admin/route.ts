@@ -2,9 +2,9 @@ import { getViewer, MEMBER_COLUMNS } from "@/lib/viewer";
 import { ADMIN_ROLES, isAdminId } from "@/lib/admins";
 import { hasSupabase, supabaseAdmin } from "@/lib/supabaseAdmin";
 import { cleanText, decodeImage, DEMO_MESSAGE, fail, ok } from "@/lib/http";
-import { ACTIVITY_COLUMNS, CLAIM_COLUMNS, DROP_COLUMNS, getCoinEpoch, GIVEAWAY_COLUMNS, ITEM_COLUMNS, ORDER_COLUMNS, POST_COLUMNS, SEASON_COLUMNS, SHOP_ITEM_COLUMNS } from "@/lib/data";
+import { ACTIVITY_COLUMNS, CLAIM_COLUMNS, DROP_COLUMNS, getCoinEpoch, getDrawnAt, GIVEAWAY_COLUMNS, ITEM_COLUMNS, ORDER_COLUMNS, POST_COLUMNS, SEASON_COLUMNS, SHOP_ITEM_COLUMNS } from "@/lib/data";
 import { FAIR_COLUMNS, runFairDraw, setFairStatus } from "@/lib/fairServer";
-import { ROLE_ORDER, type CoinClaim, type Drop, type Rarity, type ShopOrder } from "@/lib/types";
+import { ROLE_ORDER, type CoinClaim, type Drop, type Giveaway, type Rarity, type ShopOrder } from "@/lib/types";
 
 // O sorteio espera o número público do drand (alguns segundos)
 export const maxDuration = 30;
@@ -51,11 +51,12 @@ export async function POST(request: Request) {
         const { data } = await db.storage.from("provas").createSignedUrls(paths, 3600);
         for (const s of data ?? []) if (s.path && s.signedUrl) signed.set(s.path, s.signedUrl);
       }
+      const drawnAt = await getDrawnAt((giveaways.data as Giveaway[]) ?? []);
       const withUrl = (d: Drop) => ({ ...d, proof_url: d.proof_path ? signed.get(d.proof_path) ?? null : null });
 
       return ok({
         posts: posts.data,
-        giveaways: (giveaways.data ?? []).map((g) => ({ ...g, entries_count: counts.get(g.id) ?? 0 })),
+        giveaways: (giveaways.data ?? []).map((g) => ({ ...g, entries_count: counts.get(g.id) ?? 0, drawn_at: g.fair_draw_id ? drawnAt.get(g.fair_draw_id) ?? null : null })),
         seasons: seasons.data,
         items: items.data,
         members: members.data,
