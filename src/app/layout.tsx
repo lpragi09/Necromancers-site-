@@ -17,10 +17,10 @@ const DESCRIPTION = "Portal do clã Necromancers de PokeTibia: avisos, sorteios 
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
-  title: { default: "Necromancers · Clã de PokeTibia", template: "%s · Necromancers" },
+  title: { default: "Necromancers", template: "%s · Necromancers" },
   description: DESCRIPTION,
-  openGraph: { type: "website", siteName: "Necromancers", locale: "pt_BR", title: "Necromancers · Clã de PokeTibia", description: DESCRIPTION },
-  twitter: { card: "summary_large_image", title: "Necromancers · Clã de PokeTibia", description: DESCRIPTION },
+  openGraph: { type: "website", siteName: "Necromancers", locale: "pt_BR", title: "Necromancers", description: DESCRIPTION },
+  twitter: { card: "summary_large_image", title: "Necromancers", description: DESCRIPTION },
 };
 
 export const viewport: Viewport = { themeColor: "#000000" };
