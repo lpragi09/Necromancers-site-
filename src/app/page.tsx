@@ -58,7 +58,7 @@ export default async function Home() {
       </section>
 
       {/* Números do clã e aviso fixado */}
-      <div id="cla" className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 -mt-10 scroll-mt-20 space-y-6">
+      <div id="cla" className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 mt-16 scroll-mt-24 space-y-6">
         <div className="crypt-card grid grid-cols-3 divide-x divide-white/5">
           {[
             { icon: Users, label: "Membros ativos", value: stats.members },
