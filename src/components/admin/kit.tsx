@@ -175,6 +175,7 @@ export const IMAGE_SIZES = {
   giveaway: { w: 1600, h: 900, ratio: "16:9", aspect: "aspect-[16/9]" },
   shop: { w: 1200, h: 750, ratio: "16:10", aspect: "aspect-[16/10]" },
   boss: { w: 600, h: 500, ratio: "6:5", aspect: "aspect-[6/5]" },
+  game: { w: 512, h: 512, ratio: "1:1, fundo transparente fica melhor", aspect: "aspect-square" },
 } as const;
 
 export function ImageField({ value, onChange, size }: { value: string; onChange: (url: string) => void; size: keyof typeof IMAGE_SIZES }) {

@@ -500,7 +500,7 @@ export async function POST(request: Request) {
     case "saveGameMode": {
       const m = body?.mode ?? {};
       const icon = ["gamepad", "bomb", "kart", "trophy"].includes(m.icon) ? m.icon : "gamepad";
-      const fields = { name: cleanText(m.name, 60), icon, active: m.active !== false, sort: Math.floor(Number(m.sort)) || 0 };
+      const fields = { name: cleanText(m.name, 60), icon, image_url: imageUrl(m.image_url), active: m.active !== false, sort: Math.floor(Number(m.sort)) || 0 };
       if (!fields.name) return fail("Dê o nome do jogo.");
       const { error } = m.id ? await db.from("game_modes").update(fields).eq("id", m.id) : await db.from("game_modes").insert(fields);
       return error ? fail(error.message, 500) : ok();
@@ -513,7 +513,7 @@ export async function POST(request: Request) {
       const r = body?.room ?? {};
       const slots = Math.floor(Number(r.slots));
       if (!(slots >= 1 && slots <= 8)) return fail("A sala tem de 1 a 8 vagas.");
-      const fields = { name: cleanText(r.name, 60), slots, active: r.active !== false, sort: Math.floor(Number(r.sort)) || 0 };
+      const fields = { name: cleanText(r.name, 60), image_url: imageUrl(r.image_url), slots, active: r.active !== false, sort: Math.floor(Number(r.sort)) || 0 };
       if (!fields.name) return fail("Dê o nome da sala.");
       const { error } = r.id
         ? await db.from("game_rooms").update(fields).eq("id", r.id)

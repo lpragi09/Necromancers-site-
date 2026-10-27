@@ -228,6 +228,7 @@ export interface GameRoom {
   id: string;
   mode_id: string;
   name: string;
+  image_url: string | null; // ícone próprio da sala (senão usa o do jogo)
   slots: number;
   sort: number;
   active: boolean;
@@ -238,6 +239,7 @@ export interface GameMode {
   id: string;
   name: string;
   icon: GameIcon;
+  image_url: string | null; // imagem do jogo: cabeçalho e ícone padrão das salas
   sort: number;
   active: boolean;
   rooms: GameRoom[];

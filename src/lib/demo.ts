@@ -131,14 +131,14 @@ export const DEMO_DUNGEON_RUNS: DungeonRun[] = [
 
 const gamer = (i: number) => ({ member_id: DEMO_MEMBERS[i].id, char_name: DEMO_MEMBERS[i].char_name, avatar_url: null });
 const demoRooms = (mode: string, names: string[], players: Record<number, number[]> = {}): GameRoom[] =>
-  names.map((name, i) => ({ id: `${mode}-${i + 1}`, mode_id: mode, name, slots: 4, sort: i + 1, active: true, players: (players[i] ?? []).map(gamer) }));
+  names.map((name, i) => ({ id: `${mode}-${i + 1}`, mode_id: mode, name, image_url: null, slots: 4, sort: i + 1, active: true, players: (players[i] ?? []).map(gamer) }));
 export const DEMO_GAMES: GameMode[] = [
   {
-    id: "demo-bomb", name: "Bomberman", icon: "bomb", sort: 1, active: true,
+    id: "demo-bomb", name: "Bomberman", icon: "bomb", image_url: null, sort: 1, active: true,
     rooms: demoRooms("demo-bomb", ["Components Arena", "Ice Arena", "Crystal Arena", "Volcano Arena", "Desert Arena", "Undersea Arena"], { 0: [1, 3], 3: [0, 2, 4, 5] }),
   },
   {
-    id: "demo-kart", name: "Poke Kart", icon: "kart", sort: 2, active: true,
+    id: "demo-kart", name: "Poke Kart", icon: "kart", image_url: null, sort: 2, active: true,
     rooms: demoRooms("demo-kart", ["Racetrack 1", "Racetrack 2", "Racetrack 3", "Racetrack 4", "Racetrack 5", "Racetrack 6"], { 1: [6] }),
   },
 ];

@@ -1,15 +1,17 @@
 "use client";
 
+/* eslint-disable @next/next/no-img-element */
+
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Check, Eraser, Eye, EyeOff, Gamepad2, Loader2, Pencil, Plus, Trash2, Users } from "lucide-react";
 import { adminApi } from "@/lib/api";
-import { EmptyLine, Field, IconBtn, Panel, Pill, Row, Segmented, Toggle, useAction } from "@/components/admin/kit";
+import { EmptyLine, Field, IconBtn, ImageField, isUploading, Panel, Pill, Row, Segmented, Toggle, useAction } from "@/components/admin/kit";
 import { GAME_ICONS } from "@/lib/gameIcons";
 import type { GameIcon, GameMode, GameRoom } from "@/lib/types";
 
-const EMPTY_MODE = { id: "", name: "", icon: "gamepad" as GameIcon, sort: "", active: true };
-const EMPTY_ROOM = { id: "", mode_id: "", name: "", slots: 4, sort: "", active: true };
+const EMPTY_MODE = { id: "", name: "", icon: "gamepad" as GameIcon, image_url: "", sort: "", active: true };
+const EMPTY_ROOM = { id: "", mode_id: "", name: "", image_url: "", slots: 4, sort: "", active: true };
 
 export default function GamesAdmin() {
   const router = useRouter();
@@ -41,7 +43,7 @@ export default function GamesAdmin() {
     e.preventDefault();
     if (room && (await run("saveGameRoom", { room: { ...room, id: room.id || undefined } }))) setRoom(null);
   };
-  const editRoom = (r: GameRoom) => setRoom({ id: r.id, mode_id: r.mode_id, name: r.name, slots: r.slots, sort: String(r.sort), active: r.active });
+  const editRoom = (r: GameRoom) => setRoom({ id: r.id, mode_id: r.mode_id, name: r.name, image_url: r.image_url ?? "", slots: r.slots, sort: String(r.sort), active: r.active });
 
   const roomForm = room && (
     <form onSubmit={saveRoom} className="mt-3 rounded-xl border border-spirit/30 bg-spirit/[0.05] p-4 grid gap-4 animate-fade-in">
@@ -63,11 +65,13 @@ export default function GamesAdmin() {
           ))}
         </div>
       </div>
+      <div className="max-w-[13rem]"><ImageField size="game" value={room.image_url} onChange={(image_url) => setRoom({ ...room, image_url })} /></div>
+      <p className="-mt-2 text-[11px] italic text-bone/40">Sem imagem, a sala usa a imagem do jogo.</p>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <Toggle checked={room.active} onChange={(active) => setRoom({ ...room, active })} label="Aparece no site" />
         <div className="flex gap-3">
           <button type="button" onClick={() => setRoom(null)} className="btn-ghost !py-2">Cancelar</button>
-          <button disabled={busy} className="btn-neon !py-2">{busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />} {room.id ? "Salvar" : "Adicionar"}</button>
+          <button disabled={busy || isUploading(room.image_url)} className="btn-neon !py-2">{busy || isUploading(room.image_url) ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />} {isUploading(room.image_url) ? "Enviando imagem..." : room.id ? "Salvar" : "Adicionar"}</button>
         </div>
       </div>
     </form>
@@ -93,11 +97,13 @@ export default function GamesAdmin() {
               <Segmented value={mode.icon} onChange={(icon) => setMode({ ...mode, icon })}
                 options={(Object.keys(GAME_ICONS) as GameIcon[]).map((k) => ({ value: k, label: GAME_ICONS[k].label, icon: GAME_ICONS[k].icon }))} />
             </div>
+            <div className="max-w-[13rem]"><ImageField size="game" value={mode.image_url} onChange={(image_url) => setMode({ ...mode, image_url })} /></div>
+            <p className="-mt-2 text-[11px] italic text-bone/40">A imagem do jogo aparece no cabeçalho e é o ícone das salas sem imagem própria.</p>
             <div className="flex flex-wrap items-center justify-between gap-3">
               <Toggle checked={mode.active} onChange={(active) => setMode({ ...mode, active })} label="Aparece no site" />
               <div className="flex gap-3">
                 <button type="button" onClick={() => setMode(null)} className="btn-ghost !py-2">Cancelar</button>
-                <button disabled={busy} className="btn-neon !py-2">{busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />} {mode.id ? "Salvar" : "Adicionar"}</button>
+                <button disabled={busy || isUploading(mode.image_url)} className="btn-neon !py-2">{busy || isUploading(mode.image_url) ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />} {isUploading(mode.image_url) ? "Enviando imagem..." : mode.id ? "Salvar" : "Adicionar"}</button>
               </div>
             </div>
           </form>
@@ -111,7 +117,9 @@ export default function GamesAdmin() {
             return (
               <div key={m.id} className={`rounded-xl border border-white/10 p-3 sm:p-4 ${m.active ? "" : "opacity-60"}`}>
                 <div className="flex flex-wrap items-center gap-3">
-                  <span className="w-10 h-10 shrink-0 rounded-xl bg-spirit/15 border border-spirit/30 flex items-center justify-center text-spirit"><Icon className="w-5 h-5" /></span>
+                  <span className="w-12 h-12 shrink-0 rounded-xl bg-spirit/15 border border-spirit/30 flex items-center justify-center text-spirit overflow-hidden">
+                    {m.image_url ? <img src={m.image_url} alt="" className="w-full h-full object-contain p-0.5" /> : <Icon className="w-5 h-5" />}
+                  </span>
                   <div className="min-w-[9rem] flex-1">
                     <p className="font-title text-lg truncate">{m.name}</p>
                     <p className="text-[11px] text-bone/45">{m.rooms.length} {m.rooms.length === 1 ? "sala" : "salas"}{!m.active && " · oculto"}</p>
@@ -120,7 +128,7 @@ export default function GamesAdmin() {
                     <IconBtn title={m.active ? "Esconder do site" : "Mostrar no site"} disabled={busy} onClick={() => run("saveGameMode", { mode: { ...m, active: !m.active } })}>
                       {m.active ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
                     </IconBtn>
-                    <IconBtn title="Editar" onClick={() => setMode({ id: m.id, name: m.name, icon: m.icon, sort: String(m.sort), active: m.active })}><Pencil className="w-4 h-4" /></IconBtn>
+                    <IconBtn title="Editar" onClick={() => setMode({ id: m.id, name: m.name, icon: m.icon, image_url: m.image_url ?? "", sort: String(m.sort), active: m.active })}><Pencil className="w-4 h-4" /></IconBtn>
                     <IconBtn title="Excluir" danger disabled={busy} onClick={() => run("deleteGameMode", { id: m.id }, { title: `Excluir ${m.name}?`, message: "Todas as salas desse jogo são apagadas junto." })}><Trash2 className="w-4 h-4" /></IconBtn>
                     <button onClick={() => setRoom({ ...EMPTY_ROOM, mode_id: m.id })} className="btn-ghost !py-2 !px-3 !text-xs"><Plus className="w-4 h-4" /> Sala</button>
                   </div>
@@ -132,6 +140,9 @@ export default function GamesAdmin() {
                   {m.rooms.map((r) => (
                     <div key={r.id}>
                       <Row className={r.active ? "" : "opacity-50"}>
+                        <span className="w-9 h-9 shrink-0 rounded-lg bg-white/[0.04] border border-white/10 flex items-center justify-center text-spirit/70 overflow-hidden">
+                          {r.image_url || m.image_url ? <img src={(r.image_url || m.image_url) as string} alt="" className="w-full h-full object-contain p-0.5" /> : <Icon className="w-4 h-4" />}
+                        </span>
                         <div className="min-w-0 flex-1">
                           <p className="font-bold truncate">{r.name}{!r.active && <span className="font-normal text-bone/40"> · oculta</span>}</p>
                           <p className="text-[11px] text-bone/45 truncate">{r.players.length ? r.players.map((p) => p.char_name).join(" · ") : "Vazia"}</p>

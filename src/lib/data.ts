@@ -414,8 +414,8 @@ export const GAME_SEAT_MS = 3600_000;
 /** Modos de jogo com as salas e quem está em cada uma agora. activeOnly: só o que aparece no site. */
 export async function getGames(activeOnly = true): Promise<GameMode[]> {
   if (isDemo()) return DEMO_GAMES;
-  let modesQ = supabaseAdmin.from("game_modes").select("id, name, icon, sort, active").order("sort").order("name");
-  let roomsQ = supabaseAdmin.from("game_rooms").select("id, mode_id, name, slots, sort, active").order("sort").order("name");
+  let modesQ = supabaseAdmin.from("game_modes").select("id, name, icon, image_url, sort, active").order("sort").order("name");
+  let roomsQ = supabaseAdmin.from("game_rooms").select("id, mode_id, name, image_url, slots, sort, active").order("sort").order("name");
   if (activeOnly) { modesQ = modesQ.eq("active", true); roomsQ = roomsQ.eq("active", true); }
   const [modes, rooms, players] = await Promise.all([
     modesQ,

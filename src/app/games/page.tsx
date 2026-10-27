@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-img-element */
 import { Clock, Gamepad2, Plus, Users, type LucideIcon } from "lucide-react";
 import MembersGate from "@/components/MembersGate";
 import Avatar from "@/components/Avatar";
@@ -11,7 +12,7 @@ import type { GameRoom } from "@/lib/types";
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Games" };
 
-function RoomCard({ room, icon: Icon, me }: { room: GameRoom; icon: LucideIcon; me: string | null }) {
+function RoomCard({ room, image, icon: Icon, me }: { room: GameRoom; image: string | null; icon: LucideIcon; me: string | null }) {
   const filled = room.players.length;
   const full = filled >= room.slots;
   const joined = !!me && room.players.some((p) => p.member_id === me);
@@ -28,7 +29,9 @@ function RoomCard({ room, icon: Icon, me }: { room: GameRoom; icon: LucideIcon; 
 
       {/* Vagas: ocupadas com a foto, livres tracejadas */}
       <div className="flex items-center gap-2">
-        <span className="w-10 h-10 shrink-0 rounded-xl bg-spirit/15 border border-spirit/30 flex items-center justify-center text-spirit"><Icon className="w-5 h-5" /></span>
+        <span className="w-11 h-11 shrink-0 rounded-xl bg-spirit/15 border border-spirit/30 flex items-center justify-center text-spirit overflow-hidden">
+          {image ? <img src={image} alt="" className="w-full h-full object-contain p-0.5" /> : <Icon className="w-5 h-5" />}
+        </span>
         {seats.map((p, i) =>
           p ? (
             <span key={p.member_id} title={p.char_name}><Avatar src={p.avatar_url} name={p.char_name} size={36} className="ring-2 ring-spirit/50" /></span>
@@ -67,11 +70,16 @@ export default async function GamesPage() {
             return (
               <section key={m.id}>
                 <div className="flex items-end justify-between gap-4 mb-5">
-                  <h2 className="font-title text-2xl sm:text-[1.7rem] text-bone flex items-center gap-2.5"><Icon className="w-6 h-6 text-spirit" /> {m.name}</h2>
+                  <h2 className="font-title text-2xl sm:text-[1.7rem] text-bone flex items-center gap-3">
+                    {m.image_url
+                      ? <img src={m.image_url} alt="" className="w-16 h-16 sm:w-20 sm:h-20 object-contain drop-shadow-[0_0_14px_rgba(168,85,247,0.5)]" />
+                      : <Icon className="w-6 h-6 text-spirit" />}
+                    {m.name}
+                  </h2>
                   <span className="text-xs font-black italic uppercase tracking-widest text-bone/45">{playing} {playing === 1 ? "jogador" : "jogadores"} nas salas</span>
                 </div>
                 <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {m.rooms.map((r) => <RoomCard key={r.id} room={r} icon={Icon} me={me} />)}
+                  {m.rooms.map((r) => <RoomCard key={r.id} room={r} image={r.image_url ?? m.image_url} icon={Icon} me={me} />)}
                 </div>
               </section>
             );
