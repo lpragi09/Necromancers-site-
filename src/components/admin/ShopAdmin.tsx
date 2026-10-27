@@ -10,7 +10,7 @@ import { adminApi } from "@/lib/api";
 import { useDialog } from "@/components/Dialog";
 import Pagination, { usePagination } from "@/components/Pagination";
 import Avatar from "@/components/Avatar";
-import { EmptyLine, Field, IconBtn, ImageField, Panel, Pill, Row, Toggle, useAction } from "@/components/admin/kit";
+import { EmptyLine, Field, IconBtn, ImageField, isUploading, Panel, Pill, Row, Toggle, useAction } from "@/components/admin/kit";
 import { fmtDateTime, timeAgo } from "@/lib/format";
 import type { ActivityType, CoinClaim, ShopItem, ShopOrder } from "@/lib/types";
 
@@ -186,12 +186,12 @@ export default function ShopAdmin() {
             <Field label="Descrição (opcional)">
               <input value={item.description} onChange={(e) => setItem({ ...item, description: e.target.value })} maxLength={300} placeholder="Ex.: entregue no depósito do clã" className="field" />
             </Field>
-            <ImageField value={item.image_url} onChange={(url) => setItem({ ...item, image_url: url })} />
+            <ImageField size="shop" value={item.image_url} onChange={(url) => setItem({ ...item, image_url: url })} />
             <div className="flex flex-wrap items-center justify-between gap-3">
               <Toggle checked={item.active} onChange={(active) => setItem({ ...item, active })} label="Aparece na loja" />
               <div className="flex gap-3">
                 <button type="button" onClick={() => setItem(null)} className="btn-ghost !py-2">Cancelar</button>
-                <button disabled={busy} className="btn-neon !py-2">{busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />} {item.id ? "Salvar" : "Adicionar"}</button>
+                <button disabled={busy || isUploading(item.image_url)} className="btn-neon !py-2">{busy || isUploading(item.image_url) ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />} {isUploading(item.image_url) ? "Enviando imagem..." : item.id ? "Salvar" : "Adicionar"}</button>
               </div>
             </div>
           </form>

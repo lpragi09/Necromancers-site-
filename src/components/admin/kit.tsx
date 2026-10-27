@@ -165,50 +165,73 @@ export function Preview({ children }: { children: React.ReactNode }) {
   );
 }
 
-export function ImageField({ value, onChange }: { value: string; onChange: (url: string) => void }) {
+/** Imagem ainda subindo: a prévia usa o arquivo local (blob:) até o link definitivo chegar. Não dá pra salvar assim. */
+export const isUploading = (url: string) => url.startsWith("blob:");
+
+/** Tamanhos ideais de cada lugar onde a imagem aparece no site (largura × altura). */
+export const IMAGE_SIZES = {
+  post: { w: 1600, h: 700, ratio: "16:7", aspect: "aspect-[16/7]" },
+  giveaway: { w: 1600, h: 900, ratio: "16:9", aspect: "aspect-[16/9]" },
+  shop: { w: 1200, h: 750, ratio: "16:10", aspect: "aspect-[16/10]" },
+} as const;
+
+export function ImageField({ value, onChange, size }: { value: string; onChange: (url: string) => void; size: keyof typeof IMAGE_SIZES }) {
   const dialog = useDialog();
   const ref = useRef<HTMLInputElement>(null);
-  const [busy, setBusy] = useState(false);
+  const job = useRef(0); // trocar a imagem no meio do envio descarta o envio antigo
   const [over, setOver] = useState(false);
+  const spec = IMAGE_SIZES[size];
+  const busy = isUploading(value);
+
   const pick = async (file?: File) => {
     if (!file) return;
-    setBusy(true);
+    if (!file.type.startsWith("image/")) return dialog.error(new Error("Escolha um arquivo de imagem."), "Arquivo inválido");
+    const id = ++job.current;
+    const local = URL.createObjectURL(file);
+    onChange(local); // aparece na hora, na prévia também
     try {
-      const image = await compressImage(file, 1600, 0.82);
+      const image = await compressImage(file, Math.max(spec.w, spec.h), 0.82);
       const { url } = await adminApi<{ url: string }>("uploadImage", { image });
-      onChange(url);
+      if (job.current === id) onChange(url);
     } catch (err) {
+      if (job.current === id) onChange("");
       dialog.error(err, "Falha ao enviar a imagem");
+    } finally {
+      URL.revokeObjectURL(local);
     }
-    setBusy(false);
   };
+  const remove = () => { job.current++; onChange(""); };
+
   return (
     <div>
-      <label className="label">Imagem (opcional)</label>
+      <label className="label">Imagem (opcional) <span className="normal-case tracking-normal text-spirit/80">· ideal {spec.w} × {spec.h} px ({spec.ratio})</span></label>
       {value ? (
         <div className="relative group rounded-xl overflow-hidden border border-white/10">
-          <img src={value} alt="" className="w-full aspect-[16/7] object-cover" />
-          <div className="absolute inset-0 bg-black/65 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-            <button type="button" onClick={() => ref.current?.click()} className="btn-ghost !py-2">
-              {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <ImagePlus className="w-4 h-4" />} Trocar
-            </button>
-            <button type="button" onClick={() => onChange("")} className="btn-ghost !py-2 !text-rose-300"><Trash2 className="w-4 h-4" /> Remover</button>
-          </div>
+          <img src={value} alt="" className={`w-full ${spec.aspect} object-cover`} />
+          {busy && (
+            <div className="absolute inset-0 bg-black/55 flex items-center justify-center gap-2 text-sm font-black italic uppercase">
+              <Loader2 className="w-5 h-5 text-spirit animate-spin" /> Enviando...
+            </div>
+          )}
+          {!busy && (
+            <div className="absolute inset-0 bg-black/65 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+              <button type="button" onClick={() => ref.current?.click()} className="btn-ghost !py-2"><ImagePlus className="w-4 h-4" /> Trocar</button>
+              <button type="button" onClick={remove} className="btn-ghost !py-2 !text-rose-300"><Trash2 className="w-4 h-4" /> Remover</button>
+            </div>
+          )}
         </div>
       ) : (
         <button type="button" onClick={() => ref.current?.click()}
           onDragOver={(e) => { e.preventDefault(); setOver(true); }} onDragLeave={() => setOver(false)}
           onDrop={(e) => { e.preventDefault(); setOver(false); pick(e.dataTransfer.files?.[0]); }}
           className={`w-full rounded-xl border-2 border-dashed py-7 flex flex-col items-center gap-2 transition-colors ${over ? "border-spirit bg-spirit/10" : "border-white/10 bg-white/[0.02] hover:border-spirit/50 hover:bg-spirit/5"}`}>
-          <span className="w-11 h-11 rounded-xl bg-spirit/15 border border-spirit/30 flex items-center justify-center">
-            {busy ? <Loader2 className="w-5 h-5 text-spirit animate-spin" /> : <ImagePlus className="w-5 h-5 text-spirit" />}
-          </span>
-          <span className="text-sm font-bold text-bone/80">{busy ? "Enviando..." : "Clique ou arraste uma imagem"}</span>
-          <span className="text-[11px] text-bone/35">JPG, PNG ou WEBP · a gente comprime sozinho</span>
+          <span className="w-11 h-11 rounded-xl bg-spirit/15 border border-spirit/30 flex items-center justify-center"><ImagePlus className="w-5 h-5 text-spirit" /></span>
+          <span className="text-sm font-bold text-bone/80">Clique ou arraste uma imagem</span>
+          <span className="text-[11px] text-bone/45">Tamanho ideal: <b className="text-bone/70">{spec.w} × {spec.h} px</b> (proporção {spec.ratio})</span>
+          <span className="text-[11px] text-bone/30">JPG, PNG ou WEBP · a gente comprime sozinho</span>
         </button>
       )}
       <input ref={ref} type="file" accept="image/*" hidden onChange={(e) => { pick(e.target.files?.[0]); e.target.value = ""; }} />
     </div>
   );
 }
-

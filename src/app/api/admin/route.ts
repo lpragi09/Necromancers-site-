@@ -12,6 +12,8 @@ export const maxDuration = 30;
 const RARITIES: Rarity[] = ["comum", "raro", "epico", "lendario", "shiny"];
 const optionalDate = (v: unknown) => (typeof v === "string" && v && !Number.isNaN(Date.parse(v)) ? new Date(v).toISOString() : null);
 const str = (v: unknown) => (typeof v === "string" ? v : "");
+// Só aceita link http(s) como imagem: um blob:/data: (imagem ainda subindo) não pode ir pro banco
+const imageUrl = (v: unknown) => { const u = cleanText(v, 500); return /^https?:\/\//.test(u) ? u : null; };
 
 // Painel da liderança: UMA rota, com `action`. Confere se é admin antes de tudo.
 export async function POST(request: Request) {
@@ -82,7 +84,7 @@ export async function POST(request: Request) {
         kind,
         title: cleanText(p.title, 120),
         body: cleanText(p.body, 5000),
-        image_url: cleanText(p.image_url, 500) || null,
+        image_url: imageUrl(p.image_url),
         event_at: kind === "evento" ? optionalDate(p.event_at) : null,
         pinned: !!p.pinned,
         published: p.published !== false,
@@ -103,7 +105,7 @@ export async function POST(request: Request) {
         title: cleanText(g.title, 120),
         prize: cleanText(g.prize, 200),
         description: cleanText(g.description, 2000),
-        image_url: cleanText(g.image_url, 500) || null,
+        image_url: imageUrl(g.image_url),
         ends_at: optionalDate(g.ends_at),
       };
       if (!fields.title || !fields.prize) return fail("Preencha título e prêmio.");
@@ -191,7 +193,7 @@ export async function POST(request: Request) {
         name: cleanText(it.name, 80),
         points: Math.floor(Number(it.points) || 0),
         rarity: RARITIES.includes(it.rarity) ? it.rarity : "raro",
-        image_url: cleanText(it.image_url, 500) || null,
+        image_url: imageUrl(it.image_url),
         active: it.active !== false,
       };
       if (!fields.name || fields.points <= 0) return fail("Preencha nome e pontos (maior que zero).");
@@ -298,7 +300,7 @@ export async function POST(request: Request) {
       const fields = {
         name: cleanText(it.name, 80),
         description: cleanText(it.description, 300),
-        image_url: cleanText(it.image_url, 500) || null,
+        image_url: imageUrl(it.image_url),
         price: Math.floor(Number(it.price) || 0),
         stock: stockRaw === null || Number.isNaN(stockRaw) ? null : Math.max(0, stockRaw),
         active: it.active !== false,

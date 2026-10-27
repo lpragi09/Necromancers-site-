@@ -19,7 +19,7 @@ import { RarityBadge } from "@/components/ui";
 import GiveawayDraw from "@/components/admin/GiveawayDraw";
 import ShopAdmin from "@/components/admin/ShopAdmin";
 import {
-  EmptyLine, Field, FormFooter, fromLocalInput, IconBtn, ImageField, Panel, Pill, Preview, Row, Segmented, toLocalInput, Toggle, useAction,
+  EmptyLine, Field, FormFooter, fromLocalInput, IconBtn, ImageField, isUploading, Panel, Pill, Preview, Row, Segmented, toLocalInput, Toggle, useAction,
 } from "@/components/admin/kit";
 import { fmtDate, fmtDateTime, timeAgo } from "@/lib/format";
 import {
@@ -347,14 +347,14 @@ function PostsTab({ posts, reload }: { posts: Post[]; reload: () => Promise<void
             <Field label="Texto" hint={`${form.body.length}/5000 · quebras de linha aparecem no site`}>
               <textarea value={form.body} onChange={(e) => setForm({ ...form, body: e.target.value })} rows={6} maxLength={5000} placeholder="Escreva o recado para o clã..." className="field resize-y" />
             </Field>
-            <ImageField value={form.image_url} onChange={(url) => setForm({ ...form, image_url: url })} />
+            <ImageField size="post" value={form.image_url} onChange={(url) => setForm({ ...form, image_url: url })} />
             <div className="grid sm:grid-cols-2 gap-3">
               <Toggle checked={form.pinned} onChange={(pinned) => setForm({ ...form, pinned })} label="Fixar no topo" hint="Vira o aviso de destaque da home" />
               <Toggle checked={form.published} onChange={(published) => setForm({ ...form, published })} label="Publicado" hint="Desligado, fica como rascunho" />
             </div>
             <FormFooter hint={form.published ? "Publica na hora para todo mundo." : "Salvo como rascunho, só a liderança vê."}>
               {form.id && <button type="button" onClick={() => setForm(EMPTY_POST)} className="btn-ghost">Cancelar</button>}
-              <button disabled={busy} className="btn-neon">{busy ? <Loader2 className="w-4 h-4 animate-spin" /> : form.id ? <Check className="w-4 h-4" /> : <Plus className="w-4 h-4" />} {form.id ? "Salvar" : "Publicar"}</button>
+              <button disabled={busy || isUploading(form.image_url)} className="btn-neon">{busy || isUploading(form.image_url) ? <Loader2 className="w-4 h-4 animate-spin" /> : form.id ? <Check className="w-4 h-4" /> : <Plus className="w-4 h-4" />} {isUploading(form.image_url) ? "Enviando imagem..." : form.id ? "Salvar" : "Publicar"}</button>
             </FormFooter>
           </form>
         </Panel>
@@ -456,10 +456,10 @@ function GiveawaysTab({ giveaways, reload }: { giveaways: Giveaway[]; reload: ()
             <Field label="Inscrições até" hint="Opcional. Sem data, fica aberto até você fechar." className="sm:w-72">
               <input type="datetime-local" value={form.ends_at} onChange={(e) => setForm({ ...form, ends_at: e.target.value })} className="field" />
             </Field>
-            <ImageField value={form.image_url} onChange={(url) => setForm({ ...form, image_url: url })} />
+            <ImageField size="giveaway" value={form.image_url} onChange={(url) => setForm({ ...form, image_url: url })} />
             <FormFooter hint="Aparece na hora em Sorteios e na home.">
               {form.id && <button type="button" onClick={() => setForm(EMPTY_GIVEAWAY)} className="btn-ghost">Cancelar</button>}
-              <button disabled={busy} className="btn-neon">{busy ? <Loader2 className="w-4 h-4 animate-spin" /> : form.id ? <Check className="w-4 h-4" /> : <Plus className="w-4 h-4" />} {form.id ? "Salvar" : "Criar sorteio"}</button>
+              <button disabled={busy || isUploading(form.image_url)} className="btn-neon">{busy || isUploading(form.image_url) ? <Loader2 className="w-4 h-4 animate-spin" /> : form.id ? <Check className="w-4 h-4" /> : <Plus className="w-4 h-4" />} {isUploading(form.image_url) ? "Enviando imagem..." : form.id ? "Salvar" : "Criar sorteio"}</button>
             </FormFooter>
           </form>
         </Panel>
