@@ -112,3 +112,52 @@ export const RARITY: Record<Rarity, { label: string; text: string; border: strin
   lendario: { label: "Lendário", text: "text-amber-300", border: "border-amber-400/50", bg: "bg-amber-400/10", glow: "shadow-[0_0_22px_rgba(251,191,36,0.35)]" },
   shiny: { label: "Shiny", text: "text-pink-300", border: "border-pink-400/60", bg: "bg-pink-500/10", glow: "shadow-[0_0_24px_rgba(236,72,153,0.45)]" },
 };
+
+// ---------- Lojinha ----------
+export interface ActivityType {
+  id: string;
+  name: string;
+  coins: number;
+  active: boolean;
+}
+
+export type ClaimStatus = "pending" | "approved" | "rejected" | "expired";
+
+export interface CoinClaim {
+  id: string;
+  member_id: string;
+  activity_id: string | null;
+  activity_name: string;
+  coins: number;
+  happened_at: string;
+  proof_path: string | null;
+  note: string | null;
+  epoch: number;
+  status: ClaimStatus;
+  created_at: string;
+  reviewed_at: string | null;
+}
+
+export interface ShopItem {
+  id: string;
+  name: string;
+  description: string;
+  image_url: string | null;
+  price: number;
+  stock: number | null; // null = ilimitado
+  active: boolean;
+}
+
+export type OrderStatus = "pending" | "delivered" | "cancelled";
+
+export interface ShopOrder {
+  id: string;
+  member_id: string;
+  item_id: string | null;
+  item_name: string;
+  price: number;
+  epoch: number;
+  status: OrderStatus;
+  created_at: string;
+  delivered_at: string | null;
+}

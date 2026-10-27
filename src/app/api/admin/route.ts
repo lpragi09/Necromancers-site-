@@ -2,9 +2,9 @@ import { getViewer, MEMBER_COLUMNS } from "@/lib/viewer";
 import { ADMIN_ROLES, isAdminId } from "@/lib/admins";
 import { hasSupabase, supabaseAdmin } from "@/lib/supabaseAdmin";
 import { cleanText, decodeImage, DEMO_MESSAGE, fail, ok } from "@/lib/http";
-import { DROP_COLUMNS, GIVEAWAY_COLUMNS, ITEM_COLUMNS, POST_COLUMNS, SEASON_COLUMNS } from "@/lib/data";
+import { ACTIVITY_COLUMNS, CLAIM_COLUMNS, DROP_COLUMNS, getCoinEpoch, GIVEAWAY_COLUMNS, ITEM_COLUMNS, ORDER_COLUMNS, POST_COLUMNS, SEASON_COLUMNS, SHOP_ITEM_COLUMNS } from "@/lib/data";
 import { FAIR_COLUMNS, runFairDraw, setFairStatus } from "@/lib/fairServer";
-import { ROLE_ORDER, type Drop, type Rarity } from "@/lib/types";
+import { ROLE_ORDER, type CoinClaim, type Drop, type Rarity, type ShopOrder } from "@/lib/types";
 
 // O sorteio espera o número público do drand (alguns segundos)
 export const maxDuration = 30;
@@ -216,6 +216,139 @@ export async function POST(request: Request) {
       const { error } = await db.from("drops").delete().eq("id", id);
       if (error) return fail(error.message, 500);
       if (data?.proof_path) await db.storage.from("provas").remove([data.proof_path]);
+      return ok();
+    }
+
+    // ---------- Lojinha ----------
+    case "shopOverview": {
+      const epoch = await getCoinEpoch();
+      const [activities, items, members, pendingClaims, reviewedClaims, pendingOrders, recentOrders, approved, spent, lastReset] = await Promise.all([
+        db.from("activity_types").select(ACTIVITY_COLUMNS).order("coins", { ascending: false }),
+        db.from("shop_items").select(SHOP_ITEM_COLUMNS).order("price"),
+        db.from("members").select("id, char_name, avatar_url"),
+        db.from("coin_claims").select(CLAIM_COLUMNS).eq("status", "pending").order("created_at").limit(200),
+        db.from("coin_claims").select(CLAIM_COLUMNS).neq("status", "pending").order("reviewed_at", { ascending: false, nullsFirst: false }).limit(40),
+        db.from("shop_orders").select(ORDER_COLUMNS).eq("status", "pending").order("created_at").limit(200),
+        db.from("shop_orders").select(ORDER_COLUMNS).neq("status", "pending").order("delivered_at", { ascending: false, nullsFirst: false }).limit(40),
+        db.from("coin_claims").select("member_id, coins").eq("status", "approved").eq("epoch", epoch),
+        db.from("shop_orders").select("member_id, price").neq("status", "cancelled").eq("epoch", epoch),
+        db.from("coin_resets").select("created_at, created_by").order("id", { ascending: false }).limit(1).maybeSingle(),
+      ]);
+      const firstError = [activities, items, pendingClaims].find((r) => r.error)?.error;
+      if (firstError) {
+        return fail(/does not exist|schema cache|coin_epoch/i.test(firstError.message) ? "Falta rodar o supabase/migracao-lojinha.sql no SQL Editor do Supabase." : firstError.message, 500);
+      }
+
+      // Saldo de cada membro no ciclo atual
+      const balances = new Map<string, { earned: number; spent: number }>();
+      for (const c of approved.data ?? []) {
+        const b = balances.get(c.member_id) ?? { earned: 0, spent: 0 };
+        b.earned += c.coins;
+        balances.set(c.member_id, b);
+      }
+      for (const o of spent.data ?? []) {
+        const b = balances.get(o.member_id) ?? { earned: 0, spent: 0 };
+        b.spent += o.price;
+        balances.set(o.member_id, b);
+      }
+      const people = new Map((members.data ?? []).map((m) => [m.id, m]));
+      const ranking = [...balances.entries()]
+        .map(([id, b]) => ({ member_id: id, char_name: people.get(id)?.char_name ?? "?", avatar_url: people.get(id)?.avatar_url ?? null, ...b, balance: b.earned - b.spent }))
+        .sort((a, b) => b.balance - a.balance);
+
+      // Prints em bucket privado: links assinados de 1h
+      const claims = [...((pendingClaims.data as CoinClaim[]) ?? []), ...((reviewedClaims.data as CoinClaim[]) ?? [])];
+      const paths = claims.map((c) => c.proof_path).filter((p): p is string => !!p);
+      const signed = new Map<string, string>();
+      if (paths.length) {
+        const { data } = await db.storage.from("provas").createSignedUrls(paths, 3600);
+        for (const s of data ?? []) if (s.path && s.signedUrl) signed.set(s.path, s.signedUrl);
+      }
+      const names = (id: string) => ({ char_name: people.get(id)?.char_name ?? "membro removido", avatar_url: people.get(id)?.avatar_url ?? null });
+      const claimView = (c: CoinClaim) => ({ ...c, ...names(c.member_id), proof_url: c.proof_path ? signed.get(c.proof_path) ?? null : null });
+      const orderView = (o: ShopOrder) => ({ ...o, ...names(o.member_id) });
+
+      return ok({
+        epoch,
+        lastReset: lastReset.data ?? null,
+        activities: activities.data,
+        items: items.data,
+        pendingClaims: ((pendingClaims.data as CoinClaim[]) ?? []).map(claimView),
+        reviewedClaims: ((reviewedClaims.data as CoinClaim[]) ?? []).map(claimView),
+        pendingOrders: ((pendingOrders.data as ShopOrder[]) ?? []).map(orderView),
+        recentOrders: ((recentOrders.data as ShopOrder[]) ?? []).map(orderView),
+        balances: ranking,
+      });
+    }
+    case "saveActivity": {
+      const a = body?.activity ?? {};
+      const fields = { name: cleanText(a.name, 80), coins: Math.floor(Number(a.coins) || 0), active: a.active !== false };
+      if (!fields.name || fields.coins <= 0) return fail("Preencha o nome e as moedas (maior que zero).");
+      const { error } = a.id ? await db.from("activity_types").update(fields).eq("id", a.id) : await db.from("activity_types").insert(fields);
+      return error ? fail(error.message, 500) : ok();
+    }
+    case "deleteActivity": {
+      const { error } = await db.from("activity_types").delete().eq("id", id);
+      return error ? fail(error.message, 500) : ok();
+    }
+    case "saveShopItem": {
+      const it = body?.item ?? {};
+      const stockRaw = it.stock === "" || it.stock === null || it.stock === undefined ? null : Math.floor(Number(it.stock));
+      const fields = {
+        name: cleanText(it.name, 80),
+        description: cleanText(it.description, 300),
+        image_url: cleanText(it.image_url, 500) || null,
+        price: Math.floor(Number(it.price) || 0),
+        stock: stockRaw === null || Number.isNaN(stockRaw) ? null : Math.max(0, stockRaw),
+        active: it.active !== false,
+      };
+      if (!fields.name || fields.price <= 0) return fail("Preencha o nome e o preço (maior que zero).");
+      const { error } = it.id ? await db.from("shop_items").update(fields).eq("id", it.id) : await db.from("shop_items").insert(fields);
+      return error ? fail(error.message, 500) : ok();
+    }
+    case "deleteShopItem": {
+      const { error } = await db.from("shop_items").delete().eq("id", id);
+      return error ? fail(error.message, 500) : ok();
+    }
+    case "reviewClaim": {
+      const status = body?.status === "approved" ? "approved" : body?.status === "rejected" ? "rejected" : "pending";
+      const { error } = await db
+        .from("coin_claims")
+        .update({ status, reviewed_at: status === "pending" ? null : new Date().toISOString() })
+        .eq("id", id);
+      return error ? fail(error.message, 500) : ok();
+    }
+    case "deleteClaim": {
+      const { data } = await db.from("coin_claims").select("proof_path").eq("id", id).maybeSingle();
+      const { error } = await db.from("coin_claims").delete().eq("id", id);
+      if (error) return fail(error.message, 500);
+      if (data?.proof_path) await db.storage.from("provas").remove([data.proof_path]);
+      return ok();
+    }
+    case "setOrderStatus": {
+      const status = body?.status === "delivered" ? "delivered" : body?.status === "cancelled" ? "cancelled" : "pending";
+      const { data: order } = await db.from("shop_orders").select("status, item_id").eq("id", id).maybeSingle();
+      if (!order) return fail("Pedido não encontrado.", 404);
+      if (order.status === status) return ok();
+      // Reabrir um cancelado gastaria as moedas de novo sem conferir o saldo: o membro resgata outra vez
+      if (order.status === "cancelled") return fail("Pedido cancelado não pode ser reaberto. O membro pode resgatar de novo.");
+      const { error } = await db
+        .from("shop_orders")
+        .update({ status, delivered_at: status === "delivered" ? new Date().toISOString() : null })
+        .eq("id", id);
+      if (error) return fail(error.message, 500);
+      // Cancelar devolve o item ao estoque (as moedas voltam sozinhas: pedido cancelado não conta no saldo)
+      if (order.item_id && status === "cancelled") {
+        const { data: item } = await db.from("shop_items").select("stock").eq("id", order.item_id).maybeSingle();
+        if (item && item.stock !== null) await db.from("shop_items").update({ stock: item.stock + 1 }).eq("id", order.item_id);
+      }
+      return ok();
+    }
+    case "resetCoins": {
+      // Novo ciclo: todo saldo volta a zero (o histórico fica). Pedidos de moedas ainda não conferidos expiram.
+      const { error } = await db.from("coin_resets").insert({ created_by: viewer.member?.char_name ?? viewer.name });
+      if (error) return fail(error.message, 500);
+      await db.from("coin_claims").update({ status: "expired", reviewed_at: new Date().toISOString() }).eq("status", "pending");
       return ok();
     }
 

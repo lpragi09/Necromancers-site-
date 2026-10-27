@@ -1,7 +1,7 @@
 import { hasSupabase, supabaseAdmin } from "@/lib/supabaseAdmin";
 import { MEMBER_COLUMNS } from "@/lib/viewer";
-import { DEMO_GIVEAWAYS, DEMO_ITEMS, DEMO_MEMBERS, DEMO_POSTS, DEMO_RANKING, DEMO_SEASON } from "@/lib/demo";
-import type { Drop, DropItem, Giveaway, Member, Post, RankingRow, Rarity, Season } from "@/lib/types";
+import { DEMO_ACTIVITIES, DEMO_GIVEAWAYS, DEMO_ITEMS, DEMO_MEMBERS, DEMO_POSTS, DEMO_RANKING, DEMO_SEASON, DEMO_SHOP_ITEMS } from "@/lib/demo";
+import type { ActivityType, CoinClaim, Drop, DropItem, Giveaway, Member, Post, RankingRow, Rarity, Season, ShopItem, ShopOrder } from "@/lib/types";
 
 // Leituras usadas pelas páginas (sempre no servidor, pela service role).
 // Sem Supabase configurado, devolvem os dados de exemplo de lib/demo.ts.
@@ -153,4 +153,44 @@ export async function getStats() {
     supabaseAdmin.from("giveaways").select("id", { count: "exact", head: true }).eq("status", "open").or(`ends_at.is.null,ends_at.gt.${new Date().toISOString()}`),
   ]);
   return { members: m.count ?? 0, drops: d.count ?? 0, openGiveaways: g.count ?? 0 };
+}
+
+// ---------- Lojinha ----------
+export const ACTIVITY_COLUMNS = "id, name, coins, active";
+export const CLAIM_COLUMNS = "id, member_id, activity_id, activity_name, coins, happened_at, proof_path, note, epoch, status, created_at, reviewed_at";
+export const SHOP_ITEM_COLUMNS = "id, name, description, image_url, price, stock, active";
+export const ORDER_COLUMNS = "id, member_id, item_id, item_name, price, epoch, status, created_at, delivered_at";
+
+/** Ciclo atual das moedas (sobe 1 cada vez que a liderança zera). */
+export async function getCoinEpoch(): Promise<number> {
+  const { data } = await supabaseAdmin.rpc("coin_epoch");
+  return Number(data ?? 0);
+}
+
+/** Tudo que a página da lojinha precisa para um membro: saldo, atividades, itens e o que ele já pediu no ciclo atual. */
+export async function getShop(memberId: string | null) {
+  if (isDemo()) {
+    return {
+      balance: 140, activities: DEMO_ACTIVITIES, items: DEMO_SHOP_ITEMS, claims: [] as CoinClaim[], orders: [] as ShopOrder[],
+    };
+  }
+  const epoch = await getCoinEpoch();
+  const [activities, items, balance, claims, orders] = await Promise.all([
+    supabaseAdmin.from("activity_types").select(ACTIVITY_COLUMNS).eq("active", true).order("coins", { ascending: false }),
+    supabaseAdmin.from("shop_items").select(SHOP_ITEM_COLUMNS).eq("active", true).order("price"),
+    memberId ? supabaseAdmin.rpc("coin_balance", { p_member: memberId }) : Promise.resolve({ data: 0 }),
+    memberId
+      ? supabaseAdmin.from("coin_claims").select(CLAIM_COLUMNS).eq("member_id", memberId).eq("epoch", epoch).order("created_at", { ascending: false }).limit(300)
+      : Promise.resolve({ data: [] }),
+    memberId
+      ? supabaseAdmin.from("shop_orders").select(ORDER_COLUMNS).eq("member_id", memberId).eq("epoch", epoch).order("created_at", { ascending: false }).limit(300)
+      : Promise.resolve({ data: [] }),
+  ]);
+  return {
+    balance: Number(balance.data ?? 0),
+    activities: (activities.data as ActivityType[]) ?? [],
+    items: (items.data as ShopItem[]) ?? [],
+    claims: (claims.data as CoinClaim[]) ?? [],
+    orders: (orders.data as ShopOrder[]) ?? [],
+  };
 }

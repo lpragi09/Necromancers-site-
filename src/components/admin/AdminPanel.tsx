@@ -1,15 +1,14 @@
 "use client";
 
 /* eslint-disable @next/next/no-img-element */
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
-  CalendarClock, CalendarRange, Check, ClipboardCheck, Crown, Dices, Eye, EyeOff, Gem, Gift, ImagePlus, Loader2,
-  Lock, LockOpen, Megaphone, Pencil, Pin, Plus, RotateCcw, Search, Sparkles, Trash2, Trophy, UserCheck, Users, X,
+  CalendarClock, CalendarRange, Check, ClipboardCheck, Crown, Dices, Eye, EyeOff, Gem, Gift, Loader2,
+  Lock, LockOpen, Megaphone, Pencil, Pin, Plus, RotateCcw, Search, Sparkles, Store, Trash2, Trophy, UserCheck, Users, X,
   type LucideIcon,
 } from "lucide-react";
 import { adminApi } from "@/lib/api";
-import { compressImage } from "@/lib/image";
 import { useDialog } from "@/components/Dialog";
 import Pagination, { usePagination } from "@/components/Pagination";
 import Avatar from "@/components/Avatar";
@@ -18,6 +17,10 @@ import GiveawayCard from "@/components/GiveawayCard";
 import PostCard from "@/components/PostCard";
 import { RarityBadge } from "@/components/ui";
 import GiveawayDraw from "@/components/admin/GiveawayDraw";
+import ShopAdmin from "@/components/admin/ShopAdmin";
+import {
+  EmptyLine, Field, FormFooter, fromLocalInput, IconBtn, ImageField, Panel, Pill, Preview, Row, Segmented, toLocalInput, Toggle, useAction,
+} from "@/components/admin/kit";
 import { fmtDate, fmtDateTime, timeAgo } from "@/lib/format";
 import {
   POST_KIND_LABEL, RARITY, ROLE_LABEL, ROLE_ORDER,
@@ -35,15 +38,8 @@ interface Overview {
   reviewedDrops: AdminDrop[];
 }
 
-type Tab = "drops" | "membros" | "avisos" | "sorteios" | "ranking";
+type Tab = "drops" | "membros" | "avisos" | "sorteios" | "ranking" | "loja";
 
-// datetime-local <-> ISO, sempre no fuso de quem está usando o painel
-const toLocalInput = (iso: string | null) => {
-  if (!iso) return "";
-  const d = new Date(iso);
-  return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
-};
-const fromLocalInput = (v: string) => (v ? new Date(v).toISOString() : null);
 
 export default function AdminPanel() {
   const [data, setData] = useState<Overview | null>(null);
@@ -79,6 +75,7 @@ export default function AdminPanel() {
     { id: "avisos", label: "Avisos", hint: "Mural do clã", icon: Megaphone },
     { id: "sorteios", label: "Sorteios", hint: "Criar e sortear", icon: Gift },
     { id: "ranking", label: "Temporadas", hint: "Prêmios e itens", icon: Trophy },
+    { id: "loja", label: "Lojinha", hint: "Moedas e resgates", icon: Store },
   ];
   const stats: { label: string; value: number; icon: LucideIcon; tab: Tab; alert?: boolean }[] = [
     { label: "Drops na fila", value: data.pendingDrops.length, icon: ClipboardCheck, tab: "drops", alert: data.pendingDrops.length > 0 },
@@ -133,203 +130,9 @@ export default function AdminPanel() {
           {tab === "avisos" && <PostsTab posts={data.posts} reload={reload} />}
           {tab === "sorteios" && <GiveawaysTab giveaways={data.giveaways} reload={reload} />}
           {tab === "ranking" && <RankingTab seasons={data.seasons} items={data.items} reload={reload} />}
+          {tab === "loja" && <ShopAdmin />}
         </div>
       </div>
-    </div>
-  );
-}
-
-/** Executa uma ação do painel com trava contra clique duplo e popup de erro. */
-function useAction(reload: () => Promise<void>) {
-  const dialog = useDialog();
-  const lock = useRef(false);
-  const [busy, setBusy] = useState(false);
-  const run = async (action: string, payload: Record<string, unknown> = {}, confirm?: { title: string; message?: string }) => {
-    if (lock.current) return false;
-    if (confirm && !(await dialog.confirm({ ...confirm, tone: "danger", confirmText: "Sim" }))) return false;
-    lock.current = true;
-    setBusy(true);
-    try {
-      await adminApi(action, payload);
-      await reload();
-      return true;
-    } catch (err) {
-      dialog.error(err);
-      return false;
-    } finally {
-      lock.current = false;
-      setBusy(false);
-    }
-  };
-  return { run, busy };
-}
-
-// ======================= Peças do painel =======================
-
-/** Bloco com cabeçalho: ícone, título, subtítulo e uma ação à direita */
-function Panel({ icon: Icon, title, subtitle, action, children, className = "" }: {
-  icon: LucideIcon; title: string; subtitle?: string; action?: React.ReactNode; children: React.ReactNode; className?: string;
-}) {
-  return (
-    <section className={`crypt-card overflow-hidden ${className}`}>
-      <header className="flex flex-wrap items-center gap-3 px-5 sm:px-6 py-4 border-b border-white/5 bg-gradient-to-r from-spirit/[0.07] to-transparent">
-        <span className="w-9 h-9 shrink-0 rounded-lg bg-spirit/15 border border-spirit/30 flex items-center justify-center">
-          <Icon className="w-4 h-4 text-spirit" />
-        </span>
-        <div className="min-w-0 flex-1">
-          <h2 className="font-title text-base sm:text-lg">{title}</h2>
-          {subtitle && <p className="text-xs italic text-bone/45">{subtitle}</p>}
-        </div>
-        {action}
-      </header>
-      <div className="p-5 sm:p-6">{children}</div>
-    </section>
-  );
-}
-
-function Field({ label, hint, children, className = "" }: { label: string; hint?: string; children: React.ReactNode; className?: string }) {
-  return (
-    <div className={className}>
-      <label className="label">{label}</label>
-      {children}
-      {hint && <p className="mt-1.5 text-[11px] italic text-bone/35">{hint}</p>}
-    </div>
-  );
-}
-
-function Toggle({ checked, onChange, label, hint }: { checked: boolean; onChange: (v: boolean) => void; label: string; hint?: string }) {
-  return (
-    <button type="button" role="switch" aria-checked={checked} onClick={() => onChange(!checked)}
-      className={`flex items-center gap-3 rounded-xl border px-3.5 py-2.5 text-left transition-colors ${checked ? "border-spirit/40 bg-spirit/10" : "border-white/10 bg-white/[0.02] hover:border-white/20"}`}>
-      <span className={`relative w-10 h-6 shrink-0 rounded-full transition-colors ${checked ? "bg-spirit shadow-[0_0_12px_rgba(168,85,247,0.6)]" : "bg-white/10"}`}>
-        <span className={`absolute top-1 left-1 w-4 h-4 rounded-full bg-white transition-transform ${checked ? "translate-x-4" : ""}`} />
-      </span>
-      <span>
-        <span className="block text-sm font-bold">{label}</span>
-        {hint && <span className="block text-[11px] text-bone/40">{hint}</span>}
-      </span>
-    </button>
-  );
-}
-
-function Segmented<T extends string>({ value, onChange, options }: {
-  value: T; onChange: (v: T) => void; options: { value: T; label: string; icon?: LucideIcon; count?: number }[];
-}) {
-  return (
-    <div className="inline-flex flex-wrap gap-1 p-1 rounded-xl bg-black/60 border border-white/10">
-      {options.map((o) => {
-        const on = o.value === value;
-        return (
-          <button type="button" key={o.value} onClick={() => onChange(o.value)}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-black italic uppercase tracking-wide transition-all ${on ? "bg-spirit text-white shadow-[0_0_14px_rgba(168,85,247,0.45)]" : "text-bone/55 hover:text-bone hover:bg-white/5"}`}>
-            {o.icon && <o.icon className="w-3.5 h-3.5" />} {o.label}
-            {o.count !== undefined && <span className={`tabular-nums ${on ? "text-white/80" : "text-bone/35"}`}>{o.count}</span>}
-          </button>
-        );
-      })}
-    </div>
-  );
-}
-
-const PILL = {
-  purple: "text-spirit border-spirit/40 bg-spirit/10",
-  green: "text-emerald-300 border-emerald-400/40 bg-emerald-400/10",
-  amber: "text-amber-300 border-amber-400/40 bg-amber-400/10",
-  red: "text-rose-300 border-rose-400/40 bg-rose-500/10",
-  gray: "text-bone/50 border-white/15 bg-white/5",
-};
-function Pill({ tone, children }: { tone: keyof typeof PILL; children: React.ReactNode }) {
-  return <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md border text-[10px] font-black italic uppercase tracking-widest whitespace-nowrap ${PILL[tone]}`}>{children}</span>;
-}
-
-function IconBtn({ onClick, title, children, danger = false, disabled = false }: { onClick: () => void; title: string; children: React.ReactNode; danger?: boolean; disabled?: boolean }) {
-  return (
-    <button type="button" onClick={onClick} title={title} aria-label={title} disabled={disabled}
-      className={`w-9 h-9 shrink-0 flex items-center justify-center rounded-lg border transition-all disabled:opacity-40 ${danger ? "border-rose-400/20 text-rose-300/80 hover:text-rose-200 hover:bg-rose-500/15 hover:border-rose-400/50" : "border-white/10 text-bone/60 hover:text-white hover:bg-spirit/20 hover:border-spirit/50"}`}>
-      {children}
-    </button>
-  );
-}
-
-/** Linha das listas: cartãozinho com borda que acende no hover */
-function Row({ children, className = "" }: { children: React.ReactNode; className?: string }) {
-  return <div className={`flex flex-wrap items-center gap-3 sm:gap-4 p-3 sm:p-3.5 rounded-xl border border-white/5 bg-white/[0.015] hover:border-spirit/30 hover:bg-spirit/[0.04] transition-colors ${className}`}>{children}</div>;
-}
-
-function EmptyLine({ text }: { text: string }) {
-  return (
-    <div className="py-8 text-center">
-      <GhostIcon className="w-8 h-9 mx-auto text-spirit/30" />
-      <p className="mt-3 text-sm italic text-bone/40">{text}</p>
-    </div>
-  );
-}
-
-/** Rodapé dos formulários: dica à esquerda, botões à direita */
-function FormFooter({ hint, children }: { hint?: string; children: React.ReactNode }) {
-  return (
-    <div className="flex flex-wrap items-center justify-between gap-3 pt-5 mt-1 border-t border-white/5">
-      <p className="text-[11px] italic text-bone/35">{hint}</p>
-      <div className="flex gap-3">{children}</div>
-    </div>
-  );
-}
-
-/** Prévia ao vivo ao lado do formulário */
-function Preview({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="xl:sticky xl:top-24">
-      <p className="mb-3 flex items-center gap-2 text-[10px] font-black italic uppercase tracking-[0.25em] text-bone/45">
-        <Eye className="w-3.5 h-3.5 text-spirit" /> Prévia no site
-      </p>
-      <div className="pointer-events-none select-none">{children}</div>
-    </div>
-  );
-}
-
-function ImageField({ value, onChange }: { value: string; onChange: (url: string) => void }) {
-  const dialog = useDialog();
-  const ref = useRef<HTMLInputElement>(null);
-  const [busy, setBusy] = useState(false);
-  const [over, setOver] = useState(false);
-  const pick = async (file?: File) => {
-    if (!file) return;
-    setBusy(true);
-    try {
-      const image = await compressImage(file, 1600, 0.82);
-      const { url } = await adminApi<{ url: string }>("uploadImage", { image });
-      onChange(url);
-    } catch (err) {
-      dialog.error(err, "Falha ao enviar a imagem");
-    }
-    setBusy(false);
-  };
-  return (
-    <div>
-      <label className="label">Imagem (opcional)</label>
-      {value ? (
-        <div className="relative group rounded-xl overflow-hidden border border-white/10">
-          <img src={value} alt="" className="w-full aspect-[16/7] object-cover" />
-          <div className="absolute inset-0 bg-black/65 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-            <button type="button" onClick={() => ref.current?.click()} className="btn-ghost !py-2">
-              {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <ImagePlus className="w-4 h-4" />} Trocar
-            </button>
-            <button type="button" onClick={() => onChange("")} className="btn-ghost !py-2 !text-rose-300"><Trash2 className="w-4 h-4" /> Remover</button>
-          </div>
-        </div>
-      ) : (
-        <button type="button" onClick={() => ref.current?.click()}
-          onDragOver={(e) => { e.preventDefault(); setOver(true); }} onDragLeave={() => setOver(false)}
-          onDrop={(e) => { e.preventDefault(); setOver(false); pick(e.dataTransfer.files?.[0]); }}
-          className={`w-full rounded-xl border-2 border-dashed py-7 flex flex-col items-center gap-2 transition-colors ${over ? "border-spirit bg-spirit/10" : "border-white/10 bg-white/[0.02] hover:border-spirit/50 hover:bg-spirit/5"}`}>
-          <span className="w-11 h-11 rounded-xl bg-spirit/15 border border-spirit/30 flex items-center justify-center">
-            {busy ? <Loader2 className="w-5 h-5 text-spirit animate-spin" /> : <ImagePlus className="w-5 h-5 text-spirit" />}
-          </span>
-          <span className="text-sm font-bold text-bone/80">{busy ? "Enviando..." : "Clique ou arraste uma imagem"}</span>
-          <span className="text-[11px] text-bone/35">JPG, PNG ou WEBP · a gente comprime sozinho</span>
-        </button>
-      )}
-      <input ref={ref} type="file" accept="image/*" hidden onChange={(e) => { pick(e.target.files?.[0]); e.target.value = ""; }} />
     </div>
   );
 }

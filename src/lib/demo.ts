@@ -1,4 +1,4 @@
-import type { DropItem, Giveaway, Member, Post, RankingRow, Season } from "@/lib/types";
+import type { ActivityType, DropItem, Giveaway, Member, Post, RankingRow, Season, ShopItem } from "@/lib/types";
 
 // Dados de exemplo mostrados enquanto o Supabase não está configurado (modo demonstração).
 const ago = (days: number) => new Date(Date.now() - days * 86400000).toISOString();
@@ -86,4 +86,16 @@ export const DEMO_GIVEAWAYS: Giveaway[] = [
     description: "Comemoração dos 30 membros do clã.",
     image_url: null, winner_member_id: DEMO_MEMBERS[6].id, winner_name: DEMO_MEMBERS[6].char_name, fair_draw_id: null, entries_count: 30,
   },
+];
+
+export const DEMO_ACTIVITIES: ActivityType[] = [
+  { id: "demo-a1", name: "Torneio do clã", coins: 50, active: true },
+  { id: "demo-a2", name: "Castle", coins: 30, active: true },
+  { id: "demo-a3", name: "Hunt do clã", coins: 10, active: true },
+];
+
+export const DEMO_SHOP_ITEMS: ShopItem[] = [
+  { id: "demo-s1", name: "Dusk Stone", description: "Entregue no depósito do clã.", image_url: null, price: 80, stock: 5, active: true },
+  { id: "demo-s2", name: "Ultra Ball x100", description: "", image_url: null, price: 120, stock: null, active: true },
+  { id: "demo-s3", name: "Shiny Gengar", description: "Prêmio máximo da temporada.", image_url: null, price: 1500, stock: 1, active: true },
 ];

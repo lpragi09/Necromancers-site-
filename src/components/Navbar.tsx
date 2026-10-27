@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signIn, signOut } from "next-auth/react";
-import { Gift, Home, LogOut, Megaphone, Menu, Shield, Trophy, User, Users, X } from "lucide-react";
+import { Gift, Home, LogOut, Megaphone, Menu, Shield, Store, Trophy, User, Users, X } from "lucide-react";
 import Avatar from "@/components/Avatar";
 
 const LINKS = [
@@ -13,6 +13,7 @@ const LINKS = [
   { href: "/sorteios", label: "Sorteios", icon: Gift },
   { href: "/ranking", label: "Ranking", icon: Trophy },
   { href: "/membros", label: "Membros", icon: Users },
+  { href: "/loja", label: "Loja", icon: Store },
 ];
 
 export interface NavViewer {
@@ -51,7 +52,7 @@ export default function Navbar({ viewer }: { viewer: NavViewer | null }) {
           <span className="font-title text-lg bg-gradient-to-r from-[#e879f9] via-spirit to-[#818cf8] bg-clip-text text-transparent">Necromancers</span>
         </Link>
 
-        <div className="hidden lg:flex items-center">
+        <div className="hidden xl:flex items-center">
           {LINKS.map((l) => (
             <Link key={l.href} href={l.href} data-active={active(l.href)}
               className={`hover-underline flex items-center gap-1.5 px-3 py-2 text-[13px] font-black italic uppercase tracking-wide transition-colors ${active(l.href) ? "text-bone" : "text-bone/60 hover:text-bone"}`}>
@@ -63,11 +64,11 @@ export default function Navbar({ viewer }: { viewer: NavViewer | null }) {
         <div className="flex items-center gap-3">
           {viewer?.isAdmin && (
             <Link href="/admin" data-active={active("/admin")}
-              className={`hover-underline hidden lg:flex items-center gap-1.5 px-3 py-2 text-[13px] font-black italic uppercase tracking-wide transition-colors ${active("/admin") ? "text-bone" : "text-bone/60 hover:text-bone"}`}>
+              className={`hover-underline hidden xl:flex items-center gap-1.5 px-3 py-2 text-[13px] font-black italic uppercase tracking-wide transition-colors ${active("/admin") ? "text-bone" : "text-bone/60 hover:text-bone"}`}>
               <Shield className="w-3.5 h-3.5 text-spirit" /> Painel
             </Link>
           )}
-          <span className="hidden lg:block w-px h-7 bg-white/10" />
+          <span className="hidden xl:block w-px h-7 bg-white/10" />
           {viewer ? (
             <div ref={menuRef} className="relative">
               <button onClick={() => setMenu(!menu)} className="flex items-center gap-2 rounded-full pl-1 pr-3 py-1 bg-white/5 border border-white/10 hover:border-spirit/50 transition-colors">
@@ -89,14 +90,14 @@ export default function Navbar({ viewer }: { viewer: NavViewer | null }) {
               <DiscordIcon className="w-4 h-4" /> Entrar
             </button>
           )}
-          <button onClick={() => setOpen(!open)} className="lg:hidden p-2 rounded-lg text-bone/80 hover:bg-white/5" aria-label="Menu">
+          <button onClick={() => setOpen(!open)} className="xl:hidden p-2 rounded-lg text-bone/80 hover:bg-white/5" aria-label="Menu">
             {open ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </button>
         </div>
       </nav>
 
       {open && (
-        <div className="lg:hidden border-t border-white/5 px-4 py-3 grid gap-1 animate-fade-in">
+        <div className="xl:hidden border-t border-white/5 px-4 py-3 grid gap-1 animate-fade-in">
           {[...LINKS, ...(viewer?.isAdmin ? [{ href: "/admin", label: "Painel", icon: Shield }] : [])].map((l) => (
             <Link key={l.href} href={l.href}
               className={`flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm font-black italic uppercase ${active(l.href) ? "text-bone bg-spirit/15" : "text-bone/85 hover:bg-white/5"}`}>
