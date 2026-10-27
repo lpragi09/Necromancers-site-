@@ -56,12 +56,19 @@ export default function Navbar({ viewer }: { viewer: NavViewer | null }) {
     return () => window.removeEventListener(SECTION_EVENT, onSection);
   }, [pathname]);
   const homeLink = pathname === "/" ? HOME_SECTIONS[section] ?? "/" : null;
+  // Já na home, Início (e a logo) só sobem ao topo; o Next não navega para a mesma página
+  const toTop = (href: string) => (e: React.MouseEvent) => {
+    if (href !== "/" || pathname !== "/") return;
+    e.preventDefault();
+    setOpen(false);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
   const active = (href: string) => (homeLink ? href === homeLink : href !== "/" && !!pathname?.startsWith(href));
 
   return (
     <header className="fixed top-0 inset-x-0 z-50 bg-black/85 backdrop-blur-xl border-b border-spirit/20">
       <nav className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-2 sm:gap-4">
-        <Link href="/" className="flex items-center gap-2 sm:gap-2.5 group min-w-0 sm:shrink-0">
+        <Link href="/" onClick={toTop("/")} className="flex items-center gap-2 sm:gap-2.5 group min-w-0 sm:shrink-0">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/logo-160.webp" alt="" width={44} height={44} className="w-10 h-10 sm:w-11 sm:h-11 shrink-0 max-w-none drop-shadow-[0_0_10px_rgba(168,85,247,0.55)] group-hover:drop-shadow-[0_0_16px_rgba(168,85,247,0.85)] group-hover:rotate-[-6deg] transition-all duration-300" />
           <span className="font-title text-base sm:text-lg truncate bg-gradient-to-r from-[#e879f9] via-spirit to-[#818cf8] bg-clip-text text-transparent">Necromancers</span>
@@ -69,7 +76,7 @@ export default function Navbar({ viewer }: { viewer: NavViewer | null }) {
 
         <div className="hidden xl:flex items-center">
           {LINKS.map((l) => (
-            <Link key={l.href} href={l.href} data-active={active(l.href)}
+            <Link key={l.href} href={l.href} onClick={toTop(l.href)} data-active={active(l.href)}
               className={`hover-underline flex items-center gap-1.5 px-3 py-2 text-[13px] font-black italic uppercase tracking-wide transition-colors ${active(l.href) ? "text-bone" : "text-bone/60 hover:text-bone"}`}>
               <l.icon className={`hidden 2xl:block w-3.5 h-3.5 ${active(l.href) ? "text-spirit" : ""}`} /> {l.label}
             </Link>
@@ -117,7 +124,7 @@ export default function Navbar({ viewer }: { viewer: NavViewer | null }) {
       {open && (
         <div className="xl:hidden border-t border-white/5 px-4 py-3 grid gap-1 animate-fade-in">
           {[...LINKS, ...(viewer?.isAdmin ? [{ href: "/admin", label: "Painel", icon: Shield }] : [])].map((l) => (
-            <Link key={l.href} href={l.href}
+            <Link key={l.href} href={l.href} onClick={toTop(l.href)}
               className={`flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm font-black italic uppercase ${active(l.href) ? "text-bone bg-spirit/15" : "text-bone/85 hover:bg-white/5"}`}>
               <l.icon className="w-4 h-4 text-spirit" /> {l.label}
             </Link>
