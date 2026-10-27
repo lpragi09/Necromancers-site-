@@ -31,7 +31,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const member = canSeeContent(viewer);
   const popup = await getPopupPost(member).catch(() => null);
   const nav = viewer
-    ? { name: viewer.name, image: viewer.image, charName: viewer.member?.char_name ?? null, isAdmin: viewer.isAdmin }
+    ? { name: viewer.name, image: viewer.image, charName: viewer.member?.char_name ?? null, isAdmin: viewer.isAdmin, isMember: viewer.member?.status === "active" }
     : null;
 
   return (

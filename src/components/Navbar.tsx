@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signIn, signOut } from "next-auth/react";
-import { Gift, Home, LogOut, Megaphone, Menu, Mountain, Shield, Store, Swords, Trophy, User, Users, X } from "lucide-react";
+import { Backpack, Gift, Home, LogOut, Megaphone, Menu, Mountain, Shield, Store, Swords, Trophy, User, Users, X } from "lucide-react";
 import Avatar from "@/components/Avatar";
 
 const LINKS = [
@@ -23,6 +23,7 @@ export interface NavViewer {
   image: string | null;
   charName: string | null;
   isAdmin: boolean;
+  isMember: boolean;
 }
 
 export default function Navbar({ viewer }: { viewer: NavViewer | null }) {
@@ -80,6 +81,9 @@ export default function Navbar({ viewer }: { viewer: NavViewer | null }) {
               {menu && (
                 <div className="absolute right-0 mt-2 w-56 crypt-card !bg-[#0b0910] shadow-[0_12px_40px_rgba(0,0,0,0.8)] p-1.5 animate-scale-up">
                   <Link href="/perfil" className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-bold hover:bg-white/5"><User className="w-4 h-4 text-spirit" /> Meu perfil</Link>
+                  {viewer.isMember && (
+                    <Link href="/inventario" className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-bold hover:bg-white/5"><Backpack className="w-4 h-4 text-spirit" /> Meu inventário</Link>
+                  )}
                   {viewer.isAdmin && (
                     <Link href="/admin" className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-bold hover:bg-white/5"><Shield className="w-4 h-4 text-spirit" /> Painel da liderança</Link>
                   )}

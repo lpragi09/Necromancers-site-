@@ -1,10 +1,9 @@
-import { Clock, ShieldCheck, User } from "lucide-react";
+import Link from "next/link";
+import { ArrowRight, Backpack, Clock, ShieldCheck, User } from "lucide-react";
 import Avatar from "@/components/Avatar";
 import ProfileForm from "@/components/ProfileForm";
-import MyDrops from "@/components/MyDrops";
 import LoginPrompt from "@/components/LoginPrompt";
 import { PageHeader } from "@/components/ui";
-import { getMyDrops, getSeasons } from "@/lib/data";
 import { getViewer } from "@/lib/viewer";
 import { ROLE_LABEL } from "@/lib/types";
 
@@ -14,9 +13,6 @@ export const metadata = { title: "Meu perfil" };
 export default async function PerfilPage() {
   const viewer = await getViewer();
   const member = viewer?.member ?? null;
-  // Só os drops da temporada atual: quando ela acaba, a lista do perfil zera
-  const activeSeason = member ? (await getSeasons()).find((s) => s.status === "active") : undefined;
-  const drops = member ? await getMyDrops(member.id, activeSeason?.id) : [];
 
   return (
     <div className="max-w-3xl mx-auto px-4 sm:px-6">
@@ -56,10 +52,14 @@ export default async function PerfilPage() {
           </div>
 
           {member?.status === "active" && (
-            <div className="crypt-card p-6">
-              <h2 className="font-title font-bold mb-2">Meus drops</h2>
-              <MyDrops drops={drops} seasonName={activeSeason?.name} />
-            </div>
+            <Link href="/inventario" className="crypt-card crypt-card-hover p-5 flex items-center gap-4 group">
+              <span className="w-11 h-11 shrink-0 rounded-xl flex items-center justify-center bg-spirit/10 border border-spirit/30 text-spirit"><Backpack className="w-5 h-5" /></span>
+              <span className="min-w-0 flex-1">
+                <span className="block font-title">Meu inventário</span>
+                <span className="block text-sm text-bone/50">Moedas, sorteios, torneios, dungeons e seus drops.</span>
+              </span>
+              <ArrowRight className="w-5 h-5 text-spirit group-hover:translate-x-1 transition-transform" />
+            </Link>
           )}
         </div>
       )}

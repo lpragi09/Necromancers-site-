@@ -311,3 +311,98 @@ export async function getPopupPost(canSeeContent: boolean): Promise<Post | null>
   if (!post || (!canSeeContent && !post.popup_public)) return null;
   return post;
 }
+
+// ---------- Meu inventário ----------
+export interface InventoryGiveaway {
+  id: string;
+  title: string;
+  prize: string;
+  status: Giveaway["status"];
+  ends_at: string | null;
+  won: boolean;
+  rejected: boolean;
+}
+export interface InventoryRun { id: string; dungeon_name: string; starts_at: string; slots: number; filled: number; mine: boolean }
+export interface Inventory {
+  season: { name: string } | null;
+  drops: Drop[];
+  rank: { position: number; total: number; points: number; drops: number } | null;
+  coins: { balance: number; pending: number; toReceive: ShopOrder[] };
+  tournament: { month: string; total: number; weeks: number[]; position: number | null; players: number } | null;
+  giveaways: InventoryGiveaway[];
+  runs: InventoryRun[];
+}
+
+/** Tudo do membro dentro do site: drops, moedas, torneios, sorteios e dungeons. */
+export async function getInventory(memberId: string, charName: string): Promise<Inventory> {
+  const seasons = await getSeasons();
+  const season = seasons.find((s) => s.status === "active") ?? null;
+  const months = await getTournamentMonths();
+  const month = months[0] ?? null;
+  const me = charName.trim().toLowerCase();
+
+  const [drops, ranking, shop, monthRanking, monthScores, giveaways, runs] = await Promise.all([
+    season ? getMyDrops(memberId, season.id) : Promise.resolve([] as Drop[]),
+    season ? getRanking(season.id) : Promise.resolve([] as RankingRow[]),
+    getShop(memberId),
+    month ? getTournamentRanking(month.id, null) : Promise.resolve([] as TournamentRow[]),
+    month
+      ? isDemo()
+        ? Promise.resolve(DEMO_TOURNAMENT_SCORES.filter((s) => s.month_id === month.id))
+        : supabaseAdmin.from("tournament_scores").select(TOURNAMENT_SCORE_COLUMNS).eq("month_id", month.id).then((r) => (r.data as TournamentScore[]) ?? [])
+      : Promise.resolve([] as TournamentScore[]),
+    getMyGiveaways(memberId),
+    getMyRuns(memberId),
+  ]);
+
+  const pos = ranking.findIndex((r) => r.member_id === memberId);
+  const tPos = monthRanking.findIndex((r) => r.player_name.trim().toLowerCase() === me);
+  const weeks = [1, 2, 3, 4].map((w) => monthScores.filter((s) => s.week === w && s.player_name.trim().toLowerCase() === me).reduce((n, s) => n + s.count, 0));
+
+  return {
+    season: season ? { name: season.name } : null,
+    drops,
+    rank: pos >= 0 ? { position: pos + 1, total: ranking.length, points: ranking[pos].points, drops: ranking[pos].drops } : null,
+    coins: {
+      balance: shop.balance,
+      pending: shop.claims.filter((c) => c.status === "pending").reduce((n, c) => n + c.coins, 0),
+      toReceive: shop.orders.filter((o) => o.status === "pending"),
+    },
+    tournament: month ? { month: month.name, total: weeks.reduce((a, b) => a + b, 0), weeks, position: tPos >= 0 ? tPos + 1 : null, players: monthRanking.length } : null,
+    giveaways,
+    runs,
+  };
+}
+
+// Sorteios em que o membro entrou (abertos primeiro) e os que ele ganhou
+async function getMyGiveaways(memberId: string): Promise<InventoryGiveaway[]> {
+  if (isDemo()) {
+    return DEMO_GIVEAWAYS.slice(0, 3).map((g, i) => ({ id: g.id, title: g.title, prize: g.prize, status: g.status, ends_at: g.ends_at, won: i === 2 && g.status === "drawn", rejected: false }));
+  }
+  const { data } = await supabaseAdmin
+    .from("giveaway_entries")
+    .select("status, created_at, giveaways!inner(id, title, prize, status, ends_at, winner_member_id)")
+    .eq("member_id", memberId)
+    .order("created_at", { ascending: false })
+    .limit(60);
+  const order = { open: 0, closed: 1, drawn: 2 } as const;
+  return ((data ?? []) as unknown as { status: string; giveaways: Giveaway }[])
+    .map(({ status, giveaways: g }) => ({ id: g.id, title: g.title, prize: g.prize, status: g.status, ends_at: g.ends_at, won: g.winner_member_id === memberId, rejected: status === "rejected" }))
+    .sort((a, b) => order[a.status] - order[b.status]);
+}
+
+// Próximos grupos de dungeon em que o membro está
+async function getMyRuns(memberId: string): Promise<InventoryRun[]> {
+  if (isDemo()) {
+    return DEMO_DUNGEON_RUNS.slice(0, 2).map((r, i) => ({ id: r.id, dungeon_name: r.dungeon_name, starts_at: r.starts_at, slots: r.slots, filled: r.players.length, mine: i === 0 }));
+  }
+  const { data } = await supabaseAdmin
+    .from("dungeon_participants")
+    .select("dungeon_runs!inner(id, dungeon_name, starts_at, slots, status, creator_id, dungeon_participants(member_id))")
+    .eq("member_id", memberId)
+    .eq("dungeon_runs.status", "open")
+    .gte("dungeon_runs.starts_at", new Date(Date.now() - DUNGEON_GRACE_MS).toISOString());
+  return ((data ?? []) as unknown as { dungeon_runs: { id: string; dungeon_name: string; starts_at: string; slots: number; creator_id: string; dungeon_participants: unknown[] } }[])
+    .map(({ dungeon_runs: r }) => ({ id: r.id, dungeon_name: r.dungeon_name, starts_at: r.starts_at, slots: r.slots, filled: r.dungeon_participants.length, mine: r.creator_id === memberId }))
+    .sort((a, b) => a.starts_at.localeCompare(b.starts_at));
+}
