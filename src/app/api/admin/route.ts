@@ -1,10 +1,11 @@
 import { getViewer, MEMBER_COLUMNS } from "@/lib/viewer";
 import { ADMIN_ROLES, isAdminId } from "@/lib/admins";
+import { deletePost as deleteDiscordPost, discordEnabled, editPost as editDiscordPost, sendPost as sendDiscordPost } from "@/lib/discord";
 import { hasSupabase, supabaseAdmin } from "@/lib/supabaseAdmin";
 import { cleanText, decodeImage, DEMO_MESSAGE, fail, ok } from "@/lib/http";
 import { ACTIVITY_COLUMNS, CLAIM_COLUMNS, DROP_COLUMNS, getCoinEpoch, getDrawnAt, GIVEAWAY_COLUMNS, ITEM_COLUMNS, ORDER_COLUMNS, POST_COLUMNS, SEASON_COLUMNS, SHOP_ITEM_COLUMNS } from "@/lib/data";
 import { FAIR_COLUMNS, runFairDraw, setFairStatus } from "@/lib/fairServer";
-import { ROLE_ORDER, type CoinClaim, type Drop, type Giveaway, type Rarity, type ShopOrder } from "@/lib/types";
+import { ROLE_ORDER, type CoinClaim, type Drop, type Giveaway, type Post, type Rarity, type ShopOrder } from "@/lib/types";
 
 // O sorteio espera o número público do drand (alguns segundos)
 export const maxDuration = 30;
@@ -12,6 +13,29 @@ export const maxDuration = 30;
 const RARITIES: Rarity[] = ["comum", "raro", "epico", "lendario", "shiny"];
 const optionalDate = (v: unknown) => (typeof v === "string" && v && !Number.isNaN(Date.parse(v)) ? new Date(v).toISOString() : null);
 const str = (v: unknown) => (typeof v === "string" ? v : "");
+
+/** Deixa a mensagem do Discord igual ao aviso: manda, edita ou apaga. Devolve um alerta se o Discord falhar. */
+async function syncPostToDiscord(post: Post & { discord_message_id: string | null }, send: boolean, mention: boolean): Promise<{ discordError?: string }> {
+  if (!discordEnabled()) return {};
+  const setMessage = (messageId: string | null) => supabaseAdmin.from("posts").update({ discord_message_id: messageId }).eq("id", post.id);
+  try {
+    if (!post.published) {
+      if (post.discord_message_id) {
+        await deleteDiscordPost(post.discord_message_id);
+        await setMessage(null);
+      }
+      return {};
+    }
+    if (post.discord_message_id && (await editDiscordPost(post.discord_message_id, post))) return {};
+    if (send || post.discord_message_id) {
+      const messageId = await sendDiscordPost(post, mention);
+      await setMessage(messageId);
+    }
+    return {};
+  } catch (err) {
+    return { discordError: err instanceof Error ? err.message : String(err) };
+  }
+}
 // Só aceita link http(s) como imagem: um blob:/data: (imagem ainda subindo) não pode ir pro banco
 const imageUrl = (v: unknown) => { const u = cleanText(v, 500); return /^https?:\/\//.test(u) ? u : null; };
 
@@ -57,6 +81,7 @@ export async function POST(request: Request) {
       const withUrl = (d: Drop) => ({ ...d, proof_url: d.proof_path ? signed.get(d.proof_path) ?? null : null });
 
       return ok({
+        discordEnabled: discordEnabled(),
         posts: posts.data,
         giveaways: (giveaways.data ?? []).map((g) => ({ ...g, entries_count: counts.get(g.id) ?? 0, drawn_at: g.fair_draw_id ? drawnAt.get(g.fair_draw_id) ?? null : null })),
         seasons: seasons.data,
@@ -90,12 +115,21 @@ export async function POST(request: Request) {
         published: p.published !== false,
       };
       if (!fields.title) return fail("Dê um título.");
-      const { error } = p.id ? await db.from("posts").update(fields).eq("id", p.id) : await db.from("posts").insert(fields);
-      return error ? fail(error.message, 500) : ok();
+      const cols = `${POST_COLUMNS}, discord_message_id`;
+      const { data: saved, error } = p.id
+        ? await db.from("posts").update(fields).eq("id", p.id).select(cols).single()
+        : await db.from("posts").insert(fields).select(cols).single();
+      if (error || !saved) return fail(error?.message ?? "Não foi possível salvar.", 500);
+      // O aviso já está salvo; o Discord é extra (se falhar, avisa sem desfazer nada)
+      const discord = await syncPostToDiscord(saved as Post & { discord_message_id: string | null }, p.sendDiscord !== false, !!p.mentionEveryone);
+      return ok({ ok: true, ...discord });
     }
     case "deletePost": {
+      const { data: old } = await db.from("posts").select("discord_message_id").eq("id", id).maybeSingle();
       const { error } = await db.from("posts").delete().eq("id", id);
-      return error ? fail(error.message, 500) : ok();
+      if (error) return fail(error.message, 500);
+      if (old?.discord_message_id) await deleteDiscordPost(old.discord_message_id).catch(() => {});
+      return ok();
     }
 
     // ---------- Sorteios ----------

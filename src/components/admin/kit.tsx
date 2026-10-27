@@ -22,15 +22,15 @@ export function useAction(reload: () => Promise<void>) {
   const dialog = useDialog();
   const lock = useRef(false);
   const [busy, setBusy] = useState(false);
-  const run = async (action: string, payload: Record<string, unknown> = {}, confirm?: { title: string; message?: string }) => {
+  const run = async (action: string, payload: Record<string, unknown> = {}, confirm?: { title: string; message?: string }): Promise<false | Record<string, unknown>> => {
     if (lock.current) return false;
     if (confirm && !(await dialog.confirm({ ...confirm, tone: "danger", confirmText: "Sim" }))) return false;
     lock.current = true;
     setBusy(true);
     try {
-      await adminApi(action, payload);
+      const res = await adminApi<Record<string, unknown>>(action, payload);
       await reload();
-      return true;
+      return res ?? {}; // resposta do servidor (ex.: aviso de falha no Discord); vale como "deu certo"
     } catch (err) {
       dialog.error(err);
       return false;

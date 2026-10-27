@@ -36,6 +36,7 @@ interface Overview {
   members: Member[];
   pendingDrops: AdminDrop[];
   reviewedDrops: AdminDrop[];
+  discordEnabled?: boolean;
 }
 
 type Tab = "drops" | "membros" | "avisos" | "sorteios" | "ranking" | "loja";
@@ -127,7 +128,7 @@ export default function AdminPanel() {
         <div className="min-w-0">
           {tab === "drops" && <DropsTab data={data} reload={reload} />}
           {tab === "membros" && <MembersTab members={data.members} reload={reload} />}
-          {tab === "avisos" && <PostsTab posts={data.posts} reload={reload} />}
+          {tab === "avisos" && <PostsTab posts={data.posts} reload={reload} discordEnabled={!!data.discordEnabled} />}
           {tab === "sorteios" && <GiveawaysTab giveaways={data.giveaways} reload={reload} />}
           {tab === "ranking" && <RankingTab seasons={data.seasons} items={data.items} reload={reload} />}
           {tab === "loja" && <ShopAdmin />}
@@ -307,20 +308,26 @@ function MembersTab({ members, reload }: { members: Member[]; reload: () => Prom
 }
 
 // ======================= Avisos =======================
-const EMPTY_POST = { id: "", kind: "novidade" as PostKind, title: "", body: "", image_url: "", event_at: "", pinned: false, published: true };
+const EMPTY_POST = { id: "", kind: "novidade" as PostKind, title: "", body: "", image_url: "", event_at: "", pinned: false, published: true, sendDiscord: true, mentionEveryone: false };
 const KIND_ICON: Record<PostKind, LucideIcon> = { aviso: Megaphone, novidade: Sparkles, evento: CalendarClock };
 
-function PostsTab({ posts, reload }: { posts: Post[]; reload: () => Promise<void> }) {
+function PostsTab({ posts, reload, discordEnabled }: { posts: Post[]; reload: () => Promise<void>; discordEnabled: boolean }) {
   const { run, busy } = useAction(reload);
+  const dialog = useDialog();
   const [form, setForm] = useState(EMPTY_POST);
   const pag = usePagination(posts);
   const edit = (p: Post) => {
-    setForm({ id: p.id, kind: p.kind, title: p.title, body: p.body, image_url: p.image_url ?? "", event_at: toLocalInput(p.event_at), pinned: p.pinned, published: p.published });
+    setForm({ id: p.id, kind: p.kind, title: p.title, body: p.body, image_url: p.image_url ?? "", event_at: toLocalInput(p.event_at), pinned: p.pinned, published: p.published, sendDiscord: true, mentionEveryone: false });
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (await run("savePost", { post: { ...form, id: form.id || undefined, event_at: fromLocalInput(form.event_at) } })) setForm(EMPTY_POST);
+    const res = await run("savePost", { post: { ...form, id: form.id || undefined, event_at: fromLocalInput(form.event_at) } });
+    if (!res) return;
+    setForm(EMPTY_POST);
+    if (typeof res.discordError === "string") {
+      dialog.alert({ title: "Salvo no site, mas não no Discord", message: `O aviso foi salvo normalmente. O Discord recusou a mensagem: ${res.discordError}` });
+    }
   };
   const preview: Post = {
     id: "preview", kind: form.kind, title: form.title || "Título da publicação", body: form.body || "O texto aparece aqui.",
@@ -352,6 +359,14 @@ function PostsTab({ posts, reload }: { posts: Post[]; reload: () => Promise<void
               <Toggle checked={form.pinned} onChange={(pinned) => setForm({ ...form, pinned })} label="Fixar no topo" hint="Vira o aviso de destaque da home" />
               <Toggle checked={form.published} onChange={(published) => setForm({ ...form, published })} label="Publicado" hint="Desligado, fica como rascunho" />
             </div>
+            {discordEnabled ? (
+              <div className="grid sm:grid-cols-2 gap-3">
+                <Toggle checked={form.sendDiscord} onChange={(sendDiscord) => setForm({ ...form, sendDiscord })} label="Enviar no Discord" hint={form.id ? "Se já foi enviado, a mensagem é editada junto" : "Posta igualzinho no canal do clã"} />
+                <Toggle checked={form.mentionEveryone} onChange={(mentionEveryone) => setForm({ ...form, mentionEveryone })} label="Marcar @everyone" hint="Notifica todo mundo do servidor" />
+              </div>
+            ) : (
+              <p className="text-[11px] italic text-bone/35">Envio para o Discord desligado: falta a variável DISCORD_WEBHOOK_URL na Vercel.</p>
+            )}
             <FormFooter hint={form.published ? "Publica na hora para todo mundo." : "Salvo como rascunho, só a liderança vê."}>
               {form.id && <button type="button" onClick={() => setForm(EMPTY_POST)} className="btn-ghost">Cancelar</button>}
               <button disabled={busy || isUploading(form.image_url)} className="btn-neon">{busy || isUploading(form.image_url) ? <Loader2 className="w-4 h-4 animate-spin" /> : form.id ? <Check className="w-4 h-4" /> : <Plus className="w-4 h-4" />} {isUploading(form.image_url) ? "Enviando imagem..." : form.id ? "Salvar" : "Publicar"}</button>
