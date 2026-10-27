@@ -17,7 +17,7 @@ export default function GiveawayCard({ giveaway: g, canJoin }: { giveaway: Givea
   const expired = g.status === "open" && g.ends_at && new Date(g.ends_at).getTime() < Date.now();
   const done = g.status === "drawn";
   return (
-    <div className={`crypt-card crypt-card-hover overflow-hidden flex flex-col ${g.status === "open" && !expired ? "!border-spirit/40" : ""}`}>
+    <div className={`w-full crypt-card crypt-card-hover overflow-hidden flex flex-col ${g.status === "open" && !expired ? "!border-spirit/40" : ""}`}>
       <div className="relative aspect-[16/9] overflow-hidden bg-gradient-to-br from-[#2a0f4a] via-[#120822] to-black">
         {g.image_url ? (
           <img src={g.image_url} alt="" className={`absolute inset-0 w-full h-full object-cover ${done ? "grayscale opacity-50" : ""}`} />

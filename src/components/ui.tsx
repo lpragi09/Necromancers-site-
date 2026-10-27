@@ -18,6 +18,21 @@ export function PageHeader({ eyebrow, title, accent, text, icon: Icon }: { eyebr
   );
 }
 
+/** Cabeçalho centralizado das faixas da home: "• SELO", título com destaque roxo e subtítulo */
+export function BandHeader({ eyebrow, title, accent, text }: { eyebrow: string; title: string; accent?: string; text?: string }) {
+  return (
+    <div className="text-center mb-10">
+      <p className="inline-flex items-center gap-2 text-[11px] font-black italic uppercase tracking-[0.3em] text-bone/55">
+        <span className="w-1.5 h-1.5 rounded-full bg-spirit shadow-[0_0_8px_rgba(168,85,247,0.8)]" /> {eyebrow}
+      </p>
+      <h2 className="font-title text-3xl sm:text-5xl mt-3 text-bone">
+        {title} {accent && <span className="text-spirit text-glow">{accent}</span>}
+      </h2>
+      {text && <p className="text-bone/50 italic mt-3 max-w-xl mx-auto">{text}</p>}
+    </div>
+  );
+}
+
 /** Título de seção: ícone roxo, título em caixa alta e um link "ver todos" opcional */
 export function SectionTitle({ title, icon: Icon, href, linkLabel = "Ver todos" }: { title: string; icon?: LucideIcon; href?: string; linkLabel?: string }) {
   return (
