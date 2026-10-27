@@ -5,7 +5,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   CalendarClock, CalendarRange, Check, ClipboardCheck, Crown, Dices, Eye, EyeOff, Gem, Gift, Loader2,
-  Lock, LockOpen, Megaphone, Pencil, Pin, Plus, RotateCcw, Search, Sparkles, Store, Trash2, Trophy, UserCheck, Users, X,
+  Lock, LockOpen, Megaphone, Pencil, Pin, Plus, RotateCcw, Search, Sparkles, Store, Swords, Trash2, Trophy, UserCheck, Users, X,
   type LucideIcon,
 } from "lucide-react";
 import { adminApi } from "@/lib/api";
@@ -18,6 +18,7 @@ import PostCard from "@/components/PostCard";
 import { RarityBadge } from "@/components/ui";
 import GiveawayDraw from "@/components/admin/GiveawayDraw";
 import ShopAdmin from "@/components/admin/ShopAdmin";
+import TournamentAdmin from "@/components/admin/TournamentAdmin";
 import {
   EmptyLine, Field, FormFooter, fromLocalInput, IconBtn, ImageField, isUploading, Panel, Pill, Preview, Row, Segmented, toLocalInput, Toggle, useAction,
 } from "@/components/admin/kit";
@@ -39,7 +40,7 @@ interface Overview {
   discordEnabled?: boolean;
 }
 
-type Tab = "drops" | "membros" | "avisos" | "sorteios" | "ranking" | "loja";
+type Tab = "drops" | "membros" | "avisos" | "sorteios" | "ranking" | "loja" | "torneios";
 
 
 export default function AdminPanel() {
@@ -76,6 +77,7 @@ export default function AdminPanel() {
     { id: "avisos", label: "Avisos", hint: "Mural do clã", icon: Megaphone },
     { id: "sorteios", label: "Sorteios", hint: "Criar e sortear", icon: Gift },
     { id: "ranking", label: "Temporadas", hint: "Prêmios e itens", icon: Trophy },
+    { id: "torneios", label: "Torneios", hint: "Presença semanal", icon: Swords },
     { id: "loja", label: "Lojinha", hint: "Moedas e resgates", icon: Store },
   ];
   const stats: { label: string; value: number; icon: LucideIcon; tab: Tab; alert?: boolean }[] = [
@@ -132,6 +134,7 @@ export default function AdminPanel() {
           {tab === "sorteios" && <GiveawaysTab giveaways={data.giveaways} reload={reload} />}
           {tab === "ranking" && <RankingTab seasons={data.seasons} items={data.items} reload={reload} />}
           {tab === "loja" && <ShopAdmin />}
+          {tab === "torneios" && <TournamentAdmin />}
         </div>
       </div>
     </div>

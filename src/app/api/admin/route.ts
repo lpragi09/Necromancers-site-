@@ -3,7 +3,7 @@ import { ADMIN_ROLES, isAdminId } from "@/lib/admins";
 import { deletePost as deleteDiscordPost, discordEnabled, editPost as editDiscordPost, sendPost as sendDiscordPost } from "@/lib/discord";
 import { hasSupabase, supabaseAdmin } from "@/lib/supabaseAdmin";
 import { cleanText, decodeImage, DEMO_MESSAGE, fail, ok } from "@/lib/http";
-import { ACTIVITY_COLUMNS, CLAIM_COLUMNS, DROP_COLUMNS, getCoinEpoch, getDrawnAt, GIVEAWAY_COLUMNS, ITEM_COLUMNS, ORDER_COLUMNS, POST_COLUMNS, SEASON_COLUMNS, SHOP_ITEM_COLUMNS } from "@/lib/data";
+import { ACTIVITY_COLUMNS, CLAIM_COLUMNS, DROP_COLUMNS, getCoinEpoch, getDrawnAt, GIVEAWAY_COLUMNS, ITEM_COLUMNS, ORDER_COLUMNS, POST_COLUMNS, SEASON_COLUMNS, SHOP_ITEM_COLUMNS, TOURNAMENT_SCORE_COLUMNS } from "@/lib/data";
 import { FAIR_COLUMNS, runFairDraw, setFairStatus } from "@/lib/fairServer";
 import { ROLE_ORDER, type CoinClaim, type Drop, type Giveaway, type Post, type Rarity, type ShopOrder } from "@/lib/types";
 
@@ -387,6 +387,47 @@ export async function POST(request: Request) {
       if (error) return fail(error.message, 500);
       await db.from("coin_claims").update({ status: "expired", reviewed_at: new Date().toISOString() }).eq("status", "pending");
       return ok();
+    }
+
+    // ---------- Torneios ----------
+    case "tournamentOverview": {
+      const { data: months, error } = await db.from("tournament_months").select("id, name, created_at").order("created_at", { ascending: false });
+      if (error) {
+        return fail(/does not exist|schema cache/i.test(error.message) ? "Falta rodar o supabase/migracao-torneios.sql no SQL Editor do Supabase." : error.message, 500);
+      }
+      const monthId = str(body?.monthId) || months?.[0]?.id || "";
+      const [scores, members] = await Promise.all([
+        monthId ? db.from("tournament_scores").select(TOURNAMENT_SCORE_COLUMNS).eq("month_id", monthId).order("count", { ascending: false }).order("player_name") : Promise.resolve({ data: [] }),
+        db.from("members").select("char_name").eq("status", "active").order("char_name"),
+      ]);
+      return ok({ months: months ?? [], monthId, scores: scores.data ?? [], names: (members.data ?? []).map((m) => m.char_name) });
+    }
+    case "createTournamentMonth": {
+      const name = cleanText(body?.name, 60);
+      if (!name) return fail("Dê um nome para o mês (ex.: Novembro 2026).");
+      const { data, error } = await db.from("tournament_months").insert({ name }).select("id").single();
+      return error ? fail(error.message, 500) : ok({ id: data.id });
+    }
+    case "deleteTournamentMonth": {
+      const { error } = await db.from("tournament_months").delete().eq("id", id);
+      return error ? fail(error.message, 500) : ok();
+    }
+    case "tournamentAdd": {
+      const week = Math.floor(Number(body?.week));
+      const name = cleanText(body?.name, 40);
+      if (!name) return fail("Digite o nome de quem foi.");
+      if (week < 1 || week > 4) return fail("Semana inválida.");
+      const { data, error } = await db.rpc("tournament_add", { p_month: str(body?.monthId), p_week: week, p_name: name });
+      return error ? fail(error.message, 500) : ok({ count: data });
+    }
+    case "tournamentBump": {
+      const delta = Number(body?.delta) > 0 ? 1 : -1;
+      const { data, error } = await db.rpc("tournament_bump", { p_id: id, p_delta: delta });
+      return error ? fail(error.message, 500) : ok({ count: data });
+    }
+    case "tournamentRemove": {
+      const { error } = await db.from("tournament_scores").delete().eq("id", id);
+      return error ? fail(error.message, 500) : ok();
     }
 
     // ---------- Membros ----------

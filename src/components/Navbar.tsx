@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signIn, signOut } from "next-auth/react";
-import { Gift, Home, LogOut, Megaphone, Menu, Shield, Store, Trophy, User, Users, X } from "lucide-react";
+import { Gift, Home, LogOut, Megaphone, Menu, Shield, Store, Swords, Trophy, User, Users, X } from "lucide-react";
 import Avatar from "@/components/Avatar";
 
 const LINKS = [
@@ -12,6 +12,7 @@ const LINKS = [
   { href: "/avisos", label: "Avisos", icon: Megaphone },
   { href: "/sorteios", label: "Sorteios", icon: Gift },
   { href: "/loja", label: "Loja", icon: Store },
+  { href: "/torneios", label: "Torneios", icon: Swords },
   { href: "/ranking", label: "Ranking", icon: Trophy },
   { href: "/membros", label: "Membros", icon: Users },
 ];
@@ -56,7 +57,7 @@ export default function Navbar({ viewer }: { viewer: NavViewer | null }) {
           {LINKS.map((l) => (
             <Link key={l.href} href={l.href} data-active={active(l.href)}
               className={`hover-underline flex items-center gap-1.5 px-3 py-2 text-[13px] font-black italic uppercase tracking-wide transition-colors ${active(l.href) ? "text-bone" : "text-bone/60 hover:text-bone"}`}>
-              <l.icon className={`w-3.5 h-3.5 ${active(l.href) ? "text-spirit" : ""}`} /> {l.label}
+              <l.icon className={`hidden 2xl:block w-3.5 h-3.5 ${active(l.href) ? "text-spirit" : ""}`} /> {l.label}
             </Link>
           ))}
         </div>

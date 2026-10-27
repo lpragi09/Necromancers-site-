@@ -1,7 +1,7 @@
 import { hasSupabase, supabaseAdmin } from "@/lib/supabaseAdmin";
 import { MEMBER_COLUMNS } from "@/lib/viewer";
-import { DEMO_ACTIVITIES, DEMO_GIVEAWAYS, DEMO_ITEMS, DEMO_MEMBERS, DEMO_POSTS, DEMO_RANKING, DEMO_SEASON, DEMO_SHOP_ITEMS } from "@/lib/demo";
-import type { ActivityType, CoinClaim, Drop, DropItem, Giveaway, Member, Post, RankingRow, Rarity, Season, ShopItem, ShopOrder } from "@/lib/types";
+import { DEMO_ACTIVITIES, DEMO_TOURNAMENT_MONTHS, DEMO_TOURNAMENT_SCORES, DEMO_GIVEAWAYS, DEMO_ITEMS, DEMO_MEMBERS, DEMO_POSTS, DEMO_RANKING, DEMO_SEASON, DEMO_SHOP_ITEMS } from "@/lib/demo";
+import type { ActivityType, CoinClaim, Drop, DropItem, Giveaway, Member, Post, RankingRow, Rarity, Season, ShopItem, ShopOrder, TournamentMonth, TournamentRow, TournamentScore } from "@/lib/types";
 
 // Leituras usadas pelas páginas (sempre no servidor, pela service role).
 // Sem Supabase configurado, devolvem os dados de exemplo de lib/demo.ts.
@@ -202,4 +202,39 @@ export async function getShop(memberId: string | null) {
     claims: (claims.data as CoinClaim[]) ?? [],
     orders: (orders.data as ShopOrder[]) ?? [],
   };
+}
+
+// ---------- Torneios ----------
+export const TOURNAMENT_SCORE_COLUMNS = "id, month_id, week, player_name, count, updated_at";
+
+export async function getTournamentMonths(): Promise<TournamentMonth[]> {
+  if (isDemo()) return DEMO_TOURNAMENT_MONTHS;
+  const { data } = await supabaseAdmin.from("tournament_months").select("id, name, created_at").order("created_at", { ascending: false });
+  return (data as TournamentMonth[]) ?? [];
+}
+
+/** Ranking de um mês: de uma semana (1 a 4) ou do mês todo (soma das semanas). Nomes iguais a um membro ganham a foto dele. */
+export async function getTournamentRanking(monthId: string, week: number | null): Promise<TournamentRow[]> {
+  let scores: TournamentScore[];
+  if (isDemo()) {
+    scores = DEMO_TOURNAMENT_SCORES.filter((s) => s.month_id === monthId);
+  } else {
+    let q = supabaseAdmin.from("tournament_scores").select(TOURNAMENT_SCORE_COLUMNS).eq("month_id", monthId).gt("count", 0);
+    if (week) q = q.eq("week", week);
+    scores = ((await q).data as TournamentScore[]) ?? [];
+  }
+  if (week) scores = scores.filter((s) => s.week === week);
+  const totals = new Map<string, { player_name: string; count: number }>();
+  for (const s of scores) {
+    const key = s.player_name.trim().toLowerCase();
+    const row = totals.get(key) ?? { player_name: s.player_name.trim(), count: 0 };
+    row.count += s.count;
+    totals.set(key, row);
+  }
+  const members = await getMembers();
+  const photo = new Map(members.map((m) => [m.char_name.trim().toLowerCase(), m.avatar_url]));
+  return [...totals.entries()]
+    .map(([key, r]) => ({ ...r, avatar_url: photo.get(key) ?? null }))
+    .filter((r) => r.count > 0)
+    .sort((a, b) => b.count - a.count || a.player_name.localeCompare(b.player_name));
 }

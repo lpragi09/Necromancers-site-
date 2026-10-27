@@ -1,4 +1,4 @@
-import type { ActivityType, DropItem, Giveaway, Member, Post, RankingRow, Season, ShopItem } from "@/lib/types";
+import type { TournamentMonth, TournamentScore, ActivityType, DropItem, Giveaway, Member, Post, RankingRow, Season, ShopItem } from "@/lib/types";
 
 // Dados de exemplo mostrados enquanto o Supabase não está configurado (modo demonstração).
 const ago = (days: number) => new Date(Date.now() - days * 86400000).toISOString();
@@ -99,3 +99,18 @@ export const DEMO_SHOP_ITEMS: ShopItem[] = [
   { id: "demo-s2", name: "Ultra Ball x100", description: "", image_url: null, price: 120, stock: null, active: true },
   { id: "demo-s3", name: "Shiny Gengar", description: "Prêmio máximo da temporada.", image_url: null, price: 1500, stock: 1, active: true },
 ];
+
+export const DEMO_TOURNAMENT_MONTHS: TournamentMonth[] = [
+  { id: "demo-t1", name: "Outubro 2026", created_at: ago(20) },
+  { id: "demo-t0", name: "Setembro 2026", created_at: ago(50) },
+];
+
+// Presenças de exemplo: alguns membros em cada semana de outubro
+export const DEMO_TOURNAMENT_SCORES: TournamentScore[] = [
+  ["Lorde Haunter", 1, 3], ["Kuroshi", 1, 2], ["Morte Rubra", 1, 1],
+  ["Kuroshi", 2, 4], ["Lorde Haunter", 2, 2], ["Nyx Banette", 2, 2], ["Chandelure", 2, 1],
+  ["Morte Rubra", 3, 3], ["Kuroshi", 3, 1], ["Sombra de Gengar", 3, 2],
+  ["Lorde Haunter", 4, 1],
+].map(([player_name, week, count], i) => ({
+  id: `demo-ts${i}`, month_id: "demo-t1", week: Number(week), player_name: String(player_name), count: Number(count), updated_at: ago(1),
+}));

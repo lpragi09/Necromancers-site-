@@ -162,3 +162,25 @@ export interface ShopOrder {
   created_at: string;
   delivered_at: string | null;
 }
+
+// ---------- Torneios ----------
+export interface TournamentMonth {
+  id: string;
+  name: string;
+  created_at: string;
+}
+
+export interface TournamentScore {
+  id: string;
+  month_id: string;
+  week: number; // 1 a 4
+  player_name: string;
+  count: number;
+  updated_at: string;
+}
+
+export interface TournamentRow {
+  player_name: string;
+  count: number;
+  avatar_url: string | null;
+}
