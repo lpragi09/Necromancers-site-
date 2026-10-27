@@ -1,5 +1,6 @@
 import type { NextAuthOptions } from "next-auth";
 import DiscordProvider from "next-auth/providers/discord";
+import { allowLogin } from "@/lib/loginLimit";
 
 // Login pelo Discord: é onde o clã já se organiza. O ID do Discord identifica o membro
 // (o nome de exibição pode mudar a qualquer momento).
@@ -13,7 +14,14 @@ export const authOptions: NextAuthOptions = {
       issuer: "https://discord.com",
     }),
   ],
+  // Erros de login (inclusive o limite por IP) caem numa página do próprio site
+  pages: { error: "/login-erro" },
   callbacks: {
+    // Limite contra spam: 2 contas diferentes por conexão a cada 15 min
+    async signIn({ account }) {
+      if (!account?.providerAccountId) return true;
+      return allowLogin(account.providerAccountId);
+    },
     async jwt({ token, account, profile }) {
       if (account) token.discordId = account.providerAccountId;
       if (profile) {
