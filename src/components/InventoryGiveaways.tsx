@@ -1,8 +1,10 @@
 "use client";
 
-import { Gift, Trophy } from "lucide-react";
+import { Crown, Gift, Mountain, Package, Trophy } from "lucide-react";
 import Pagination, { usePagination } from "@/components/Pagination";
-import type { InventoryGiveaway } from "@/lib/data";
+import { fmtDateTime, timeAgo } from "@/lib/format";
+import type { InventoryGiveaway, InventoryRun } from "@/lib/data";
+import type { ShopOrder } from "@/lib/types";
 
 const pill = (g: InventoryGiveaway) =>
   g.rejected ? { label: "Removido", cls: "text-rose-300 bg-rose-500/10 border-rose-400/30" }
@@ -31,6 +33,49 @@ export default function InventoryGiveaways({ list }: { list: InventoryGiveaway[]
             </div>
           );
         })}
+      </div>
+      <Pagination {...pag} />
+    </div>
+  );
+}
+
+/** Itens resgatados na lojinha esperando entrega, 5 por página. */
+export function InventoryOrders({ list }: { list: ShopOrder[] }) {
+  const pag = usePagination(list, 5);
+  if (!list.length) return <p className="text-sm italic text-bone/45">Nenhum resgate esperando entrega.</p>;
+  return (
+    <div>
+      <div className="space-y-2">
+        {pag.pageItems.map((o) => (
+          <div key={o.id} className="flex items-center gap-3 rounded-lg border border-white/5 bg-white/[0.02] px-3.5 py-2.5">
+            <Package className="w-4 h-4 shrink-0 text-spirit" />
+            <p className="flex-1 min-w-0 font-bold truncate">{o.item_name}</p>
+            <span className="text-[11px] text-bone/40">{timeAgo(o.created_at)}</span>
+          </div>
+        ))}
+      </div>
+      <Pagination {...pag} />
+    </div>
+  );
+}
+
+/** Próximos grupos de dungeon do membro, 5 por página. */
+export function InventoryRuns({ list }: { list: InventoryRun[] }) {
+  const pag = usePagination(list, 5);
+  if (!list.length) return <p className="text-sm italic text-bone/45">Você não está em nenhum grupo marcado.</p>;
+  return (
+    <div>
+      <div className="space-y-2">
+        {pag.pageItems.map((r) => (
+          <div key={r.id} className="flex items-center gap-3 rounded-lg border border-white/5 bg-white/[0.02] px-3.5 py-2.5">
+            {r.mine ? <Crown className="w-4 h-4 shrink-0 text-amber-300" /> : <Mountain className="w-4 h-4 shrink-0 text-spirit" />}
+            <div className="min-w-0 flex-1">
+              <p className="font-bold truncate">{r.dungeon_name}</p>
+              <p className="text-[11px] text-bone/45">{fmtDateTime(r.starts_at)}{r.mine ? " · você criou" : ""}</p>
+            </div>
+            <span className="text-xs font-black italic text-bone/55 tabular-nums">{r.filled}/{r.slots}</span>
+          </div>
+        ))}
       </div>
       <Pagination {...pag} />
     </div>

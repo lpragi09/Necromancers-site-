@@ -1,8 +1,7 @@
 import Link from "next/link";
-import { ArrowRight, Coins, Crown, Gem, Gift, Mountain, Package, Store, Swords, Trophy, type LucideIcon } from "lucide-react";
+import { ArrowRight, Coins, Gem, Gift, Mountain, Store, Swords, Trophy, type LucideIcon } from "lucide-react";
 import MyDrops from "@/components/MyDrops";
-import InventoryGiveaways from "@/components/InventoryGiveaways";
-import { fmtDateTime, timeAgo } from "@/lib/format";
+import InventoryGiveaways, { InventoryOrders, InventoryRuns } from "@/components/InventoryGiveaways";
 import type { Inventory } from "@/lib/data";
 
 function Box({ icon: Icon, title, href, link, children, className = "" }: { icon: LucideIcon; title: string; href: string; link: string; children: React.ReactNode; className?: string }) {
@@ -68,17 +67,7 @@ export default function InventoryView({ inv }: { inv: Inventory }) {
           </div>
           {inv.coins.pending > 0 && <p className="mt-2 text-xs italic text-amber-200/70">+{inv.coins.pending} moedas esperando a liderança aprovar.</p>}
           <p className="mt-5 label">Itens para receber</p>
-          {inv.coins.toReceive.length ? (
-            <div className="space-y-2">
-              {inv.coins.toReceive.slice(0, 5).map((o) => (
-                <div key={o.id} className="flex items-center gap-3 rounded-lg border border-white/5 bg-white/[0.02] px-3.5 py-2.5">
-                  <Package className="w-4 h-4 shrink-0 text-spirit" />
-                  <p className="flex-1 min-w-0 font-bold truncate">{o.item_name}</p>
-                  <span className="text-[11px] text-bone/40">{timeAgo(o.created_at)}</span>
-                </div>
-              ))}
-            </div>
-          ) : <p className="text-sm italic text-bone/45">Nenhum resgate esperando entrega.</p>}
+          <InventoryOrders list={inv.coins.toReceive} />
         </Box>
 
         <Box icon={Swords} title={inv.tournament ? `Torneios · ${inv.tournament.month}` : "Torneios"} href="/torneios" link="Ranking">
@@ -102,20 +91,7 @@ export default function InventoryView({ inv }: { inv: Inventory }) {
         </Box>
 
         <Box icon={Mountain} title="Minhas dungeons" href="/dungeons" link="Dungeons">
-          {inv.runs.length ? (
-            <div className="space-y-2">
-              {inv.runs.slice(0, 6).map((r) => (
-                <div key={r.id} className="flex items-center gap-3 rounded-lg border border-white/5 bg-white/[0.02] px-3.5 py-2.5">
-                  {r.mine ? <Crown className="w-4 h-4 shrink-0 text-amber-300" /> : <Mountain className="w-4 h-4 shrink-0 text-spirit" />}
-                  <div className="min-w-0 flex-1">
-                    <p className="font-bold truncate">{r.dungeon_name}</p>
-                    <p className="text-[11px] text-bone/45">{fmtDateTime(r.starts_at)}{r.mine ? " · você criou" : ""}</p>
-                  </div>
-                  <span className="text-xs font-black italic text-bone/55 tabular-nums">{r.filled}/{r.slots}</span>
-                </div>
-              ))}
-            </div>
-          ) : <p className="text-sm italic text-bone/45">Você não está em nenhum grupo marcado.</p>}
+          <InventoryRuns list={inv.runs} />
         </Box>
       </div>
 

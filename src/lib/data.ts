@@ -384,7 +384,7 @@ async function getMyGiveaways(memberId: string): Promise<InventoryGiveaway[]> {
     .select("status, created_at, giveaways!inner(id, title, prize, status, ends_at, winner_member_id)")
     .eq("member_id", memberId)
     .order("created_at", { ascending: false })
-    .limit(60);
+    .limit(500);
   const order = { open: 0, closed: 1, drawn: 2 } as const;
   return ((data ?? []) as unknown as { status: string; giveaways: Giveaway }[])
     .map(({ status, giveaways: g }) => ({ id: g.id, title: g.title, prize: g.prize, status: g.status, ends_at: g.ends_at, won: g.winner_member_id === memberId, rejected: status === "rejected" }))
