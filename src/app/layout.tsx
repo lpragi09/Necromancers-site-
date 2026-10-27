@@ -12,9 +12,15 @@ import { isDemo } from "@/lib/data";
 
 const lato = Lato({ subsets: ["latin"], weight: ["400", "700", "900"], style: ["normal", "italic"], variable: "--font-lato" });
 
+const SITE_URL = process.env.NEXTAUTH_URL || "https://necromancers.vercel.app";
+const DESCRIPTION = "Portal do clã Necromancers de PokeTibia: avisos, sorteios comprovados, ranking de drops com prêmio e membros.";
+
 export const metadata: Metadata = {
-  title: { default: "Necromancers · Clã", template: "%s · Necromancers" },
-  description: "Portal do clã Necromancers: avisos, sorteios, ranking de drops e membros.",
+  metadataBase: new URL(SITE_URL),
+  title: { default: "Necromancers · Clã de PokeTibia", template: "%s · Necromancers" },
+  description: DESCRIPTION,
+  openGraph: { type: "website", siteName: "Necromancers", locale: "pt_BR", title: "Necromancers · Clã de PokeTibia", description: DESCRIPTION },
+  twitter: { card: "summary_large_image", title: "Necromancers · Clã de PokeTibia", description: DESCRIPTION },
 };
 
 export const viewport: Viewport = { themeColor: "#000000" };

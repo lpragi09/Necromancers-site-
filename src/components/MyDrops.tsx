@@ -4,7 +4,7 @@ import { timeAgo } from "@/lib/format";
 
 const STATUS = {
   pending: { label: "Em análise", cls: "text-amber-300 bg-amber-400/10 border-amber-400/30" },
-  approved: { label: "Aprovado", cls: "text-ecto bg-ecto/10 border-ecto/30" },
+  approved: { label: "Aprovado", cls: "text-emerald-300 bg-emerald-400/10 border-emerald-400/30" },
   rejected: { label: "Recusado", cls: "text-rose-300 bg-rose-500/10 border-rose-400/30" },
 };
 
@@ -18,7 +18,7 @@ export default function MyDrops({ drops }: { drops: Drop[] }) {
             <p className="font-semibold text-bone truncate">{d.quantity > 1 ? `${d.quantity}x ` : ""}{d.item_name}</p>
             <p className="text-xs text-bone/40 flex items-center gap-2 mt-0.5"><RarityBadge rarity={d.rarity} /> {timeAgo(d.created_at)}</p>
           </div>
-          <span className="text-sm font-bold text-ecto tabular-nums">+{(d.points * d.quantity).toLocaleString("pt-BR")}</span>
+          <span className="text-sm font-bold text-spirit tabular-nums">+{(d.points * d.quantity).toLocaleString("pt-BR")}</span>
           <span className={`px-2 py-0.5 rounded-md border text-[10px] font-bold uppercase tracking-widest ${STATUS[d.status].cls}`}>{STATUS[d.status].label}</span>
         </div>
       ))}

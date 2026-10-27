@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signIn, signOut } from "next-auth/react";
@@ -27,7 +27,18 @@ export default function Navbar({ viewer }: { viewer: NavViewer | null }) {
   const [open, setOpen] = useState(false);
   const [menu, setMenu] = useState(false);
 
+  const menuRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => { setOpen(false); setMenu(false); }, [pathname]);
+  // Menu do avatar fecha ao clicar fora ou apertar Esc
+  useEffect(() => {
+    if (!menu) return;
+    const onDown = (e: MouseEvent) => { if (!menuRef.current?.contains(e.target as Node)) setMenu(false); };
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setMenu(false); };
+    document.addEventListener("mousedown", onDown);
+    document.addEventListener("keydown", onKey);
+    return () => { document.removeEventListener("mousedown", onDown); document.removeEventListener("keydown", onKey); };
+  }, [menu]);
 
   const active = (href: string) => (href === "/" ? pathname === "/" : pathname?.startsWith(href));
 
@@ -58,7 +69,7 @@ export default function Navbar({ viewer }: { viewer: NavViewer | null }) {
           )}
           <span className="hidden lg:block w-px h-7 bg-white/10" />
           {viewer ? (
-            <div className="relative">
+            <div ref={menuRef} className="relative">
               <button onClick={() => setMenu(!menu)} className="flex items-center gap-2 rounded-full pl-1 pr-3 py-1 bg-white/5 border border-white/10 hover:border-spirit/50 transition-colors">
                 <Avatar src={viewer.image} name={viewer.charName ?? viewer.name} size={30} className="ring-2 ring-spirit/50" />
                 <span className="hidden sm:block text-sm font-black italic uppercase max-w-32 truncate">{viewer.charName ?? viewer.name}</span>
@@ -88,7 +99,7 @@ export default function Navbar({ viewer }: { viewer: NavViewer | null }) {
         <div className="lg:hidden border-t border-white/5 px-4 py-3 grid gap-1 animate-fade-in">
           {[...LINKS, ...(viewer?.isAdmin ? [{ href: "/admin", label: "Painel", icon: Shield }] : [])].map((l) => (
             <Link key={l.href} href={l.href}
-              className={`flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm font-black italic uppercase ${active(l.href) ? "text-bone bg-spirit/15" : "text-bone/70"}`}>
+              className={`flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm font-black italic uppercase ${active(l.href) ? "text-bone bg-spirit/15" : "text-bone/85 hover:bg-white/5"}`}>
               <l.icon className="w-4 h-4 text-spirit" /> {l.label}
             </Link>
           ))}

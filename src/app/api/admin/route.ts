@@ -1,4 +1,5 @@
 import { getViewer, MEMBER_COLUMNS } from "@/lib/viewer";
+import { ADMIN_ROLES, isAdminId } from "@/lib/admins";
 import { hasSupabase, supabaseAdmin } from "@/lib/supabaseAdmin";
 import { cleanText, decodeImage, DEMO_MESSAGE, fail, ok } from "@/lib/http";
 import { DROP_COLUMNS, GIVEAWAY_COLUMNS, ITEM_COLUMNS, POST_COLUMNS, SEASON_COLUMNS } from "@/lib/data";
@@ -162,7 +163,8 @@ export async function POST(request: Request) {
         prizes,
       };
       if (!fields.name) return fail("Dê um nome para a temporada.");
-      const { error } = s.id ? await db.from("seasons").update(fields).eq("id", s.id) : await db.from("seasons").insert(fields);
+      // Nova nasce encerrada: só uma temporada fica ativa, e quem ativa é a liderança na lista
+      const { error } = s.id ? await db.from("seasons").update(fields).eq("id", s.id) : await db.from("seasons").insert({ ...fields, status: "closed" });
       return error ? fail(error.message, 500) : ok();
     }
     case "setSeasonStatus": {
@@ -173,8 +175,12 @@ export async function POST(request: Request) {
       return error ? fail(error.message, 500) : ok();
     }
     case "deleteSeason": {
+      const { data: proofs } = await db.from("drops").select("proof_path").eq("season_id", id);
       const { error } = await db.from("seasons").delete().eq("id", id);
-      return error ? fail(error.message, 500) : ok();
+      if (error) return fail(error.message, 500);
+      const paths = (proofs ?? []).map((d) => d.proof_path).filter((p): p is string => !!p);
+      if (paths.length) await db.storage.from("provas").remove(paths);
+      return ok();
     }
 
     // ---------- Itens ----------
@@ -223,14 +229,22 @@ export async function POST(request: Request) {
       if (m.level !== undefined) fields.level = Number(m.level) > 0 ? Math.min(1000, Math.floor(Number(m.level))) : null;
       // Ninguém tira o próprio acesso sem querer
       if (viewer.member?.id === m.id && (fields.status && fields.status !== "active")) return fail("Você não pode desativar a si mesmo.");
+      if (viewer.member?.id === m.id && fields.role && !ADMIN_ROLES.includes(fields.role as string) && !isAdminId(viewer.discordId)) {
+        return fail("Você perderia o acesso ao painel. Peça para outro líder mudar o seu cargo.");
+      }
       const { error } = await db.from("members").update(fields).eq("id", str(m.id));
       if (error) return fail(/members_char_name|duplicate/i.test(error.message) ? "Já existe um membro com esse personagem." : error.message, 400);
       return ok();
     }
     case "deleteMember": {
       if (viewer.member?.id === id) return fail("Você não pode remover a si mesmo.");
+      // Os drops somem junto (cascade); os prints guardados também precisam sair do bucket
+      const { data: proofs } = await db.from("drops").select("proof_path").eq("member_id", id);
       const { error } = await db.from("members").delete().eq("id", id);
-      return error ? fail(error.message, 500) : ok();
+      if (error) return fail(error.message, 500);
+      const paths = (proofs ?? []).map((d) => d.proof_path).filter((p): p is string => !!p);
+      if (paths.length) await db.storage.from("provas").remove(paths);
+      return ok();
     }
 
     default:

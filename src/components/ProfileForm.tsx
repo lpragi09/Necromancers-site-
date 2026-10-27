@@ -18,7 +18,9 @@ export default function ProfileForm({ charName, level, isNew }: { charName: stri
     setBusy(true);
     try {
       await api("/api/me", { charName: name, level: lvl ? Number(lvl) : null });
-      if (isNew) await dialog.alert({ title: "Cadastro enviado!", message: "Agora é só esperar a liderança aprovar sua entrada no clã.", tone: "success" });
+      await dialog.alert(isNew
+        ? { title: "Cadastro enviado!", message: "Agora é só esperar a liderança aprovar sua entrada no clã.", tone: "success" }
+        : { title: "Perfil salvo!", message: "Seu personagem foi atualizado.", tone: "success" });
       router.refresh();
     } catch (err) {
       dialog.error(err, "Não foi possível salvar");

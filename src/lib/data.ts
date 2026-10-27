@@ -104,7 +104,8 @@ export async function getStats() {
   const [m, d, g] = await Promise.all([
     supabaseAdmin.from("members").select("id", { count: "exact", head: true }).eq("status", "active"),
     supabaseAdmin.from("drops").select("id", { count: "exact", head: true }).eq("status", "approved"),
-    supabaseAdmin.from("giveaways").select("id", { count: "exact", head: true }).eq("status", "open"),
+    // Aberto de verdade: status aberto e sem prazo vencido
+    supabaseAdmin.from("giveaways").select("id", { count: "exact", head: true }).eq("status", "open").or(`ends_at.is.null,ends_at.gt.${new Date().toISOString()}`),
   ]);
   return { members: m.count ?? 0, drops: d.count ?? 0, openGiveaways: g.count ?? 0 };
 }

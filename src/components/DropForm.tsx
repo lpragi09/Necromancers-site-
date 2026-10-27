@@ -1,7 +1,7 @@
 "use client";
 
 /* eslint-disable @next/next/no-img-element */
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ImagePlus, Loader2, Send } from "lucide-react";
 import { api } from "@/lib/api";
@@ -14,13 +14,15 @@ export default function DropForm({ items }: { items: DropItem[] }) {
   const router = useRouter();
   const dialog = useDialog();
   const [itemId, setItemId] = useState(items[0]?.id ?? "");
-  const [quantity, setQuantity] = useState(1);
+  const [quantity, setQuantity] = useState("1");
   const [note, setNote] = useState("");
   const [proof, setProof] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const lock = useRef(false);
   const fileRef = useRef<HTMLInputElement>(null);
+  const [over, setOver] = useState(false);
   const item = items.find((i) => i.id === itemId);
+  const qty = Math.max(1, Math.min(999, Math.floor(Number(quantity)) || 1));
 
   const pick = async (file: File | undefined) => {
     if (!file) return;
@@ -31,6 +33,16 @@ export default function DropForm({ items }: { items: DropItem[] }) {
     }
   };
 
+  // Print do jogo costuma estar na área de transferência: Ctrl+V em qualquer lugar da página anexa
+  useEffect(() => {
+    const onPaste = (e: ClipboardEvent) => {
+      const file = [...(e.clipboardData?.files ?? [])].find((f) => f.type.startsWith("image/"));
+      if (file) { e.preventDefault(); pick(file); }
+    };
+    window.addEventListener("paste", onPaste);
+    return () => window.removeEventListener("paste", onPaste);
+  });
+
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (lock.current) return;
@@ -38,10 +50,10 @@ export default function DropForm({ items }: { items: DropItem[] }) {
     lock.current = true;
     setBusy(true);
     try {
-      await api("/api/drops", { itemId, quantity, note, proof });
+      await api("/api/drops", { itemId, quantity: qty, note, proof });
       setProof(null);
       setNote("");
-      setQuantity(1);
+      setQuantity("1");
       await dialog.alert({ title: "Drop enviado!", message: "A liderança vai conferir o print. Assim que aprovar, os pontos entram no ranking.", tone: "success" });
       router.refresh();
     } catch (err) {
@@ -67,26 +79,33 @@ export default function DropForm({ items }: { items: DropItem[] }) {
         <div className="grid grid-cols-[120px_1fr] gap-3">
           <div>
             <label className="label">Quantidade</label>
-            <input type="number" min={1} max={999} value={quantity} onChange={(e) => setQuantity(Math.max(1, Math.min(999, Number(e.target.value) || 1)))} className="field" />
+            <input type="number" min={1} max={999} value={quantity} onChange={(e) => setQuantity(e.target.value)} onBlur={() => setQuantity(String(qty))} className="field" />
           </div>
           <div>
             <label className="label">Observação (opcional)</label>
             <input value={note} onChange={(e) => setNote(e.target.value)} maxLength={200} placeholder="Ex.: hunt de Ghost Tower com o Kuroshi" className="field" />
           </div>
         </div>
-        <p className="text-sm text-bone/55">Vale <b className="text-ecto">{((item?.points ?? 0) * quantity).toLocaleString("pt-BR")} pontos</b> se aprovado.</p>
+        <p className="text-sm text-bone/55">Vale <b className="text-spirit">{((item?.points ?? 0) * qty).toLocaleString("pt-BR")} pontos</b> se aprovado.</p>
         <button disabled={busy} className="btn-neon">
           {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />} Enviar para aprovação
         </button>
       </div>
 
       <button type="button" onClick={() => fileRef.current?.click()}
-        className="relative rounded-xl border-2 border-dashed border-spirit/25 hover:border-ecto/50 transition-colors min-h-48 overflow-hidden flex items-center justify-center">
+        onDragOver={(e) => { e.preventDefault(); setOver(true); }} onDragLeave={() => setOver(false)}
+        onDrop={(e) => { e.preventDefault(); setOver(false); pick(e.dataTransfer.files?.[0]); }}
+        className={`relative rounded-xl border-2 border-dashed transition-colors min-h-48 overflow-hidden flex items-center justify-center ${over ? "border-spirit bg-spirit/10" : "border-white/10 hover:border-spirit/50 hover:bg-spirit/5"}`}>
         {proof ? (
-          <img src={proof} alt="Print do drop" className="absolute inset-0 w-full h-full object-contain bg-checker" />
+          <>
+            <img src={proof} alt="Print do drop" className="absolute inset-0 w-full h-full object-contain bg-checker" />
+            <span className="absolute bottom-2 inset-x-2 rounded-md bg-black/70 py-1 text-[10px] font-black italic uppercase text-bone/80">Clique para trocar</span>
+          </>
         ) : (
           <span className="text-center px-4 text-bone/50 text-sm">
-            <ImagePlus className="w-8 h-8 mx-auto mb-2 text-spirit" /> Clique para anexar o print
+            <ImagePlus className="w-8 h-8 mx-auto mb-2 text-spirit" />
+            <b className="block text-bone/80">Anexe o print</b>
+            <span className="block text-xs mt-1">Clique, arraste ou cole com <kbd className="px-1.5 py-0.5 rounded bg-white/10 border border-white/15 text-[10px] not-italic font-bold">Ctrl+V</kbd></span>
           </span>
         )}
         <input ref={fileRef} type="file" accept="image/*" hidden onChange={(e) => { pick(e.target.files?.[0]); e.target.value = ""; }} />
