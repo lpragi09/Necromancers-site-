@@ -2,7 +2,7 @@ import Link from "next/link";
 import { ArrowDown, ArrowRight, Gem, Gift, Megaphone, Trophy, Users } from "lucide-react";
 import PostCard from "@/components/PostCard";
 import GiveawayCard from "@/components/GiveawayCard";
-import HeroGraveyard from "@/components/HeroGraveyard";
+import HeroVideo from "@/components/HeroVideo";
 import RankingTable, { Podium } from "@/components/RankingTable";
 import { BandHeader, Empty } from "@/components/ui";
 import { getGiveaways, getPosts, getRanking, getSeasons, getStats, pickSeason } from "@/lib/data";
@@ -33,7 +33,7 @@ export default async function Home() {
     <>
       {/* Hero: cemitério ao luar, névoa e o fantasma do clã */}
       <section className="hero-scene relative min-h-[100svh] flex flex-col items-center justify-center overflow-hidden pt-16">
-        <HeroGraveyard />
+        <HeroVideo />
 
         <div className="relative z-10 text-center px-4 rise-in">
           <div className="relative w-fit mx-auto">
