@@ -1,4 +1,4 @@
-import type { Dungeon, DungeonRun, TournamentMonth, TournamentScore, ActivityType, DropItem, Giveaway, Member, Post, RankingRow, Season, ShopItem } from "@/lib/types";
+import type { Dungeon, DungeonRun, GameMode, GameRoom, TournamentMonth, TournamentScore, ActivityType, DropItem, Giveaway, Member, Post, RankingRow, Season, ShopItem } from "@/lib/types";
 
 // Dados de exemplo mostrados enquanto o Supabase não está configurado (modo demonstração).
 const ago = (days: number) => new Date(Date.now() - days * 86400000).toISOString();
@@ -127,4 +127,18 @@ export const DEMO_DUNGEON_RUNS: DungeonRun[] = [
   { id: "demo-r1", dungeon_id: "demo-d1", dungeon_name: "Magma", creator_id: DEMO_MEMBERS[1].id, slots: 4, starts_at: ahead(0.08), note: "Levem revive", status: "open", created_at: ago(0.1), players: [player(1), player(3)] },
   { id: "demo-r2", dungeon_id: "demo-d2", dungeon_name: "Nightmare", creator_id: DEMO_MEMBERS[0].id, slots: 3, starts_at: ahead(0.4), note: null, status: "open", created_at: ago(0.2), players: [player(0), player(2), player(5)] },
   { id: "demo-r3", dungeon_id: "demo-d3", dungeon_name: "Sacred Ruins", creator_id: DEMO_MEMBERS[4].id, slots: 2, starts_at: ahead(1.2), note: "Só level 200+", status: "open", created_at: ago(0.3), players: [player(4)] },
+];
+
+const gamer = (i: number) => ({ member_id: DEMO_MEMBERS[i].id, char_name: DEMO_MEMBERS[i].char_name, avatar_url: null });
+const demoRooms = (mode: string, names: string[], players: Record<number, number[]> = {}): GameRoom[] =>
+  names.map((name, i) => ({ id: `${mode}-${i + 1}`, mode_id: mode, name, slots: 4, sort: i + 1, active: true, players: (players[i] ?? []).map(gamer) }));
+export const DEMO_GAMES: GameMode[] = [
+  {
+    id: "demo-bomb", name: "Bomberman", icon: "bomb", sort: 1, active: true,
+    rooms: demoRooms("demo-bomb", ["Components Arena", "Ice Arena", "Crystal Arena", "Volcano Arena", "Desert Arena", "Undersea Arena"], { 0: [1, 3], 3: [0, 2, 4, 5] }),
+  },
+  {
+    id: "demo-kart", name: "Poke Kart", icon: "kart", sort: 2, active: true,
+    rooms: demoRooms("demo-kart", ["Racetrack 1", "Racetrack 2", "Racetrack 3", "Racetrack 4", "Racetrack 5", "Racetrack 6"], { 1: [6] }),
+  },
 ];

@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signIn, signOut } from "next-auth/react";
-import { Backpack, Gift, Home, LogOut, Megaphone, Menu, Mountain, Shield, Store, Swords, Trophy, User, Users, X } from "lucide-react";
+import { Backpack, Gamepad2, Gift, Home, LogOut, Megaphone, Menu, Mountain, Shield, Store, Swords, Trophy, User, Users, X } from "lucide-react";
 import Avatar from "@/components/Avatar";
 import { SECTION_EVENT } from "@/components/ScrollHash";
 
@@ -15,6 +15,7 @@ const LINKS = [
   { href: "/loja", label: "Loja", icon: Store },
   { href: "/torneios", label: "Torneios", icon: Swords },
   { href: "/dungeons", label: "Dungeons", icon: Mountain },
+  { href: "/games", label: "Games", icon: Gamepad2 },
   { href: "/ranking", label: "Ranking", icon: Trophy },
   { href: "/membros", label: "Membros", icon: Users },
 ];
@@ -67,7 +68,7 @@ export default function Navbar({ viewer }: { viewer: NavViewer | null }) {
 
   return (
     <header className="fixed top-0 inset-x-0 z-50 bg-black/85 backdrop-blur-xl border-b border-spirit/20">
-      <nav className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-2 sm:gap-4">
+      <nav className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-2 sm:gap-4">
         <Link href="/" onClick={toTop("/")} className="flex items-center gap-2 sm:gap-2.5 group min-w-0 sm:shrink-0">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/logo-160.webp" alt="" width={44} height={44} className="w-10 h-10 sm:w-11 sm:h-11 shrink-0 max-w-none drop-shadow-[0_0_10px_rgba(168,85,247,0.55)] group-hover:drop-shadow-[0_0_16px_rgba(168,85,247,0.85)] group-hover:rotate-[-6deg] transition-all duration-300" />
@@ -78,7 +79,7 @@ export default function Navbar({ viewer }: { viewer: NavViewer | null }) {
           {LINKS.map((l) => (
             <Link key={l.href} href={l.href} onClick={toTop(l.href)} data-active={active(l.href)}
               className={`hover-underline flex items-center gap-1.5 px-3 py-2 text-[13px] font-black italic uppercase tracking-wide transition-colors ${active(l.href) ? "text-bone" : "text-bone/60 hover:text-bone"}`}>
-              <l.icon className={`hidden 2xl:block w-3.5 h-3.5 ${active(l.href) ? "text-spirit" : ""}`} /> {l.label}
+              {l.label}
             </Link>
           ))}
         </div>
@@ -93,9 +94,10 @@ export default function Navbar({ viewer }: { viewer: NavViewer | null }) {
           <span className="hidden xl:block w-px h-7 bg-white/10" />
           {viewer ? (
             <div ref={menuRef} className="relative">
-              <button onClick={() => setMenu(!menu)} className="flex items-center gap-2 rounded-full p-1 sm:pr-3 bg-white/5 border border-white/10 hover:border-spirit/50 transition-colors">
+              <button onClick={() => setMenu(!menu)} className="flex items-center gap-2 rounded-full p-1 sm:pr-3 xl:pr-1 2xl:pr-3 bg-white/5 border border-white/10 hover:border-spirit/50 transition-colors">
                 <Avatar src={viewer.image} name={viewer.charName ?? viewer.name} size={30} className="ring-2 ring-spirit/50" />
-                <span className="hidden sm:block text-sm font-black italic uppercase max-w-32 truncate">{viewer.charName ?? viewer.name}</span>
+                {/* Em notebook (xl) o menu cheio ocupa a largura: lá fica só a foto */}
+                <span className="hidden sm:block xl:hidden 2xl:block text-sm font-black italic uppercase max-w-32 truncate">{viewer.charName ?? viewer.name}</span>
               </button>
               {menu && (
                 <div className="absolute right-0 mt-2 w-56 crypt-card !bg-[#0b0910] shadow-[0_12px_40px_rgba(0,0,0,0.8)] p-1.5 animate-scale-up">

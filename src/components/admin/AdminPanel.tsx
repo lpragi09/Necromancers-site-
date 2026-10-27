@@ -4,7 +4,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
-  CalendarClock, CalendarRange, Check, ClipboardCheck, Crown, Dices, Eye, EyeOff, Gem, Gift, Loader2,
+  CalendarClock, CalendarRange, Check, ClipboardCheck, Crown, Dices, Eye, EyeOff, Gamepad2, Gem, Gift, Loader2,
   Lock, LockOpen, Megaphone, Mountain, Pencil, Pin, Plus, RotateCcw, Search, Sparkles, Store, Swords, Trash2, Trophy, UserCheck, Users, X,
   type LucideIcon,
 } from "lucide-react";
@@ -20,6 +20,7 @@ import GiveawayDraw from "@/components/admin/GiveawayDraw";
 import ShopAdmin from "@/components/admin/ShopAdmin";
 import TournamentAdmin from "@/components/admin/TournamentAdmin";
 import DungeonAdmin from "@/components/admin/DungeonAdmin";
+import GamesAdmin from "@/components/admin/GamesAdmin";
 import {
   EmptyLine, Field, FormFooter, fromLocalInput, IconBtn, ImageField, isUploading, Panel, Pill, Preview, Row, Segmented, toLocalInput, Toggle, useAction,
 } from "@/components/admin/kit";
@@ -41,7 +42,7 @@ interface Overview {
   discordEnabled?: boolean;
 }
 
-type Tab = "drops" | "membros" | "avisos" | "sorteios" | "ranking" | "loja" | "torneios" | "dungeons";
+type Tab = "drops" | "membros" | "avisos" | "sorteios" | "ranking" | "loja" | "torneios" | "dungeons" | "games";
 
 
 export default function AdminPanel() {
@@ -100,6 +101,7 @@ export default function AdminPanel() {
     { id: "ranking", label: "Temporadas", hint: "Prêmios e itens", icon: Trophy },
     { id: "torneios", label: "Torneios", hint: "Presença semanal", icon: Swords },
     { id: "dungeons", label: "Dungeons", hint: "Lista e grupos", icon: Mountain },
+    { id: "games", label: "Games", hint: "Salas dos minigames", icon: Gamepad2 },
     { id: "loja", label: "Lojinha", hint: "Moedas e resgates", icon: Store },
   ];
   const stats: { label: string; value: number; icon: LucideIcon; tab: Tab; alert?: boolean }[] = [
@@ -128,8 +130,8 @@ export default function AdminPanel() {
       </div>
 
       <div className="grid lg:grid-cols-[230px_1fr] gap-6 items-start">
-        {/* Menu: lateral no computador, grade 4×2 no celular (todas as abas à vista) */}
-        <nav className="lg:sticky lg:top-24 crypt-card p-2 grid grid-cols-4 lg:flex lg:flex-col gap-1">
+        {/* Menu: lateral no computador, grade 3×3 no celular (todas as abas à vista) */}
+        <nav className="lg:sticky lg:top-24 crypt-card p-2 grid grid-cols-3 lg:flex lg:flex-col gap-1">
           {tabs.map((t) => {
             const on = tab === t.id;
             return (
@@ -158,6 +160,7 @@ export default function AdminPanel() {
           {tab === "loja" && <ShopAdmin />}
           {tab === "torneios" && <TournamentAdmin />}
           {tab === "dungeons" && <DungeonAdmin />}
+          {tab === "games" && <GamesAdmin />}
         </div>
       </div>
     </div>

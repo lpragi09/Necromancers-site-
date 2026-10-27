@@ -3,7 +3,7 @@ import { ADMIN_ROLES, isAdminId } from "@/lib/admins";
 import { deletePost as deleteDiscordPost, discordEnabled, editPost as editDiscordPost, sendPost as sendDiscordPost } from "@/lib/discord";
 import { hasSupabase, supabaseAdmin } from "@/lib/supabaseAdmin";
 import { cleanText, decodeImage, DEMO_MESSAGE, fail, ok } from "@/lib/http";
-import { ACTIVITY_COLUMNS, CLAIM_COLUMNS, DROP_COLUMNS, getCoinEpoch, getDrawnAt, GIVEAWAY_COLUMNS, ITEM_COLUMNS, ORDER_COLUMNS, POST_COLUMNS, SEASON_COLUMNS, SHOP_ITEM_COLUMNS, TOURNAMENT_SCORE_COLUMNS, DUNGEON_RUN_COLUMNS, DUNGEON_GRACE_MS } from "@/lib/data";
+import { ACTIVITY_COLUMNS, CLAIM_COLUMNS, DROP_COLUMNS, getCoinEpoch, getDrawnAt, GIVEAWAY_COLUMNS, ITEM_COLUMNS, ORDER_COLUMNS, POST_COLUMNS, SEASON_COLUMNS, SHOP_ITEM_COLUMNS, TOURNAMENT_SCORE_COLUMNS, DUNGEON_RUN_COLUMNS, DUNGEON_GRACE_MS, getGames } from "@/lib/data";
 import { FAIR_COLUMNS, runFairDraw, setFairStatus } from "@/lib/fairServer";
 import { ROLE_ORDER, type CoinClaim, type Drop, type Giveaway, type Post, type Rarity, type ShopOrder } from "@/lib/types";
 
@@ -488,6 +488,44 @@ export async function POST(request: Request) {
     }
     case "cancelDungeonRun": {
       const { error } = await db.from("dungeon_runs").update({ status: "cancelled" }).eq("id", id);
+      return error ? fail(error.message, 500) : ok();
+    }
+
+    // ---------- Games ----------
+    case "gamesOverview": {
+      const { error } = await db.from("game_modes").select("id").limit(1);
+      if (error) return fail(/does not exist|schema cache/i.test(error.message) ? "Falta rodar o supabase/migracao-games.sql no SQL Editor do Supabase." : error.message, 500);
+      return ok({ modes: await getGames(false) });
+    }
+    case "saveGameMode": {
+      const m = body?.mode ?? {};
+      const icon = ["gamepad", "bomb", "kart", "trophy"].includes(m.icon) ? m.icon : "gamepad";
+      const fields = { name: cleanText(m.name, 60), icon, active: m.active !== false, sort: Math.floor(Number(m.sort)) || 0 };
+      if (!fields.name) return fail("Dê o nome do jogo.");
+      const { error } = m.id ? await db.from("game_modes").update(fields).eq("id", m.id) : await db.from("game_modes").insert(fields);
+      return error ? fail(error.message, 500) : ok();
+    }
+    case "deleteGameMode": {
+      const { error } = await db.from("game_modes").delete().eq("id", id);
+      return error ? fail(error.message, 500) : ok();
+    }
+    case "saveGameRoom": {
+      const r = body?.room ?? {};
+      const slots = Math.floor(Number(r.slots));
+      if (!(slots >= 1 && slots <= 8)) return fail("A sala tem de 1 a 8 vagas.");
+      const fields = { name: cleanText(r.name, 60), slots, active: r.active !== false, sort: Math.floor(Number(r.sort)) || 0 };
+      if (!fields.name) return fail("Dê o nome da sala.");
+      const { error } = r.id
+        ? await db.from("game_rooms").update(fields).eq("id", r.id)
+        : await db.from("game_rooms").insert({ ...fields, mode_id: str(r.mode_id) });
+      return error ? fail(error.message, 500) : ok();
+    }
+    case "deleteGameRoom": {
+      const { error } = await db.from("game_rooms").delete().eq("id", id);
+      return error ? fail(error.message, 500) : ok();
+    }
+    case "clearGameRoom": {
+      const { error } = await db.from("game_room_players").delete().eq("room_id", id);
       return error ? fail(error.message, 500) : ok();
     }
 

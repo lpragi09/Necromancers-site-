@@ -18,6 +18,7 @@ const GROUPS = [
       { href: "/sorteios", label: "Sorteios" },
       { href: "/torneios", label: "Torneios" },
       { href: "/dungeons", label: "Dungeons" },
+      { href: "/games", label: "Games" },
     ],
   },
   {

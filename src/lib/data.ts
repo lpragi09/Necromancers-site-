@@ -1,7 +1,7 @@
 import { hasSupabase, supabaseAdmin } from "@/lib/supabaseAdmin";
 import { MEMBER_COLUMNS } from "@/lib/viewer";
-import { DEMO_ACTIVITIES, DEMO_DUNGEONS, DEMO_DUNGEON_RUNS, DEMO_TOURNAMENT_MONTHS, DEMO_TOURNAMENT_SCORES, DEMO_GIVEAWAYS, DEMO_ITEMS, DEMO_MEMBERS, DEMO_POSTS, DEMO_RANKING, DEMO_SEASON, DEMO_SHOP_ITEMS } from "@/lib/demo";
-import type { ActivityType, CoinClaim, Drop, DropItem, Giveaway, Member, Post, RankingRow, Rarity, Season, ShopItem, ShopOrder, TournamentMonth, TournamentRow, TournamentScore, Dungeon, DungeonPlayer, DungeonRun } from "@/lib/types";
+import { DEMO_ACTIVITIES, DEMO_DUNGEONS, DEMO_DUNGEON_RUNS, DEMO_GAMES, DEMO_TOURNAMENT_MONTHS, DEMO_TOURNAMENT_SCORES, DEMO_GIVEAWAYS, DEMO_ITEMS, DEMO_MEMBERS, DEMO_POSTS, DEMO_RANKING, DEMO_SEASON, DEMO_SHOP_ITEMS } from "@/lib/demo";
+import type { ActivityType, CoinClaim, Drop, DropItem, Giveaway, Member, Post, RankingRow, Rarity, Season, ShopItem, ShopOrder, TournamentMonth, TournamentRow, TournamentScore, Dungeon, DungeonPlayer, DungeonRun, GameMode, GamePlayer, GameRoom } from "@/lib/types";
 
 // Leituras usadas pelas páginas (sempre no servidor, pela service role).
 // Sem Supabase configurado, devolvem os dados de exemplo de lib/demo.ts.
@@ -405,4 +405,38 @@ async function getMyRuns(memberId: string): Promise<InventoryRun[]> {
   return ((data ?? []) as unknown as { dungeon_runs: { id: string; dungeon_name: string; starts_at: string; slots: number; creator_id: string; dungeon_participants: unknown[] } }[])
     .map(({ dungeon_runs: r }) => ({ id: r.id, dungeon_name: r.dungeon_name, starts_at: r.starts_at, slots: r.slots, filled: r.dungeon_participants.length, mine: r.creator_id === memberId }))
     .sort((a, b) => a.starts_at.localeCompare(b.starts_at));
+}
+
+// ---------- Games ----------
+/** A entrada numa sala vale 1 hora; depois a vaga libera sozinha. */
+export const GAME_SEAT_MS = 3600_000;
+
+/** Modos de jogo com as salas e quem está em cada uma agora. activeOnly: só o que aparece no site. */
+export async function getGames(activeOnly = true): Promise<GameMode[]> {
+  if (isDemo()) return DEMO_GAMES;
+  let modesQ = supabaseAdmin.from("game_modes").select("id, name, icon, sort, active").order("sort").order("name");
+  let roomsQ = supabaseAdmin.from("game_rooms").select("id, mode_id, name, slots, sort, active").order("sort").order("name");
+  if (activeOnly) { modesQ = modesQ.eq("active", true); roomsQ = roomsQ.eq("active", true); }
+  const [modes, rooms, players] = await Promise.all([
+    modesQ,
+    roomsQ,
+    supabaseAdmin
+      .from("game_room_players")
+      .select("room_id, member_id, joined_at, members(char_name, avatar_url)")
+      .gte("joined_at", new Date(Date.now() - GAME_SEAT_MS).toISOString())
+      .order("joined_at"),
+  ]);
+  const byRoom = new Map<string, GamePlayer[]>();
+  for (const p of (players.data ?? []) as unknown as { room_id: string; member_id: string; members: { char_name: string; avatar_url: string | null } | null }[]) {
+    const list = byRoom.get(p.room_id) ?? [];
+    list.push({ member_id: p.member_id, char_name: p.members?.char_name ?? "?", avatar_url: p.members?.avatar_url ?? null });
+    byRoom.set(p.room_id, list);
+  }
+  const roomsByMode = new Map<string, GameRoom[]>();
+  for (const r of (rooms.data ?? []) as Omit<GameRoom, "players">[]) {
+    const list = roomsByMode.get(r.mode_id) ?? [];
+    list.push({ ...r, players: byRoom.get(r.id) ?? [] });
+    roomsByMode.set(r.mode_id, list);
+  }
+  return ((modes.data ?? []) as Omit<GameMode, "rooms">[]).map((m) => ({ ...m, rooms: roomsByMode.get(m.id) ?? [] }));
 }

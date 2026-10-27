@@ -214,3 +214,31 @@ export interface DungeonRun {
   created_at: string;
   players: DungeonPlayer[];
 }
+
+// ---------- Games (salas para combinar os minigames do jogo) ----------
+export type GameIcon = "gamepad" | "bomb" | "kart" | "trophy";
+
+export interface GamePlayer {
+  member_id: string;
+  char_name: string;
+  avatar_url: string | null;
+}
+
+export interface GameRoom {
+  id: string;
+  mode_id: string;
+  name: string;
+  slots: number;
+  sort: number;
+  active: boolean;
+  players: GamePlayer[];
+}
+
+export interface GameMode {
+  id: string;
+  name: string;
+  icon: GameIcon;
+  sort: number;
+  active: boolean;
+  rooms: GameRoom[];
+}
