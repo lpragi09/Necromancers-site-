@@ -1,14 +1,17 @@
 import { hasSupabase, supabaseAdmin } from "@/lib/supabaseAdmin";
 import { FAIR_COLUMNS } from "@/lib/fairServer";
+import { canSeeContent, getViewer } from "@/lib/viewer";
 
 const LIST_COLUMNS = "id, kind, target_id, title, total_weight, drand_round, winner_label, winner_username, status, created_at, drawn_at";
 
-// Registro público dos sorteios: ?id= traz um giro completo (com a lista), ?target= os giros de um sorteio
+// Registro dos sorteios (só para membros): ?id= traz um giro completo (com a lista), ?target= os giros de um sorteio
 export async function GET(request: Request) {
+  if (!canSeeContent(await getViewer())) return Response.json({ error: "Área exclusiva do clã." }, { status: 401 });
   const url = new URL(request.url);
   const id = url.searchParams.get("id");
   const target = url.searchParams.get("target");
-  const headers = { "Vercel-CDN-Cache-Control": "max-age=5, stale-while-revalidate=60", "Cache-Control": "public, max-age=0, must-revalidate" };
+  // Resposta depende de quem pede: nada de cache compartilhado na CDN
+  const headers = { "Cache-Control": "private, no-store" };
   if (!hasSupabase()) return Response.json(id ? { error: "Sorteio não encontrado." } : { draws: [] }, { status: id ? 404 : 200 });
 
   if (id) {

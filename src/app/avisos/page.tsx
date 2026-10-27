@@ -1,8 +1,10 @@
 import { Megaphone } from "lucide-react";
+import MembersGate from "@/components/MembersGate";
 import PostCard from "@/components/PostCard";
 import PageNav, { pageFrom } from "@/components/PageNav";
 import { Empty, PageHeader } from "@/components/ui";
 import { getPostsPage } from "@/lib/data";
+import { canSeeContent, getViewer } from "@/lib/viewer";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Avisos e novidades" };
@@ -11,6 +13,8 @@ const PAGE_SIZE = 9;
 
 export default async function AvisosPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const params = await searchParams;
+  const viewer = await getViewer();
+  if (!canSeeContent(viewer)) return <MembersGate viewer={viewer} />;
   const page = pageFrom(params);
   const { items: posts, total } = await getPostsPage(page, PAGE_SIZE);
   const pageCount = Math.max(1, Math.ceil(total / PAGE_SIZE));

@@ -4,6 +4,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, CalendarClock, Clock, Megaphone, Pin, Sparkles } from "lucide-react";
 import { getPost } from "@/lib/data";
+import { canSeeContent, getViewer } from "@/lib/viewer";
+import MembersGate from "@/components/MembersGate";
 import { fmtDateTime } from "@/lib/format";
 import { POST_KIND_LABEL, type PostKind } from "@/lib/types";
 
@@ -16,6 +18,8 @@ const KIND: Record<PostKind, { icon: typeof Megaphone; cls: string }> = {
 };
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
+  // A prévia do link (Discord, WhatsApp) não pode vazar o aviso para quem não é do clã
+  if (!canSeeContent(await getViewer())) return { title: "Aviso do clã" };
   const post = await getPost((await params).id);
   if (!post) return { title: "Aviso não encontrado" };
   const description = post.body.slice(0, 160);
@@ -27,6 +31,8 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
 }
 
 export default async function AvisoPage({ params }: { params: Promise<{ id: string }> }) {
+  const viewer = await getViewer();
+  if (!canSeeContent(viewer)) return <MembersGate viewer={viewer} />;
   const post = await getPost((await params).id);
   if (!post) notFound();
   const k = KIND[post.kind];

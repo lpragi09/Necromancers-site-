@@ -1,9 +1,11 @@
 import { Crown, Shield, Skull, Sparkles, Star, Users } from "lucide-react";
+import MembersGate from "@/components/MembersGate";
 import Avatar from "@/components/Avatar";
 import { Empty, PageHeader } from "@/components/ui";
 import PageNav, { pageFrom, slicePage } from "@/components/PageNav";
 import { getMembers } from "@/lib/data";
 import { ROLE_LABEL, ROLE_ORDER, type MemberRole } from "@/lib/types";
+import { canSeeContent, getViewer } from "@/lib/viewer";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Membros" };
@@ -21,6 +23,8 @@ const PAGE_SIZE = 30;
 
 export default async function MembrosPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const params = await searchParams;
+  const viewer = await getViewer();
+  if (!canSeeContent(viewer)) return <MembersGate viewer={viewer} />;
   const members = await getMembers();
   // Ordem: cargo, depois level. Pagina a lista inteira e agrupa por cargo só o que caiu na página.
   const sorted = [...members].sort((a, b) => ROLE_ORDER.indexOf(a.role) - ROLE_ORDER.indexOf(b.role) || (b.level ?? 0) - (a.level ?? 0));

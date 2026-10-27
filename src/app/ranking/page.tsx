@@ -1,11 +1,12 @@
 import Link from "next/link";
+import MembersGate from "@/components/MembersGate";
 import { CalendarRange, Gem, ListOrdered, Trophy } from "lucide-react";
 import RankingTable, { Podium } from "@/components/RankingTable";
 import DropForm from "@/components/DropForm";
 import MyDrops from "@/components/MyDrops";
 import { Empty, PageHeader, RarityBadge, SectionTitle } from "@/components/ui";
 import { getItems, getMyDrops, getRanking, getSeasons, pickSeason } from "@/lib/data";
-import { getViewer, isActiveMember } from "@/lib/viewer";
+import { canSeeContent, getViewer, isActiveMember } from "@/lib/viewer";
 import { fmtDate } from "@/lib/format";
 import LoginPrompt from "@/components/LoginPrompt";
 import PageNav, { pageFrom, slicePage } from "@/components/PageNav";
@@ -20,6 +21,7 @@ export default async function RankingPage({ searchParams }: { searchParams: Prom
   const params = await searchParams;
   const temporada = typeof params.temporada === "string" ? params.temporada : undefined;
   const viewer = await getViewer();
+  if (!canSeeContent(viewer)) return <MembersGate viewer={viewer} />;
   const [seasons, items] = await Promise.all([getSeasons(), getItems()]);
   const season = pickSeason(seasons, temporada);
   const activeSeason = seasons.find((s) => s.status === "active");

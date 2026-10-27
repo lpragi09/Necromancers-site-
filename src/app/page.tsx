@@ -6,7 +6,8 @@ import HeroVideo from "@/components/HeroVideo";
 import RankingTable, { Podium } from "@/components/RankingTable";
 import { BandHeader, Empty } from "@/components/ui";
 import { getGiveaways, getPosts, getRanking, getSeasons, getStats, pickSeason } from "@/lib/data";
-import { getViewer, isActiveMember } from "@/lib/viewer";
+import { canSeeContent, getViewer, isActiveMember } from "@/lib/viewer";
+import MembersGate from "@/components/MembersGate";
 import { fmtDate, fmtPoints } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
@@ -19,8 +20,47 @@ function SeeAll({ href, label }: { href: string; label: string }) {
   );
 }
 
+// Hero: cemitério ao luar, névoa e a logo do clã (visível para todo mundo)
+function Hero() {
+  return (
+    <section className="hero-scene relative min-h-[100svh] flex flex-col items-center justify-center overflow-hidden pt-16">
+      <HeroVideo />
+
+      <div className="relative z-10 text-center px-4 rise-in">
+        <div className="relative w-fit mx-auto">
+          <div className="absolute inset-[12%] rounded-full bg-spirit/40 blur-[70px]" />
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/logo.webp" alt="Necromancers" width={600} height={600}
+            className="logo-float relative w-60 h-60 sm:w-80 sm:h-80 drop-shadow-[0_0_35px_rgba(168,85,247,0.55)]" />
+        </div>
+        <h1 className="sr-only">Necromancers</h1>
+        <p className="mt-6 text-base sm:text-lg italic text-bone/60 max-w-xl mx-auto">
+          Onde os treinadores fantasmas se reúnem. Sorteios, ranking de drops e tudo que acontece no clã.
+        </p>
+        <div className="mt-9 flex flex-wrap gap-4 justify-center">
+          <Link href="/sorteios" className="btn-neon"><Gift className="w-4 h-4" /> Ver sorteios</Link>
+          <Link href="/ranking" className="btn-ghost !bg-black/60 backdrop-blur"><Trophy className="w-4 h-4" /> Ranking</Link>
+        </div>
+      </div>
+
+      <a href="#cla" className="scroll-cue absolute bottom-16 z-10 hidden [@media(min-height:760px)]:flex flex-col items-center gap-1 text-[10px] font-black italic uppercase tracking-[0.3em] text-bone/60 hover:text-bone">
+        Ver o clã <ArrowDown className="w-4 h-4" />
+      </a>
+    </section>
+  );
+}
+
 export default async function Home() {
   const viewer = await getViewer();
+  // Visitante (ou rival) vê só a abertura; os dados do clã nem são buscados
+  if (!canSeeContent(viewer)) {
+    return (
+      <>
+        <Hero />
+        <div id="cla" className="mt-16 scroll-mt-24"><MembersGate viewer={viewer} compact /></div>
+      </>
+    );
+  }
   const [posts, giveaways, seasons, stats] = await Promise.all([getPosts(7), getGiveaways(viewer?.member?.id), getSeasons(), getStats()]);
   const season = pickSeason(seasons);
   const ranking = await getRanking(season?.id);
@@ -33,31 +73,7 @@ export default async function Home() {
 
   return (
     <>
-      {/* Hero: cemitério ao luar, névoa e o fantasma do clã */}
-      <section className="hero-scene relative min-h-[100svh] flex flex-col items-center justify-center overflow-hidden pt-16">
-        <HeroVideo />
-
-        <div className="relative z-10 text-center px-4 rise-in">
-          <div className="relative w-fit mx-auto">
-            <div className="absolute inset-[12%] rounded-full bg-spirit/40 blur-[70px]" />
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/logo.webp" alt="Necromancers" width={600} height={600}
-              className="logo-float relative w-60 h-60 sm:w-80 sm:h-80 drop-shadow-[0_0_35px_rgba(168,85,247,0.55)]" />
-          </div>
-          <h1 className="sr-only">Necromancers</h1>
-          <p className="mt-6 text-base sm:text-lg italic text-bone/60 max-w-xl mx-auto">
-            Onde os treinadores fantasmas se reúnem. Sorteios, ranking de drops e tudo que acontece no clã.
-          </p>
-          <div className="mt-9 flex flex-wrap gap-4 justify-center">
-            <Link href="/sorteios" className="btn-neon"><Gift className="w-4 h-4" /> Ver sorteios</Link>
-            <Link href="/ranking" className="btn-ghost !bg-black/60 backdrop-blur"><Trophy className="w-4 h-4" /> Ranking</Link>
-          </div>
-        </div>
-
-        <a href="#cla" className="scroll-cue absolute bottom-16 z-10 hidden [@media(min-height:760px)]:flex flex-col items-center gap-1 text-[10px] font-black italic uppercase tracking-[0.3em] text-bone/60 hover:text-bone">
-          Ver o clã <ArrowDown className="w-4 h-4" />
-        </a>
-      </section>
+      <Hero />
 
       {/* Números do clã e aviso fixado */}
       <div id="cla" className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 mt-16 scroll-mt-24 space-y-6">

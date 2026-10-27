@@ -1,10 +1,11 @@
 import Link from "next/link";
+import MembersGate from "@/components/MembersGate";
 import { Flame, Gift, ShieldCheck, Trophy } from "lucide-react";
 import GiveawayCard from "@/components/GiveawayCard";
 import PageNav, { pageFrom } from "@/components/PageNav";
 import { Empty, PageHeader, SectionTitle } from "@/components/ui";
 import { getGiveawaysPage } from "@/lib/data";
-import { getViewer, isActiveMember } from "@/lib/viewer";
+import { canSeeContent, getViewer, isActiveMember } from "@/lib/viewer";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Sorteios" };
@@ -14,6 +15,7 @@ const PAGE_SIZE = 9;
 export default async function SorteiosPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const params = await searchParams;
   const viewer = await getViewer();
+  if (!canSeeContent(viewer)) return <MembersGate viewer={viewer} />;
   const memberId = viewer?.member?.id;
   // Cada lista tem a sua página: ?pagina= (em andamento) e ?sorteados= (já sorteados)
   const page = pageFrom(params);

@@ -40,3 +40,9 @@ export async function getViewer(): Promise<Viewer | null> {
 
 /** Membro ativo pode se inscrever em sorteio e enviar drop. */
 export const isActiveMember = (v: Viewer | null): v is Viewer & { member: Member } => v?.member?.status === "active";
+
+/**
+ * Conteúdo do site (sorteios, ranking, avisos, membros) é só para membro aprovado ou admin: o clã rival não vê nada.
+ * No modo demonstração (sem Supabase, só local) libera, porque ali só existem dados de exemplo.
+ */
+export const canSeeContent = (v: Viewer | null): boolean => !hasSupabase() || isActiveMember(v) || !!v?.isAdmin;
