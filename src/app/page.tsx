@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ArrowDown, ArrowRight, Gem, Gift, Megaphone, Trophy, Users } from "lucide-react";
 import PostCard from "@/components/PostCard";
 import GiveawayCard from "@/components/GiveawayCard";
+import HeroGraveyard from "@/components/HeroGraveyard";
 import RankingTable, { Podium } from "@/components/RankingTable";
 import { BandHeader, Empty } from "@/components/ui";
 import { getGiveaways, getPosts, getRanking, getSeasons, getStats, pickSeason } from "@/lib/data";
@@ -32,10 +33,7 @@ export default async function Home() {
     <>
       {/* Hero: cemitério ao luar, névoa e o fantasma do clã */}
       <section className="hero-scene relative min-h-[100svh] flex flex-col items-center justify-center overflow-hidden pt-16">
-        <div className="hero-moon absolute top-[16%] right-[14%] w-16 h-16 sm:w-24 sm:h-24 rounded-full" />
-        <div className="absolute inset-x-0 bottom-0 h-[38%] hero-graves opacity-90" />
-        <div className="hero-fog bottom-[6%]" />
-        <div className="hero-fog bottom-[-12%] [animation-duration:65s] [animation-direction:reverse] opacity-70" />
+        <HeroGraveyard />
 
         <div className="relative z-10 text-center px-4 rise-in">
           <div className="relative w-fit mx-auto">
@@ -50,7 +48,7 @@ export default async function Home() {
           </p>
           <div className="mt-9 flex flex-wrap gap-4 justify-center">
             <Link href="/sorteios" className="btn-neon"><Gift className="w-4 h-4" /> Ver sorteios</Link>
-            <Link href="/ranking" className="btn-ghost"><Trophy className="w-4 h-4" /> Ranking</Link>
+            <Link href="/ranking" className="btn-ghost !bg-black/60 backdrop-blur"><Trophy className="w-4 h-4" /> Ranking</Link>
           </div>
         </div>
 

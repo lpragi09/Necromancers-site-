@@ -57,7 +57,7 @@ export default function Pagination({ page, pageCount, total, pageSize, setPage, 
             <span key={`e${i}`} className="px-1 text-bone/30">…</span>
           ) : (
             <button key={p} onClick={() => setPage(p)}
-              className={`${btn} ${p === page ? "bg-ecto text-void" : "text-bone/60 hover:bg-white/5 hover:text-bone"}`}>
+              className={`${btn} ${p === page ? "bg-spirit text-white shadow-[0_0_12px_rgba(168,85,247,0.5)]" : "text-bone/60 hover:bg-white/5 hover:text-bone"}`}>
               {p}
             </button>
           )
