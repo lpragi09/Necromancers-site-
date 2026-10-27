@@ -78,7 +78,7 @@ export default async function Home() {
         </div>
 
         {pinned && (
-          <Link href={`/avisos#${pinned.id}`} className={`group block overflow-hidden rounded-[0.9rem] border border-spirit/40 bg-gradient-to-r from-spirit/15 via-crypt to-crypt hover:border-spirit/70 hover:shadow-[0_0_28px_rgba(168,85,247,0.2)] transition-all ${pinned.image_url ? "md:grid md:grid-cols-[1.15fr_1fr]" : ""}`}>
+          <Link href={`/avisos/${pinned.id}`} className={`group block overflow-hidden rounded-[0.9rem] border border-spirit/40 bg-gradient-to-r from-spirit/15 via-crypt to-crypt hover:border-spirit/70 hover:shadow-[0_0_28px_rgba(168,85,247,0.2)] transition-all ${pinned.image_url ? "md:grid md:grid-cols-[1.15fr_1fr]" : ""}`}>
             {pinned.image_url && (
               // eslint-disable-next-line @next/next/no-img-element
               <img src={pinned.image_url} alt="" className="w-full aspect-[16/7] object-cover md:h-full group-hover:scale-[1.02] transition-transform duration-500" />
@@ -87,7 +87,7 @@ export default async function Home() {
               <p className="flex items-center gap-2 text-[11px] font-black italic uppercase tracking-[0.25em] text-spirit"><Megaphone className="w-4 h-4" /> Aviso importante</p>
               <p className="font-title text-xl sm:text-2xl mt-2">{pinned.title}</p>
               <p className={`text-sm text-bone/60 mt-2 whitespace-pre-line ${pinned.image_url ? "line-clamp-4" : "line-clamp-2"}`}>{pinned.body}</p>
-              <span className="mt-4 inline-flex items-center gap-1 text-xs font-black italic uppercase text-spirit group-hover:text-white transition-colors">Ler aviso completo <ArrowRight className="w-3.5 h-3.5" /></span>
+              <span className="btn-neon mt-5 w-fit !py-2.5 !px-5">Clique aqui para ver o aviso completo <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" /></span>
             </div>
           </Link>
         )}
@@ -138,7 +138,13 @@ export default async function Home() {
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
           <BandHeader eyebrow="Mural do clã" title="Avisos &" accent="novidades" text="Regras, eventos, hunts e novidades do servidor." />
           {latest.length ? (
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">{latest.map((p) => <PostCard key={p.id} post={p} />)}</div>
+            <div className="flex flex-wrap justify-center gap-5">
+              {latest.map((p) => (
+                <div key={p.id} className="w-full md:w-[calc(50%-0.625rem)] lg:w-[calc(33.333%-0.834rem)] flex">
+                  <PostCard post={p} href={`/avisos/${p.id}`} />
+                </div>
+              ))}
+            </div>
           ) : (
             <Empty text="Nenhuma novidade por enquanto." />
           )}

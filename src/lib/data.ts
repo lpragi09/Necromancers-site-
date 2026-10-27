@@ -26,6 +26,13 @@ export async function getPosts(limit = 50): Promise<Post[]> {
   return (data as Post[]) ?? [];
 }
 
+/** Um aviso publicado, para a página do aviso completo. */
+export async function getPost(id: string): Promise<Post | null> {
+  if (isDemo()) return DEMO_POSTS.find((p) => p.id === id) ?? null;
+  const { data } = await supabaseAdmin.from("posts").select(POST_COLUMNS).eq("id", id).eq("published", true).maybeSingle();
+  return (data as Post | null) ?? null;
+}
+
 export async function getGiveaways(memberId?: string | null): Promise<Giveaway[]> {
   if (isDemo()) return DEMO_GIVEAWAYS;
   const { data } = await supabaseAdmin.from("giveaways").select(GIVEAWAY_COLUMNS).order("created_at", { ascending: false }).limit(30);

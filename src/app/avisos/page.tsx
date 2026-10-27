@@ -9,9 +9,11 @@ export const metadata = { title: "Avisos e novidades" };
 export default async function AvisosPage() {
   const posts = await getPosts(100);
   return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6">
+    <div className="max-w-6xl mx-auto px-4 sm:px-6">
       <PageHeader icon={Megaphone} eyebrow="Mural do clã" title="Avisos &" accent="novidades" text="Tudo que a liderança anunciou: regras, eventos, hunts e novidades do servidor." />
-      {posts.length ? <div className="grid gap-5">{posts.map((p) => <PostCard key={p.id} post={p} full />)}</div> : <Empty text="O mural está vazio por enquanto." />}
+      {posts.length ? (
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">{posts.map((p) => <PostCard key={p.id} post={p} href={`/avisos/${p.id}`} />)}</div>
+      ) : <Empty text="O mural está vazio por enquanto." />}
     </div>
   );
 }
