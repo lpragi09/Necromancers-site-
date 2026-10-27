@@ -17,8 +17,11 @@ export async function POST(request: Request) {
   if (!g) return fail("Sorteio não encontrado.", 404);
   if (g.status !== "open" || (g.ends_at && new Date(g.ends_at).getTime() < Date.now())) return fail("As inscrições deste sorteio já fecharam.");
 
+  const { data: mine } = await supabaseAdmin.from("giveaway_entries").select("status").eq("giveaway_id", id).eq("member_id", viewer.member.id).maybeSingle();
+  if (mine?.status === "rejected") return fail("A liderança tirou você deste sorteio. Fale com eles no Discord.", 403);
+
   if (leave) {
-    await supabaseAdmin.from("giveaway_entries").delete().eq("giveaway_id", id).eq("member_id", viewer.member.id);
+    await supabaseAdmin.from("giveaway_entries").delete().eq("giveaway_id", id).eq("member_id", viewer.member.id).eq("status", "ok");
     return ok({ joined: false });
   }
   const { error } = await supabaseAdmin

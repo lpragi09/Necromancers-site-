@@ -4,13 +4,13 @@
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
-  CalendarClock, Check, Coins, Eye, EyeOff, History, Loader2, Package, PackageCheck, Pencil, Plus, RotateCcw, Sparkles, Trash2, Wallet, X,
+  CalendarClock, Check, CheckCircle2, Coins, Eye, EyeOff, History, Loader2, Package, PackageCheck, Pencil, Plus, RotateCcw, Sparkles, Trash2, Wallet, X,
 } from "lucide-react";
 import { adminApi } from "@/lib/api";
 import { useDialog } from "@/components/Dialog";
 import Pagination, { usePagination } from "@/components/Pagination";
 import Avatar from "@/components/Avatar";
-import { EmptyLine, Field, IconBtn, ImageField, isUploading, Panel, Pill, Row, Toggle, useAction } from "@/components/admin/kit";
+import { EmptyLine, Field, IconBtn, ImageField, isUploading, Panel, Pill, Row, Segmented, Toggle, useAction } from "@/components/admin/kit";
 import { fmtDateTime, timeAgo } from "@/lib/format";
 import type { ActivityType, CoinClaim, ShopItem, ShopOrder } from "@/lib/types";
 
@@ -29,6 +29,8 @@ interface ShopData {
   balances: { member_id: string; char_name: string; avatar_url: string | null; earned: number; spent: number; balance: number }[];
 }
 
+type ShopTab = "pendentes" | "saldos" | "itens" | "atividades" | "historico";
+
 const EMPTY_ITEM = { id: "", name: "", description: "", image_url: "", price: "", stock: "", active: true };
 const EMPTY_ACTIVITY = { id: "", name: "", coins: "", active: true };
 
@@ -44,6 +46,7 @@ export default function ShopAdmin() {
   const [zoom, setZoom] = useState<string | null>(null);
   const [item, setItem] = useState<typeof EMPTY_ITEM | null>(null);
   const [activity, setActivity] = useState<typeof EMPTY_ACTIVITY | null>(null);
+  const [tab, setTab] = useState<ShopTab>("pendentes");
 
   const load = useCallback(async () => {
     try {
@@ -87,10 +90,27 @@ export default function ShopAdmin() {
     if (await run("saveActivity", { activity: { ...activity, id: activity.id || undefined, coins: Number(activity.coins) } })) setActivity(null);
   };
 
+  const pending = data.pendingClaims.length + data.pendingOrders.length;
+
   return (
     <div className="space-y-6">
+      {/* Uma coisa por vez: o que precisa de ação fica em Pendências */}
+      <Segmented value={tab} onChange={setTab} options={[
+        { value: "pendentes", label: "Pendências", icon: CheckCircle2, count: pending },
+        { value: "saldos", label: "Saldos", icon: Wallet, count: data.balances.length },
+        { value: "itens", label: "Itens", icon: Package, count: data.items.length },
+        { value: "atividades", label: "Atividades", icon: Sparkles, count: data.activities.length },
+        { value: "historico", label: "Histórico", icon: History },
+      ]} />
+
+      {tab === "pendentes" && pending === 0 && (
+        <Panel icon={CheckCircle2} title="Tudo em dia" subtitle="Quando alguém pedir moedas ou resgatar um item, aparece aqui.">
+          <EmptyLine text="Nenhum pedido de moedas nem resgate esperando." />
+        </Panel>
+      )}
+
       {/* Moedas para aprovar */}
-      <Panel icon={Coins} title={`Moedas para aprovar (${data.pendingClaims.length})`} subtitle="Confira o print com o dia e a hora da atividade.">
+      {tab === "pendentes" && data.pendingClaims.length > 0 && <Panel icon={Coins} title={`Moedas para aprovar (${data.pendingClaims.length})`} subtitle="Confira o print com o dia e a hora da atividade.">
         {data.pendingClaims.length ? (
           <div className="grid sm:grid-cols-2 gap-4">
             {claimsPag.pageItems.map((c) => (
@@ -118,12 +138,12 @@ export default function ShopAdmin() {
               </div>
             ))}
           </div>
-        ) : <EmptyLine text="Nenhum pedido de moedas esperando." />}
+        ) : null}
         <Pagination {...claimsPag} />
-      </Panel>
+      </Panel>}
 
       {/* Resgates para entregar */}
-      <Panel icon={PackageCheck} title={`Resgates para entregar (${data.pendingOrders.length})`} subtitle="Entregue o item no jogo e marque como entregue. Cancelar devolve as moedas.">
+      {tab === "pendentes" && data.pendingOrders.length > 0 && <Panel icon={PackageCheck} title={`Resgates para entregar (${data.pendingOrders.length})`} subtitle="Entregue o item no jogo e marque como entregue. Cancelar devolve as moedas.">
         {data.pendingOrders.length ? (
           <div className="space-y-2">
             {ordersPag.pageItems.map((o) => (
@@ -139,12 +159,12 @@ export default function ShopAdmin() {
               </Row>
             ))}
           </div>
-        ) : <EmptyLine text="Nenhum resgate esperando entrega." />}
+        ) : null}
         <Pagination {...ordersPag} />
-      </Panel>
+      </Panel>}
 
       {/* Saldos */}
-      <Panel icon={Wallet} title="Saldos do clã"
+      {tab === "saldos" && <Panel icon={Wallet} title="Saldos do clã"
         subtitle={data.lastReset ? `Zerado em ${fmtDateTime(data.lastReset.created_at)}${data.lastReset.created_by ? ` por ${data.lastReset.created_by}` : ""}.` : "As moedas nunca foram zeradas."}
         action={<button disabled={busy} onClick={resetCoins} className="btn-ghost !py-2 !px-4 !text-xs !text-rose-300 hover:!border-rose-400/60 hover:!bg-rose-500/10"><RotateCcw className="w-4 h-4" /> Zerar moedas</button>}>
         {data.balances.length ? (
@@ -161,10 +181,10 @@ export default function ShopAdmin() {
           </div>
         ) : <EmptyLine text="Ninguém tem moedas neste ciclo ainda." />}
         <Pagination {...balancesPag} />
-      </Panel>
+      </Panel>}
 
       {/* Itens da loja */}
-      <Panel icon={Package} title={`Itens da loja (${data.items.length})`} subtitle="O que os membros trocam pelas moedas."
+      {tab === "itens" && <Panel icon={Package} title={`Itens da loja (${data.items.length})`} subtitle="O que os membros trocam pelas moedas."
         action={!item && <button onClick={() => setItem(EMPTY_ITEM)} className="btn-neon !py-2 !px-4 !text-xs"><Plus className="w-4 h-4" /> Novo item</button>}>
         {item && (
           <form onSubmit={saveItem} className="mb-6 rounded-xl border border-spirit/30 bg-spirit/[0.05] p-4 sm:p-5 grid gap-4 animate-fade-in">
@@ -219,10 +239,10 @@ export default function ShopAdmin() {
           ))}
         </div>
         <Pagination {...itemsPag} />
-      </Panel>
+      </Panel>}
 
       {/* Atividades */}
-      <Panel icon={Sparkles} title={`Atividades (${data.activities.length})`} subtitle="Quanto cada atividade do clã vale em moedas."
+      {tab === "atividades" && <Panel icon={Sparkles} title={`Atividades (${data.activities.length})`} subtitle="Quanto cada atividade do clã vale em moedas."
         action={!activity && <button onClick={() => setActivity(EMPTY_ACTIVITY)} className="btn-neon !py-2 !px-4 !text-xs"><Plus className="w-4 h-4" /> Nova atividade</button>}>
         {activity && (
           <form onSubmit={saveActivity} className="mb-6 rounded-xl border border-spirit/30 bg-spirit/[0.05] p-4 sm:p-5 grid gap-4 animate-fade-in">
@@ -265,10 +285,10 @@ export default function ShopAdmin() {
           ))}
         </div>
         <Pagination {...activitiesPag} />
-      </Panel>
+      </Panel>}
 
       {/* Histórico */}
-      <Panel icon={History} title="Histórico" subtitle="Últimos pedidos de moedas conferidos e resgates resolvidos.">
+      {tab === "historico" && <Panel icon={History} title="Histórico" subtitle="Últimos pedidos de moedas conferidos e resgates resolvidos.">
         <div className="grid xl:grid-cols-2 gap-6">
           <div>
             <p className="label">Moedas conferidas</p>
@@ -305,7 +325,7 @@ export default function ShopAdmin() {
             <Pagination {...orderHistoryPag} />
           </div>
         </div>
-      </Panel>
+      </Panel>}
 
       {zoom && (
         <div onClick={() => setZoom(null)} className="fixed inset-0 z-[250] bg-black/95 flex items-center justify-center p-4 animate-fade-in cursor-zoom-out">

@@ -1,10 +1,11 @@
 import Link from "next/link";
-import { Crown, Swords } from "lucide-react";
+import { Crown, ShieldCheck, Swords, Trophy } from "lucide-react";
 import MembersGate from "@/components/MembersGate";
 import Avatar from "@/components/Avatar";
 import PageNav, { pageFrom, slicePage } from "@/components/PageNav";
 import { Empty, PageHeader } from "@/components/ui";
-import { getTournamentMonths, getTournamentRanking } from "@/lib/data";
+import { getTournamentDraws, getTournamentMonths, getTournamentRanking } from "@/lib/data";
+import { fmtDateTime } from "@/lib/format";
 import { canSeeContent, getViewer } from "@/lib/viewer";
 
 export const dynamic = "force-dynamic";
@@ -36,7 +37,7 @@ export default async function TorneiosPage({ searchParams }: { searchParams: Pro
   const rawWeek = typeof params.semana === "string" ? params.semana : undefined;
   // Sem filtro: mês atual abre na semana de hoje; meses antigos abrem no total do mês
   const week: number | null = rawWeek === "todo" ? null : rawWeek && /^[1-4]$/.test(rawWeek) ? Number(rawWeek) : isNewest ? currentWeek() : null;
-  const ranking = month ? await getTournamentRanking(month.id, week) : [];
+  const [ranking, draws] = month ? await Promise.all([getTournamentRanking(month.id, week), getTournamentDraws(month.id)]) : [[], []];
   const rest = slicePage(ranking.slice(3), pageFrom(params), PAGE_SIZE);
   const top = ranking.slice(0, 3);
 
@@ -81,6 +82,23 @@ export default async function TorneiosPage({ searchParams }: { searchParams: Pro
               })}
             </div>
           </div>
+
+          {draws.length > 0 && (
+            <div className="mb-10 rounded-[0.9rem] border border-amber-300/30 bg-gradient-to-r from-amber-400/[0.08] via-crypt to-crypt p-5">
+              <p className="flex items-center gap-2 text-[11px] font-black italic uppercase tracking-[0.25em] text-amber-200/80"><Trophy className="w-4 h-4 text-amber-300" /> Sorteios deste mês</p>
+              <div className="mt-3 grid sm:grid-cols-2 gap-2">
+                {draws.map((d) => (
+                  <Link key={d.id} href={`/provably-fair?id=${d.id}`} className="flex items-center gap-3 rounded-lg border border-white/5 bg-black/30 px-3.5 py-2.5 hover:border-amber-300/40 transition-colors">
+                    <div className="min-w-0 flex-1">
+                      <p className="font-black italic truncate text-amber-100">{d.winner_label}</p>
+                      <p className="text-[11px] text-bone/45 truncate">{d.title.replace(/^Torneio · /, "")}{d.drawn_at ? ` · ${fmtDateTime(d.drawn_at)}` : ""}</p>
+                    </div>
+                    <span className="shrink-0 inline-flex items-center gap-1 text-[10px] font-black italic uppercase text-spirit"><ShieldCheck className="w-3.5 h-3.5" /> Prova</span>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          )}
 
           <p className="text-center -mt-6 mb-8 text-xs italic text-bone/40">
             {month.name} · {week === null ? "total do mês" : `semana ${week}`}{isNewest && week === currentWeek() ? " (semana atual)" : ""}

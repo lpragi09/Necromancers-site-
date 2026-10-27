@@ -6,6 +6,7 @@ const LINKS = [
   { href: "/sorteios", label: "Sorteios" },
   { href: "/loja", label: "Lojinha" },
   { href: "/torneios", label: "Torneios" },
+  { href: "/dungeons", label: "Dungeons" },
   { href: "/ranking", label: "Ranking de drops" },
   { href: "/membros", label: "Membros" },
   { href: "/perfil", label: "Meu perfil" },

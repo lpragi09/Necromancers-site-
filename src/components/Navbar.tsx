@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signIn, signOut } from "next-auth/react";
-import { Gift, Home, LogOut, Megaphone, Menu, Shield, Store, Swords, Trophy, User, Users, X } from "lucide-react";
+import { Gift, Home, LogOut, Megaphone, Menu, Mountain, Shield, Store, Swords, Trophy, User, Users, X } from "lucide-react";
 import Avatar from "@/components/Avatar";
 
 const LINKS = [
@@ -13,6 +13,7 @@ const LINKS = [
   { href: "/sorteios", label: "Sorteios", icon: Gift },
   { href: "/loja", label: "Loja", icon: Store },
   { href: "/torneios", label: "Torneios", icon: Swords },
+  { href: "/dungeons", label: "Dungeons", icon: Mountain },
   { href: "/ranking", label: "Ranking", icon: Trophy },
   { href: "/membros", label: "Membros", icon: Users },
 ];

@@ -3,7 +3,7 @@ import { ADMIN_ROLES, isAdminId } from "@/lib/admins";
 import { deletePost as deleteDiscordPost, discordEnabled, editPost as editDiscordPost, sendPost as sendDiscordPost } from "@/lib/discord";
 import { hasSupabase, supabaseAdmin } from "@/lib/supabaseAdmin";
 import { cleanText, decodeImage, DEMO_MESSAGE, fail, ok } from "@/lib/http";
-import { ACTIVITY_COLUMNS, CLAIM_COLUMNS, DROP_COLUMNS, getCoinEpoch, getDrawnAt, GIVEAWAY_COLUMNS, ITEM_COLUMNS, ORDER_COLUMNS, POST_COLUMNS, SEASON_COLUMNS, SHOP_ITEM_COLUMNS, TOURNAMENT_SCORE_COLUMNS } from "@/lib/data";
+import { ACTIVITY_COLUMNS, CLAIM_COLUMNS, DROP_COLUMNS, getCoinEpoch, getDrawnAt, GIVEAWAY_COLUMNS, ITEM_COLUMNS, ORDER_COLUMNS, POST_COLUMNS, SEASON_COLUMNS, SHOP_ITEM_COLUMNS, TOURNAMENT_SCORE_COLUMNS, DUNGEON_RUN_COLUMNS, DUNGEON_GRACE_MS } from "@/lib/data";
 import { FAIR_COLUMNS, runFairDraw, setFairStatus } from "@/lib/fairServer";
 import { ROLE_ORDER, type CoinClaim, type Drop, type Giveaway, type Post, type Rarity, type ShopOrder } from "@/lib/types";
 
@@ -55,7 +55,7 @@ export async function POST(request: Request) {
       const [posts, giveaways, entries, seasons, items, members, pending, reviewed] = await Promise.all([
         db.from("posts").select(POST_COLUMNS).order("created_at", { ascending: false }),
         db.from("giveaways").select(GIVEAWAY_COLUMNS).order("created_at", { ascending: false }),
-        db.from("giveaway_entries").select("giveaway_id"),
+        db.from("giveaway_entries").select("giveaway_id").eq("status", "ok"),
         db.from("seasons").select(SEASON_COLUMNS).order("starts_at", { ascending: false }),
         db.from("drop_items").select(ITEM_COLUMNS).order("points", { ascending: false }),
         db.from("members").select(MEMBER_COLUMNS).order("created_at", { ascending: false }),
@@ -113,6 +113,8 @@ export async function POST(request: Request) {
         event_at: kind === "evento" ? optionalDate(p.event_at) : null,
         pinned: !!p.pinned,
         published: p.published !== false,
+        popup: !!p.popup,
+        popup_public: !!p.popup && !!p.popup_public,
       };
       if (!fields.title) return fail("Dê um título.");
       const cols = `${POST_COLUMNS}, discord_message_id`;
@@ -120,6 +122,8 @@ export async function POST(request: Request) {
         ? await db.from("posts").update(fields).eq("id", p.id).select(cols).single()
         : await db.from("posts").insert(fields).select(cols).single();
       if (error || !saved) return fail(error?.message ?? "Não foi possível salvar.", 500);
+      // Só um popup de destaque por vez: marcar este desmarca os outros
+      if (fields.popup) await db.from("posts").update({ popup: false }).eq("popup", true).neq("id", (saved as Post).id);
       // O aviso já está salvo; o Discord é extra (se falhar, avisa sem desfazer nada)
       const discord = await syncPostToDiscord(saved as Post & { discord_message_id: string | null }, p.sendDiscord !== false, !!p.mentionEveryone);
       return ok({ ok: true, ...discord });
@@ -156,11 +160,25 @@ export async function POST(request: Request) {
       return error ? fail(error.message, 500) : ok();
     }
     case "giveawayEntries": {
-      const { data } = await db.from("giveaway_entries").select("created_at, members(char_name, status, avatar_url)").eq("giveaway_id", id).order("created_at");
+      const { data } = await db.from("giveaway_entries").select("member_id, status, created_at, members(char_name, status, avatar_url)").eq("giveaway_id", id).order("created_at");
       return ok({ entries: data ?? [] });
+    }
+    case "setEntryStatus": {
+      // Aprovar ou rejeitar a inscrição de alguém (saiu do clã, fez besteira...). Rejeitado não volta sozinho.
+      const status = body?.status === "rejected" ? "rejected" : "ok";
+      const { data: g } = await db.from("giveaways").select("status").eq("id", str(body?.giveawayId)).maybeSingle();
+      if (g?.status === "drawn") return fail("Esse sorteio já tem ganhador.");
+      const { error } = await db.from("giveaway_entries").update({ status }).eq("giveaway_id", str(body?.giveawayId)).eq("member_id", str(body?.memberId));
+      return error ? fail(error.message, 500) : ok();
     }
     case "fairDraw": {
       const targetId = str(body?.targetId);
+      if (body?.kind === "torneio") {
+        const w = Math.floor(Number(body?.week));
+        const result = await runFairDraw("torneio", targetId, w >= 1 && w <= 4 ? w : null);
+        if (result.error) return fail(result.error, result.status ?? 500);
+        return ok({ data: result.draw });
+      }
       const { data: g } = await db.from("giveaways").select("status").eq("id", targetId).maybeSingle();
       if (!g) return fail("Sorteio não encontrado.", 404);
       if (g.status === "drawn") return fail("Este sorteio já tem ganhador.");
@@ -398,9 +416,13 @@ export async function POST(request: Request) {
       const monthId = str(body?.monthId) || months?.[0]?.id || "";
       const [scores, members] = await Promise.all([
         monthId ? db.from("tournament_scores").select(TOURNAMENT_SCORE_COLUMNS).eq("month_id", monthId).order("count", { ascending: false }).order("player_name") : Promise.resolve({ data: [] }),
-        db.from("members").select("char_name").eq("status", "active").order("char_name"),
+        db.from("members").select("char_name, avatar_url").eq("status", "active").order("char_name"),
       ]);
-      return ok({ months: months ?? [], monthId, scores: scores.data ?? [], names: (members.data ?? []).map((m) => m.char_name) });
+      return ok({
+        months: months ?? [], monthId, scores: scores.data ?? [],
+        names: (members.data ?? []).map((m) => m.char_name),
+        photos: (members.data ?? []).filter((m) => m.avatar_url).map((m) => [m.char_name, m.avatar_url]),
+      });
     }
     case "createTournamentMonth": {
       const name = cleanText(body?.name, 60);
@@ -427,6 +449,36 @@ export async function POST(request: Request) {
     }
     case "tournamentRemove": {
       const { error } = await db.from("tournament_scores").delete().eq("id", id);
+      return error ? fail(error.message, 500) : ok();
+    }
+
+    // ---------- Dungeons ----------
+    case "dungeonsOverview": {
+      const [dungeons, runs] = await Promise.all([
+        db.from("dungeons").select("id, name, active").order("name"),
+        db.from("dungeon_runs").select(`${DUNGEON_RUN_COLUMNS}, dungeon_participants(member_id), members!dungeon_runs_creator_id_fkey(char_name)`)
+          .eq("status", "open").gte("starts_at", new Date(Date.now() - DUNGEON_GRACE_MS).toISOString()).order("starts_at").limit(200),
+      ]);
+      if (dungeons.error) {
+        return fail(/does not exist|schema cache/i.test(dungeons.error.message) ? "Falta rodar o supabase/migracao-dungeons.sql no SQL Editor do Supabase." : dungeons.error.message, 500);
+      }
+      const list = ((runs.data ?? []) as unknown as (Record<string, unknown> & { dungeon_participants: unknown[]; members: { char_name: string } | null })[])
+        .map(({ dungeon_participants, members, ...r }) => ({ ...r, filled: dungeon_participants.length, creator_name: members?.char_name ?? "?" }));
+      return ok({ dungeons: dungeons.data, runs: list });
+    }
+    case "saveDungeon": {
+      const d = body?.dungeon ?? {};
+      const fields = { name: cleanText(d.name, 60), active: d.active !== false };
+      if (!fields.name) return fail("Dê o nome da dungeon.");
+      const { error } = d.id ? await db.from("dungeons").update(fields).eq("id", d.id) : await db.from("dungeons").insert(fields);
+      return error ? fail(error.message, 500) : ok();
+    }
+    case "deleteDungeon": {
+      const { error } = await db.from("dungeons").delete().eq("id", id);
+      return error ? fail(error.message, 500) : ok();
+    }
+    case "cancelDungeonRun": {
+      const { error } = await db.from("dungeon_runs").update({ status: "cancelled" }).eq("id", id);
       return error ? fail(error.message, 500) : ok();
     }
 

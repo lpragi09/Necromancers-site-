@@ -2,14 +2,15 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { CalendarPlus, Loader2, Minus, Plus, Swords, Trash2, UserPlus } from "lucide-react";
+import { CalendarPlus, Dices, Loader2, Minus, Plus, Swords, Trash2, UserPlus } from "lucide-react";
+import GiveawayDraw from "@/components/admin/GiveawayDraw";
 import { adminApi } from "@/lib/api";
 import { useDialog } from "@/components/Dialog";
 import Pagination, { usePagination } from "@/components/Pagination";
 import { EmptyLine, IconBtn, Panel, Segmented } from "@/components/admin/kit";
 import type { TournamentMonth, TournamentScore } from "@/lib/types";
 
-interface Data { months: TournamentMonth[]; monthId: string; scores: TournamentScore[]; names: string[] }
+interface Data { months: TournamentMonth[]; monthId: string; scores: TournamentScore[]; names: string[]; photos: [string, string][] }
 
 const MONTHS = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
 const currentWeek = () => Math.min(4, Math.ceil(new Date().getDate() / 7));
@@ -32,6 +33,7 @@ export default function TournamentAdmin() {
   const [name, setName] = useState("");
   const [newMonth, setNewMonth] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [drawing, setDrawing] = useState<{ week: number | null } | null>(null);
 
   const load = useCallback(async (monthId?: string) => {
     try {
@@ -50,6 +52,12 @@ export default function TournamentAdmin() {
   );
   const pag = usePagination(rows, 15);
   const weekTotal = rows.reduce((s, r) => s + r.count, 0);
+  const monthTotal = (data?.scores ?? []).reduce((s, r) => s + r.count, 0);
+  // Fotos pelo nome (a comparação ignora maiúsculas) para a roleta
+  const photos = useMemo(() => {
+    const byKey = new Map((data?.photos ?? []).map(([n, url]) => [n.trim().toLowerCase(), url]));
+    return new Map((data?.scores ?? []).flatMap((s) => { const url = byKey.get(s.player_name.trim().toLowerCase()); return url ? [[s.player_name.trim(), url] as [string, string]] : []; }));
+  }, [data]);
 
   if (error) return <p className="crypt-card p-6 text-rose-300 text-sm">{error}</p>;
   if (!data) return <div className="flex justify-center py-20"><Loader2 className="w-8 h-8 text-spirit animate-spin" /></div>;
@@ -193,9 +201,27 @@ export default function TournamentAdmin() {
               ))}
             </div>
             <Pagination {...pag} />
+
+            {/* Sorteio: cada ida ao torneio vale 1 chance */}
+            <div className="mt-6 pt-5 border-t border-white/5 flex flex-col sm:flex-row sm:items-center gap-3 justify-between">
+              <p className="text-xs italic text-bone/45">Sorteio provably fair: cada ida ao torneio vale 1 chance.</p>
+              <div className="flex flex-wrap gap-2">
+                <button type="button" disabled={weekTotal === 0} onClick={() => setDrawing({ week })} className="btn-neon !py-2 !text-xs"><Dices className="w-4 h-4" /> Sortear semana {week} ({weekTotal} chances)</button>
+                <button type="button" disabled={monthTotal === 0} onClick={() => setDrawing({ week: null })} className="btn-ghost !py-2 !text-xs"><Dices className="w-4 h-4" /> Sortear o mês todo ({monthTotal})</button>
+              </div>
+            </div>
           </>
         )}
       </Panel>
+
+      {drawing && month && (
+        <GiveawayDraw
+          giveaway={{ id: month.id, title: month.name, prize: drawing.week ? `Torneio · Semana ${drawing.week}` : `Torneio · ${month.name}` }}
+          tournament={{ week: drawing.week, photos }}
+          onClose={() => setDrawing(null)}
+          onConfirmed={() => { setDrawing(null); router.refresh(); }}
+        />
+      )}
     </div>
   );
 }

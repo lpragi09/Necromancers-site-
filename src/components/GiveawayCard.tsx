@@ -61,7 +61,11 @@ export default function GiveawayCard({ giveaway: g, canJoin }: { giveaway: Givea
               )}
             </div>
           ) : g.status === "open" && !expired ? (
+            g.rejected ? (
+            <p className="rounded-xl border border-rose-400/30 bg-rose-500/10 px-4 py-2.5 text-center text-xs font-black italic uppercase text-rose-200">Removido deste sorteio pela liderança</p>
+          ) : (
             <JoinButton giveawayId={g.id} joined={!!g.joined} canJoin={canJoin} />
+          )
           ) : (
             <p className="text-sm italic text-bone/50">A liderança vai sortear em breve. O resultado aparece aqui.</p>
           )}

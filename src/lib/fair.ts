@@ -7,7 +7,7 @@
 //   bilhete      = SHA-256(hash_lista + ":" + aleatório) como número, módulo total de chances
 //   ganhador     = dono do bilhete, contando as chances na ordem da lista
 
-export type FairKind = "sorteio";
+export type FairKind = "sorteio" | "torneio";
 export type FairEntry = { label: string; weight: number };
 
 export interface FairDraw {
@@ -29,7 +29,7 @@ export interface FairDraw {
   drawn_at: string | null;
 }
 
-export const FAIR_KIND_LABEL: Record<FairKind, string> = { sorteio: "Sorteio do clã" };
+export const FAIR_KIND_LABEL: Record<FairKind, string> = { sorteio: "Sorteio do clã", torneio: "Sorteio do torneio" };
 
 // drand "quicknet": uma rodada nova a cada 3 segundos, assinada por dezenas de organizações independentes
 export const DRAND_CHAIN = "52db9ba70e0cc0f6eaf7803dd07447a1f5477735fd3f661792ba94600c84e971";

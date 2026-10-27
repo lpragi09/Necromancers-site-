@@ -18,10 +18,12 @@ const SPIN_MS = 9000;
 
 type Phase = "countdown" | "spinning" | "result";
 
-// Sorteio entre os membros inscritos. Quem ganha sai do servidor (provably fair);
-// a roleta só mostra. Confirmar grava o ganhador no sorteio.
-export default function GiveawayDraw({ giveaway, onClose, onConfirmed }: {
+// Sorteio entre os membros inscritos (ou entre quem foi aos torneios). Quem ganha sai do servidor
+// (provably fair); a roleta só mostra. Confirmar grava o ganhador.
+export default function GiveawayDraw({ giveaway, tournament, onClose, onConfirmed }: {
   giveaway: { id: string; title: string; prize: string };
+  /** Sorteio do torneio: id do mês em giveaway.id, semana (null = mês todo) e fotos de quem é membro */
+  tournament?: { week: number | null; photos: Map<string, string> };
   onClose: () => void;
   onConfirmed: () => void;
 }) {
@@ -36,16 +38,18 @@ export default function GiveawayDraw({ giveaway, onClose, onConfirmed }: {
   const sounds = useSounds();
   const dialog = useDialog();
   // Foto do Discord de cada inscrito, pelo nome do personagem (a lista do sorteio guarda só o nome)
-  const [photos, setPhotos] = useState<Map<string, string>>(new Map());
+  const [photos, setPhotos] = useState<Map<string, string>>(tournament?.photos ?? new Map());
   useEffect(() => {
+    if (tournament) return;
     adminApi<{ entries: { members: { char_name: string; avatar_url: string | null } | null }[] }>("giveawayEntries", { id: giveaway.id })
       .then((r) => setPhotos(new Map(r.entries.flatMap((e) => (e.members?.avatar_url ? [[e.members.char_name, e.members.avatar_url] as [string, string]] : [])))))
       .catch(() => {});
-  }, [giveaway.id]);
+  }, [giveaway.id, tournament]);
 
   const start = () => {
     sounds.unlock();
-    const p = adminApi<{ data: FairDraw }>("fairDraw", { targetId: giveaway.id }).then((r) => r.data);
+    const payload = tournament ? { kind: "torneio", targetId: giveaway.id, week: tournament.week } : { targetId: giveaway.id };
+    const p = adminApi<{ data: FairDraw }>("fairDraw", payload).then((r) => r.data);
     p.catch(() => {}); // mostrado depois da contagem
     setDraw(null);
     setUntil(p);
@@ -63,8 +67,9 @@ export default function GiveawayDraw({ giveaway, onClose, onConfirmed }: {
   }, []);
 
   const spin = (d: FairDraw) => {
-    const labels = d.entries.map((e) => e.label);
-    const reel = Array.from({ length: REEL_SIZE }, () => labels[Math.floor(Math.random() * labels.length)]);
+    // Quem tem mais chances aparece mais vezes na roleta (só visual: o ganhador já veio do servidor)
+    const bag = d.entries.flatMap((e) => Array.from({ length: Math.min(e.weight, 20) }, () => e.label));
+    const reel = Array.from({ length: REEL_SIZE }, () => bag[Math.floor(Math.random() * bag.length)]);
     reel[WINNER_INDEX] = d.winner_label ?? "";
     setItems(reel);
     setDraw(d);
@@ -116,7 +121,8 @@ export default function GiveawayDraw({ giveaway, onClose, onConfirmed }: {
     if (!draw) return;
     setBusy(true);
     try {
-      await adminApi("confirmGiveawayWinner", { drawId: draw.id });
+      if (tournament) await adminApi("fairStatus", { id: draw.id, status: "confirmed" });
+      else await adminApi("confirmGiveawayWinner", { drawId: draw.id });
       onConfirmed();
     } catch (err) {
       dialog.error(err, "Não foi possível salvar o ganhador");
@@ -181,7 +187,7 @@ export default function GiveawayDraw({ giveaway, onClose, onConfirmed }: {
                   <button onClick={confirm} disabled={busy} className="btn-neon flex-1 !text-xs uppercase tracking-widest"><Trophy className="w-4 h-4" /> Confirmar</button>
                   <button onClick={discardAndRedraw} disabled={busy} className="btn-ghost flex-1 !text-xs uppercase tracking-widest"><RotateCcw className="w-4 h-4" /> Sortear de novo</button>
                 </div>
-                <p className="mt-4 text-[11px] text-bone/40">Confirmar grava o ganhador no sorteio. &quot;Sortear de novo&quot; fica registrado como descartado.</p>
+                <p className="mt-4 text-[11px] text-bone/40">Confirmar grava o ganhador{tournament ? " e mostra na página de Torneios" : " no sorteio"}. &quot;Sortear de novo&quot; fica registrado como descartado.</p>
               </div>
             )}
           </div>

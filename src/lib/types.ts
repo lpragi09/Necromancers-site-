@@ -25,6 +25,8 @@ export interface Post {
   pinned: boolean;
   published: boolean;
   created_at: string;
+  popup?: boolean; // aparece em popup ao entrar no site
+  popup_public?: boolean; // visitantes também veem o popup
 }
 
 export type GiveawayStatus = "open" | "closed" | "drawn";
@@ -43,6 +45,7 @@ export interface Giveaway {
   created_at: string;
   entries_count?: number;
   joined?: boolean;
+  rejected?: boolean; // a liderança tirou este membro do sorteio
   drawn_at?: string | null; // quando saiu o ganhador (vem do giro do Provably Fair)
 }
 
@@ -183,4 +186,30 @@ export interface TournamentRow {
   player_name: string;
   count: number;
   avatar_url: string | null;
+}
+
+// ---------- Dungeons ----------
+export interface Dungeon {
+  id: string;
+  name: string;
+  active: boolean;
+}
+
+export interface DungeonPlayer {
+  member_id: string;
+  char_name: string;
+  avatar_url: string | null;
+}
+
+export interface DungeonRun {
+  id: string;
+  dungeon_id: string | null;
+  dungeon_name: string;
+  creator_id: string;
+  slots: number; // 1 a 4, contando quem criou
+  starts_at: string;
+  note: string | null;
+  status: "open" | "cancelled";
+  created_at: string;
+  players: DungeonPlayer[];
 }

@@ -5,7 +5,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   CalendarClock, CalendarRange, Check, ClipboardCheck, Crown, Dices, Eye, EyeOff, Gem, Gift, Loader2,
-  Lock, LockOpen, Megaphone, Pencil, Pin, Plus, RotateCcw, Search, Sparkles, Store, Swords, Trash2, Trophy, UserCheck, Users, X,
+  Lock, LockOpen, Megaphone, Mountain, Pencil, Pin, Plus, RotateCcw, Search, Sparkles, Store, Swords, Trash2, Trophy, UserCheck, Users, X,
   type LucideIcon,
 } from "lucide-react";
 import { adminApi } from "@/lib/api";
@@ -19,6 +19,7 @@ import { RarityBadge } from "@/components/ui";
 import GiveawayDraw from "@/components/admin/GiveawayDraw";
 import ShopAdmin from "@/components/admin/ShopAdmin";
 import TournamentAdmin from "@/components/admin/TournamentAdmin";
+import DungeonAdmin from "@/components/admin/DungeonAdmin";
 import {
   EmptyLine, Field, FormFooter, fromLocalInput, IconBtn, ImageField, isUploading, Panel, Pill, Preview, Row, Segmented, toLocalInput, Toggle, useAction,
 } from "@/components/admin/kit";
@@ -40,7 +41,7 @@ interface Overview {
   discordEnabled?: boolean;
 }
 
-type Tab = "drops" | "membros" | "avisos" | "sorteios" | "ranking" | "loja" | "torneios";
+type Tab = "drops" | "membros" | "avisos" | "sorteios" | "ranking" | "loja" | "torneios" | "dungeons";
 
 
 export default function AdminPanel() {
@@ -78,6 +79,7 @@ export default function AdminPanel() {
     { id: "sorteios", label: "Sorteios", hint: "Criar e sortear", icon: Gift },
     { id: "ranking", label: "Temporadas", hint: "Prêmios e itens", icon: Trophy },
     { id: "torneios", label: "Torneios", hint: "Presença semanal", icon: Swords },
+    { id: "dungeons", label: "Dungeons", hint: "Lista e grupos", icon: Mountain },
     { id: "loja", label: "Lojinha", hint: "Moedas e resgates", icon: Store },
   ];
   const stats: { label: string; value: number; icon: LucideIcon; tab: Tab; alert?: boolean }[] = [
@@ -135,6 +137,7 @@ export default function AdminPanel() {
           {tab === "ranking" && <RankingTab seasons={data.seasons} items={data.items} reload={reload} />}
           {tab === "loja" && <ShopAdmin />}
           {tab === "torneios" && <TournamentAdmin />}
+          {tab === "dungeons" && <DungeonAdmin />}
         </div>
       </div>
     </div>
@@ -311,7 +314,7 @@ function MembersTab({ members, reload }: { members: Member[]; reload: () => Prom
 }
 
 // ======================= Avisos =======================
-const EMPTY_POST = { id: "", kind: "novidade" as PostKind, title: "", body: "", image_url: "", event_at: "", pinned: false, published: true, sendDiscord: true, mentionEveryone: false };
+const EMPTY_POST = { id: "", kind: "novidade" as PostKind, title: "", body: "", image_url: "", event_at: "", pinned: false, published: true, sendDiscord: true, mentionEveryone: false, popup: false, popup_public: false };
 const KIND_ICON: Record<PostKind, LucideIcon> = { aviso: Megaphone, novidade: Sparkles, evento: CalendarClock };
 
 function PostsTab({ posts, reload, discordEnabled }: { posts: Post[]; reload: () => Promise<void>; discordEnabled: boolean }) {
@@ -320,7 +323,7 @@ function PostsTab({ posts, reload, discordEnabled }: { posts: Post[]; reload: ()
   const [form, setForm] = useState(EMPTY_POST);
   const pag = usePagination(posts);
   const edit = (p: Post) => {
-    setForm({ id: p.id, kind: p.kind, title: p.title, body: p.body, image_url: p.image_url ?? "", event_at: toLocalInput(p.event_at), pinned: p.pinned, published: p.published, sendDiscord: true, mentionEveryone: false });
+    setForm({ id: p.id, kind: p.kind, title: p.title, body: p.body, image_url: p.image_url ?? "", event_at: toLocalInput(p.event_at), pinned: p.pinned, published: p.published, sendDiscord: true, mentionEveryone: false, popup: !!p.popup, popup_public: !!p.popup_public });
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
   const submit = async (e: React.FormEvent) => {
@@ -362,6 +365,10 @@ function PostsTab({ posts, reload, discordEnabled }: { posts: Post[]; reload: ()
               <Toggle checked={form.pinned} onChange={(pinned) => setForm({ ...form, pinned })} label="Fixar no topo" hint="Vira o aviso de destaque da home" />
               <Toggle checked={form.published} onChange={(published) => setForm({ ...form, published })} label="Publicado" hint="Desligado, fica como rascunho" />
             </div>
+            <div className="grid sm:grid-cols-2 gap-3">
+              <Toggle checked={form.popup} onChange={(popup) => setForm({ ...form, popup, popup_public: popup && form.popup_public })} label="Popup ao entrar no site" hint="Aparece toda vez que alguém entra ou dá F5 (só um aviso por vez)" />
+              {form.popup && <Toggle checked={form.popup_public} onChange={(popup_public) => setForm({ ...form, popup_public })} label="Visitantes também veem" hint="Ideal para boas-vindas; senão só membros veem" />}
+            </div>
             {discordEnabled ? (
               <div className="grid sm:grid-cols-2 gap-3">
                 <Toggle checked={form.sendDiscord} onChange={(sendDiscord) => setForm({ ...form, sendDiscord })} label="Enviar no Discord" hint={form.id ? "Se já foi enviado, a mensagem é editada junto" : "Posta igualzinho no canal do clã"} />
@@ -394,6 +401,7 @@ function PostsTab({ posts, reload, discordEnabled }: { posts: Post[]; reload: ()
                   <p className="text-[11px] text-bone/40">{POST_KIND_LABEL[p.kind]} · {fmtDateTime(p.created_at)}</p>
                 </div>
                 {p.pinned && <Pill tone="red">Fixado</Pill>}
+                {p.popup && <Pill tone="purple">Popup</Pill>}
                 <Pill tone={p.published ? "green" : "gray"}>{p.published ? "No ar" : "Rascunho"}</Pill>
                 <div className="flex gap-2">
                   <IconBtn title={p.published ? "Esconder" : "Publicar"} disabled={busy} onClick={() => run("savePost", { post: { ...p, published: !p.published } })}>
@@ -420,9 +428,10 @@ function GiveawaysTab({ giveaways, reload }: { giveaways: Giveaway[]; reload: ()
   const dialog = useDialog();
   const [form, setForm] = useState(EMPTY_GIVEAWAY);
   const [drawing, setDrawing] = useState<Giveaway | null>(null);
-  const [entries, setEntries] = useState<{ id: string; names: string[] } | null>(null);
+  type Entry = { member_id: string; name: string; status: "ok" | "rejected" };
+  const [entries, setEntries] = useState<{ id: string; drawn: boolean; list: Entry[] } | null>(null);
   const pag = usePagination(giveaways);
-  const entriesPag = usePagination(entries?.names ?? [], 40);
+  const entriesPag = usePagination(entries?.list ?? [], 40);
 
   const edit = (g: Giveaway) => {
     setForm({ id: g.id, title: g.title, prize: g.prize, description: g.description, image_url: g.image_url ?? "", ends_at: toLocalInput(g.ends_at) });
@@ -434,9 +443,12 @@ function GiveawaysTab({ giveaways, reload }: { giveaways: Giveaway[]; reload: ()
   };
   const showEntries = async (g: Giveaway) => {
     if (entries?.id === g.id) return setEntries(null);
+    await loadEntries(g);
+  };
+  const loadEntries = async (g: Giveaway) => {
     try {
-      const r = await adminApi<{ entries: { members: { char_name: string } | null }[] }>("giveawayEntries", { id: g.id });
-      setEntries({ id: g.id, names: r.entries.map((e) => e.members?.char_name ?? "?") });
+      const r = await adminApi<{ entries: { member_id: string; status: Entry["status"]; members: { char_name: string } | null }[] }>("giveawayEntries", { id: g.id });
+      setEntries({ id: g.id, drawn: g.status === "drawn", list: r.entries.map((e) => ({ member_id: e.member_id, name: e.members?.char_name ?? "?", status: e.status ?? "ok" })) });
     } catch (err) {
       dialog.error(err);
     }
@@ -524,10 +536,32 @@ function GiveawaysTab({ giveaways, reload }: { giveaways: Giveaway[]; reload: ()
               </Row>
               {entries?.id === g.id && (
                 <div className="mx-3 -mt-1 rounded-b-xl border border-t-0 border-white/5 bg-black/40 px-4 py-3">
-                  <p className="text-[10px] font-black italic uppercase tracking-widest text-bone/40 mb-2">Inscritos ({entries.names.length})</p>
-                  {entries.names.length ? (
+                  <p className="text-[10px] font-black italic uppercase tracking-widest text-bone/40 mb-2">
+                    Inscritos ({entries.list.filter((e) => e.status === "ok").length})
+                    {entries.list.some((e) => e.status === "rejected") && <span className="text-rose-300/80"> · {entries.list.filter((e) => e.status === "rejected").length} removidos</span>}
+                  </p>
+                  {entries.list.length ? (
                     <>
-                      <div className="flex flex-wrap gap-1.5">{entriesPag.pageItems.map((n, i) => <span key={i} className="px-2 py-1 rounded-md bg-white/5 border border-white/10 text-xs font-bold">{n}</span>)}</div>
+                      <div className="flex flex-wrap gap-1.5">
+                        {entriesPag.pageItems.map((e) => {
+                          const out = e.status === "rejected";
+                          const flip = async () => {
+                            if (!out && !(await dialog.confirm({ title: `Tirar ${e.name} do sorteio?`, message: "Ele sai da roleta e não consegue entrar de novo sozinho. Dá pra aprovar de volta depois.", tone: "danger", confirmText: "Tirar" }))) return;
+                            if (await run("setEntryStatus", { giveawayId: g.id, memberId: e.member_id, status: out ? "ok" : "rejected" })) await loadEntries(g);
+                          };
+                          return (
+                            <span key={e.member_id} className={`inline-flex items-center gap-1 pl-2 pr-1 py-1 rounded-md border text-xs font-bold ${out ? "bg-rose-500/10 border-rose-400/30 text-rose-200/70 line-through" : "bg-white/5 border-white/10"}`}>
+                              {e.name}
+                              {!entries.drawn && (
+                                <button type="button" onClick={flip} disabled={busy} title={out ? "Aprovar de volta" : "Tirar do sorteio"}
+                                  className={`ml-0.5 w-5 h-5 rounded flex items-center justify-center no-underline transition-colors ${out ? "text-emerald-300 hover:bg-emerald-400/20" : "text-bone/40 hover:text-rose-300 hover:bg-rose-500/20"}`}>
+                                  {out ? <Check className="w-3.5 h-3.5" /> : <X className="w-3.5 h-3.5" />}
+                                </button>
+                              )}
+                            </span>
+                          );
+                        })}
+                      </div>
                       <Pagination {...entriesPag} />
                     </>
                   ) : <p className="text-xs italic text-bone/40">Ninguém inscrito ainda.</p>}

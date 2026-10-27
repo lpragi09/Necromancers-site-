@@ -1,12 +1,12 @@
 import { hasSupabase, supabaseAdmin } from "@/lib/supabaseAdmin";
 import { MEMBER_COLUMNS } from "@/lib/viewer";
-import { DEMO_ACTIVITIES, DEMO_TOURNAMENT_MONTHS, DEMO_TOURNAMENT_SCORES, DEMO_GIVEAWAYS, DEMO_ITEMS, DEMO_MEMBERS, DEMO_POSTS, DEMO_RANKING, DEMO_SEASON, DEMO_SHOP_ITEMS } from "@/lib/demo";
-import type { ActivityType, CoinClaim, Drop, DropItem, Giveaway, Member, Post, RankingRow, Rarity, Season, ShopItem, ShopOrder, TournamentMonth, TournamentRow, TournamentScore } from "@/lib/types";
+import { DEMO_ACTIVITIES, DEMO_DUNGEONS, DEMO_DUNGEON_RUNS, DEMO_TOURNAMENT_MONTHS, DEMO_TOURNAMENT_SCORES, DEMO_GIVEAWAYS, DEMO_ITEMS, DEMO_MEMBERS, DEMO_POSTS, DEMO_RANKING, DEMO_SEASON, DEMO_SHOP_ITEMS } from "@/lib/demo";
+import type { ActivityType, CoinClaim, Drop, DropItem, Giveaway, Member, Post, RankingRow, Rarity, Season, ShopItem, ShopOrder, TournamentMonth, TournamentRow, TournamentScore, Dungeon, DungeonPlayer, DungeonRun } from "@/lib/types";
 
 // Leituras usadas pelas páginas (sempre no servidor, pela service role).
 // Sem Supabase configurado, devolvem os dados de exemplo de lib/demo.ts.
 
-export const POST_COLUMNS = "id, kind, title, body, image_url, event_at, pinned, published, created_at";
+export const POST_COLUMNS = "id, kind, title, body, image_url, event_at, pinned, published, created_at, popup, popup_public";
 export const GIVEAWAY_COLUMNS = "id, title, description, prize, image_url, status, ends_at, winner_member_id, winner_name, fair_draw_id, created_at";
 export const SEASON_COLUMNS = "id, name, starts_at, ends_at, prizes, status, created_at";
 export const ITEM_COLUMNS = "id, name, points, rarity, image_url, active";
@@ -71,16 +71,21 @@ async function withEntries(list: Giveaway[], memberId?: string | null): Promise<
   if (list.length === 0) return list;
   const { data: entries } = await supabaseAdmin
     .from("giveaway_entries")
-    .select("giveaway_id, member_id")
+    .select("giveaway_id, member_id, status")
     .in("giveaway_id", list.map((g) => g.id));
   const counts = new Map<string, number>();
   const joined = new Set<string>();
+  const rejected = new Set<string>();
   for (const e of entries ?? []) {
+    if (e.status === "rejected") {
+      if (memberId && e.member_id === memberId) rejected.add(e.giveaway_id);
+      continue; // removido pela liderança: não conta
+    }
     counts.set(e.giveaway_id, (counts.get(e.giveaway_id) ?? 0) + 1);
     if (memberId && e.member_id === memberId) joined.add(e.giveaway_id);
   }
   const drawnAt = await getDrawnAt(list);
-  return list.map((g) => ({ ...g, entries_count: counts.get(g.id) ?? 0, joined: joined.has(g.id), drawn_at: g.fair_draw_id ? drawnAt.get(g.fair_draw_id) ?? null : null }));
+  return list.map((g) => ({ ...g, entries_count: counts.get(g.id) ?? 0, joined: joined.has(g.id), rejected: rejected.has(g.id), drawn_at: g.fair_draw_id ? drawnAt.get(g.fair_draw_id) ?? null : null }));
 }
 
 /** Dia e hora em que cada sorteio teve ganhador (o giro do Provably Fair guarda isso). */
@@ -237,4 +242,72 @@ export async function getTournamentRanking(monthId: string, week: number | null)
     .map(([key, r]) => ({ ...r, avatar_url: photo.get(key) ?? null }))
     .filter((r) => r.count > 0)
     .sort((a, b) => b.count - a.count || a.player_name.localeCompare(b.player_name));
+}
+
+// ---------- Dungeons ----------
+export const DUNGEON_RUN_COLUMNS = "id, dungeon_id, dungeon_name, creator_id, slots, starts_at, note, status, created_at";
+/** Grupos continuam na lista até 2 horas depois do horário marcado. */
+export const DUNGEON_GRACE_MS = 2 * 3600_000;
+
+export async function getDungeons(activeOnly = true): Promise<Dungeon[]> {
+  if (isDemo()) return DEMO_DUNGEONS;
+  let q = supabaseAdmin.from("dungeons").select("id, name, active").order("name");
+  if (activeOnly) q = q.eq("active", true);
+  return ((await q).data as Dungeon[]) ?? [];
+}
+
+/** Próximos grupos (em ordem de horário), paginados no banco, com quem já está em cada um. */
+export async function getDungeonRuns(page: number, size: number): Promise<{ items: DungeonRun[]; total: number }> {
+  if (isDemo()) return { items: DEMO_DUNGEON_RUNS.slice((page - 1) * size, page * size), total: DEMO_DUNGEON_RUNS.length };
+  const from = (page - 1) * size;
+  const { data, count } = await supabaseAdmin
+    .from("dungeon_runs")
+    .select(DUNGEON_RUN_COLUMNS, { count: "exact" })
+    .eq("status", "open")
+    .gte("starts_at", new Date(Date.now() - DUNGEON_GRACE_MS).toISOString())
+    .order("starts_at")
+    .range(from, from + size - 1);
+  const runs = (data as Omit<DungeonRun, "players">[]) ?? [];
+  if (!runs.length) return { items: [], total: count ?? 0 };
+  const { data: parts } = await supabaseAdmin
+    .from("dungeon_participants")
+    .select("run_id, member_id, joined_at, members(char_name, avatar_url)")
+    .in("run_id", runs.map((r) => r.id))
+    .order("joined_at");
+  const byRun = new Map<string, DungeonPlayer[]>();
+  for (const p of (parts ?? []) as unknown as { run_id: string; member_id: string; members: { char_name: string; avatar_url: string | null } | null }[]) {
+    const list = byRun.get(p.run_id) ?? [];
+    list.push({ member_id: p.member_id, char_name: p.members?.char_name ?? "?", avatar_url: p.members?.avatar_url ?? null });
+    byRun.set(p.run_id, list);
+  }
+  // Quem criou sempre aparece primeiro
+  const items = runs.map((r) => {
+    const players = byRun.get(r.id) ?? [];
+    players.sort((a, b) => (a.member_id === r.creator_id ? -1 : b.member_id === r.creator_id ? 1 : 0));
+    return { ...r, players };
+  });
+  return { items, total: count ?? 0 };
+}
+
+/** Sorteios confirmados de um mês de torneios (mais recentes primeiro). */
+export async function getTournamentDraws(monthId: string): Promise<{ id: string; title: string; winner_label: string | null; drawn_at: string | null }[]> {
+  if (isDemo()) return [];
+  const { data } = await supabaseAdmin
+    .from("fair_draws")
+    .select("id, title, winner_label, drawn_at")
+    .eq("kind", "torneio")
+    .eq("target_id", monthId)
+    .eq("status", "confirmed")
+    .order("drawn_at", { ascending: false })
+    .limit(10);
+  return data ?? [];
+}
+
+/** Aviso marcado como popup de destaque (só um por vez). Visitante só vê se o aviso liberar. */
+export async function getPopupPost(canSeeContent: boolean): Promise<Post | null> {
+  if (isDemo()) return null;
+  const { data } = await supabaseAdmin.from("posts").select(POST_COLUMNS).eq("popup", true).eq("published", true).order("created_at", { ascending: false }).limit(1).maybeSingle();
+  const post = (data as Post | null) ?? null;
+  if (!post || (!canSeeContent && !post.popup_public)) return null;
+  return post;
 }

@@ -1,4 +1,4 @@
-import type { TournamentMonth, TournamentScore, ActivityType, DropItem, Giveaway, Member, Post, RankingRow, Season, ShopItem } from "@/lib/types";
+import type { Dungeon, DungeonRun, TournamentMonth, TournamentScore, ActivityType, DropItem, Giveaway, Member, Post, RankingRow, Season, ShopItem } from "@/lib/types";
 
 // Dados de exemplo mostrados enquanto o Supabase não está configurado (modo demonstração).
 const ago = (days: number) => new Date(Date.now() - days * 86400000).toISOString();
@@ -114,3 +114,16 @@ export const DEMO_TOURNAMENT_SCORES: TournamentScore[] = [
 ].map(([player_name, week, count], i) => ({
   id: `demo-ts${i}`, month_id: "demo-t1", week: Number(week), player_name: String(player_name), count: Number(count), updated_at: ago(1),
 }));
+
+export const DEMO_DUNGEONS: Dungeon[] = [
+  { id: "demo-d1", name: "Magma", active: true },
+  { id: "demo-d2", name: "Caverna Sombria", active: true },
+  { id: "demo-d3", name: "Torre Fantasma", active: true },
+];
+
+const player = (i: number) => ({ member_id: DEMO_MEMBERS[i].id, char_name: DEMO_MEMBERS[i].char_name, avatar_url: null });
+export const DEMO_DUNGEON_RUNS: DungeonRun[] = [
+  { id: "demo-r1", dungeon_id: "demo-d1", dungeon_name: "Magma", creator_id: DEMO_MEMBERS[1].id, slots: 4, starts_at: ahead(0.08), note: "Levem revive", status: "open", created_at: ago(0.1), players: [player(1), player(3)] },
+  { id: "demo-r2", dungeon_id: "demo-d2", dungeon_name: "Caverna Sombria", creator_id: DEMO_MEMBERS[0].id, slots: 3, starts_at: ahead(0.4), note: null, status: "open", created_at: ago(0.2), players: [player(0), player(2), player(5)] },
+  { id: "demo-r3", dungeon_id: "demo-d3", dungeon_name: "Torre Fantasma", creator_id: DEMO_MEMBERS[4].id, slots: 2, starts_at: ahead(1.2), note: "Só level 200+", status: "open", created_at: ago(0.3), players: [player(4)] },
+];

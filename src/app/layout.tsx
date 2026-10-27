@@ -7,8 +7,9 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import HauntBackground from "@/components/HauntBackground";
 import { DemoBanner } from "@/components/ui";
-import { getViewer } from "@/lib/viewer";
-import { isDemo } from "@/lib/data";
+import { canSeeContent, getViewer } from "@/lib/viewer";
+import AnnouncementPopup from "@/components/AnnouncementPopup";
+import { getPopupPost, isDemo } from "@/lib/data";
 
 const lato = Lato({ subsets: ["latin"], weight: ["400", "700", "900"], style: ["normal", "italic"], variable: "--font-lato" });
 
@@ -27,6 +28,8 @@ export const viewport: Viewport = { themeColor: "#000000" };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const viewer = await getViewer();
+  const member = canSeeContent(viewer);
+  const popup = await getPopupPost(member).catch(() => null);
   const nav = viewer
     ? { name: viewer.name, image: viewer.image, charName: viewer.member?.char_name ?? null, isAdmin: viewer.isAdmin }
     : null;
@@ -40,6 +43,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           {isDemo() && <DemoBanner />}
           <main className="min-h-[70vh]">{children}</main>
           <Footer />
+          {popup && <AnnouncementPopup post={popup} isMember={member} />}
         </Providers>
         <Analytics />
       </body>
