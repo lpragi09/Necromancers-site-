@@ -114,7 +114,7 @@ export default async function Home() {
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
           <BandHeader eyebrow="Sorteios" title="Sorteios" accent="ativos" text="Uma chance por membro ativo, com resultado que qualquer um pode conferir." />
           {activeGiveaways.length ? (
-            <div className="flex flex-wrap justify-center gap-5">
+            <div className="flex flex-wrap justify-start gap-5">
               {activeGiveaways.map((g) => (
                 <div key={g.id} className="w-full sm:w-[calc(50%-0.625rem)] lg:w-[calc(33.333%-0.834rem)] flex">
                   <GiveawayCard giveaway={g} canJoin={canJoin} />
@@ -154,7 +154,7 @@ export default async function Home() {
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
           <BandHeader eyebrow="Mural do clã" title="Avisos &" accent="novidades" text="Regras, eventos, hunts e novidades do servidor." />
           {latest.length ? (
-            <div className="flex flex-wrap justify-center gap-5">
+            <div className="flex flex-wrap justify-start gap-5">
               {latest.map((p) => (
                 <div key={p.id} className="w-full md:w-[calc(50%-0.625rem)] lg:w-[calc(33.333%-0.834rem)] flex">
                   <PostCard post={p} href={`/avisos/${p.id}`} />
