@@ -42,7 +42,7 @@ export default function PostCard({ post, full = false, href }: { post: Post; ful
       </div>
     </>
   );
-  const cls = `w-full crypt-card crypt-card-hover overflow-hidden flex flex-col scroll-mt-24 ${post.pinned ? "!border-spirit/50 shadow-[0_0_24px_rgba(168,85,247,0.15)]" : ""}`;
+  const cls = `w-full crypt-card crypt-card-hover overflow-hidden flex flex-col scroll-mt-24 !border-spirit/50 ${post.pinned ? "shadow-[0_0_24px_rgba(168,85,247,0.15)]" : ""}`;
   return href ? (
     <Link id={post.id} href={href} className={`group ${cls}`}>{body}</Link>
   ) : (
