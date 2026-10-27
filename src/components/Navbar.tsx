@@ -78,7 +78,7 @@ export default function Navbar({ viewer }: { viewer: NavViewer | null }) {
                 <span className="hidden sm:block text-sm font-black italic uppercase max-w-32 truncate">{viewer.charName ?? viewer.name}</span>
               </button>
               {menu && (
-                <div className="absolute right-0 mt-2 w-56 crypt-card p-1.5 animate-scale-up">
+                <div className="absolute right-0 mt-2 w-56 crypt-card !bg-[#0b0910] shadow-[0_12px_40px_rgba(0,0,0,0.8)] p-1.5 animate-scale-up">
                   <Link href="/perfil" className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-bold hover:bg-white/5"><User className="w-4 h-4 text-spirit" /> Meu perfil</Link>
                   {viewer.isAdmin && (
                     <Link href="/admin" className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-bold hover:bg-white/5"><Shield className="w-4 h-4 text-spirit" /> Painel da liderança</Link>
