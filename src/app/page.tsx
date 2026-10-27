@@ -78,10 +78,17 @@ export default async function Home() {
         </div>
 
         {pinned && (
-          <Link href={`/avisos#${pinned.id}`} className="block rounded-[0.9rem] border border-spirit/40 bg-gradient-to-r from-spirit/15 via-crypt to-crypt p-5 sm:p-6 hover:border-spirit/70 hover:shadow-[0_0_28px_rgba(168,85,247,0.2)] transition-all">
-            <p className="flex items-center gap-2 text-[11px] font-black italic uppercase tracking-[0.25em] text-spirit"><Megaphone className="w-4 h-4" /> Aviso importante</p>
-            <p className="font-title text-xl sm:text-2xl mt-2">{pinned.title}</p>
-            <p className="text-sm text-bone/60 mt-1 line-clamp-2">{pinned.body}</p>
+          <Link href={`/avisos#${pinned.id}`} className={`group block overflow-hidden rounded-[0.9rem] border border-spirit/40 bg-gradient-to-r from-spirit/15 via-crypt to-crypt hover:border-spirit/70 hover:shadow-[0_0_28px_rgba(168,85,247,0.2)] transition-all ${pinned.image_url ? "md:grid md:grid-cols-[1.15fr_1fr]" : ""}`}>
+            {pinned.image_url && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={pinned.image_url} alt="" className="w-full aspect-[16/7] object-cover md:h-full group-hover:scale-[1.02] transition-transform duration-500" />
+            )}
+            <div className="p-5 sm:p-7 flex flex-col justify-center">
+              <p className="flex items-center gap-2 text-[11px] font-black italic uppercase tracking-[0.25em] text-spirit"><Megaphone className="w-4 h-4" /> Aviso importante</p>
+              <p className="font-title text-xl sm:text-2xl mt-2">{pinned.title}</p>
+              <p className={`text-sm text-bone/60 mt-2 whitespace-pre-line ${pinned.image_url ? "line-clamp-4" : "line-clamp-2"}`}>{pinned.body}</p>
+              <span className="mt-4 inline-flex items-center gap-1 text-xs font-black italic uppercase text-spirit group-hover:text-white transition-colors">Ler aviso completo <ArrowRight className="w-3.5 h-3.5" /></span>
+            </div>
           </Link>
         )}
       </div>
