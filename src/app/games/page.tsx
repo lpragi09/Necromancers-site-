@@ -30,7 +30,7 @@ function RoomCard({ room, image, icon: Icon, me }: { room: GameRoom; image: stri
       {/* Vagas: ocupadas com a foto, livres tracejadas */}
       <div className="flex items-center gap-2">
         <span className="w-11 h-11 shrink-0 rounded-xl bg-spirit/15 border border-spirit/30 flex items-center justify-center text-spirit overflow-hidden">
-          {image ? <img src={image} alt="" className="w-full h-full object-contain p-0.5" /> : <Icon className="w-5 h-5" />}
+          {image ? <img src={image} alt="" className="w-full h-full object-cover" /> : <Icon className="w-5 h-5" />}
         </span>
         {seats.map((p, i) =>
           p ? (

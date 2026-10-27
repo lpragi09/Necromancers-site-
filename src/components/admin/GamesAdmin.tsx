@@ -119,7 +119,7 @@ export default function GamesAdmin() {
               <div key={m.id} className={`rounded-xl border border-white/10 p-3 sm:p-4 ${m.active ? "" : "opacity-60"}`}>
                 <div className="flex flex-wrap items-center gap-3">
                   <span className="w-12 h-12 shrink-0 rounded-xl bg-spirit/15 border border-spirit/30 flex items-center justify-center text-spirit overflow-hidden">
-                    {modeImage ? <img src={modeImage} alt="" className="w-full h-full object-contain p-0.5" /> : <Icon className="w-5 h-5" />}
+                    {modeImage ? <img src={modeImage} alt="" className="w-full h-full object-cover" /> : <Icon className="w-5 h-5" />}
                   </span>
                   <div className="min-w-[9rem] flex-1">
                     <p className="font-title text-lg truncate">{m.name}</p>
@@ -142,7 +142,7 @@ export default function GamesAdmin() {
                     <div key={r.id}>
                       <Row className={r.active ? "" : "opacity-50"}>
                         <span className="w-9 h-9 shrink-0 rounded-lg bg-white/[0.04] border border-white/10 flex items-center justify-center text-spirit/70 overflow-hidden">
-                          {r.image_url || modeImage ? <img src={(r.image_url || modeImage) as string} alt="" className="w-full h-full object-contain p-0.5" /> : <Icon className="w-4 h-4" />}
+                          {r.image_url || modeImage ? <img src={(r.image_url || modeImage) as string} alt="" className="w-full h-full object-cover" /> : <Icon className="w-4 h-4" />}
                         </span>
                         <div className="min-w-0 flex-1">
                           <p className="font-bold truncate">{r.name}{!r.active && <span className="font-normal text-bone/40"> · oculta</span>}</p>
