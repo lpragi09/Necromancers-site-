@@ -8,6 +8,7 @@ import Footer from "@/components/Footer";
 import HauntBackground from "@/components/HauntBackground";
 import { DemoBanner } from "@/components/ui";
 import { canSeeContent, getViewer } from "@/lib/viewer";
+import ScrollHash from "@/components/ScrollHash";
 import AnnouncementPopup from "@/components/AnnouncementPopup";
 import { getPopupPost, isDemo } from "@/lib/data";
 
@@ -43,6 +44,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           {isDemo() && <DemoBanner />}
           <main className="min-h-[70vh]">{children}</main>
           <Footer />
+          <ScrollHash />
           {popup && <AnnouncementPopup post={popup} isMember={member} />}
         </Providers>
         <Analytics />

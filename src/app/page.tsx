@@ -90,7 +90,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<Rec
       <Hero />
 
       {/* Números do clã e aviso fixado */}
-      <div id="cla" className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 mt-16 scroll-mt-24 space-y-6">
+      <div id="cla" data-section className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 mt-16 scroll-mt-24 space-y-6">
         <div className="crypt-card grid grid-cols-3 divide-x divide-white/5">
           {[
             { icon: Users, label: "Membros ativos", value: stats.members },
@@ -124,7 +124,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<Rec
       </div>
 
       {/* Sorteios */}
-      <section id="sorteios-ativos" className="mt-20 py-20 border-t border-white/5 scroll-mt-16">
+      <section id="sorteios" data-section className="mt-20 py-20 border-t border-white/5 scroll-mt-16">
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
           <BandHeader eyebrow="Sorteios" title="Sorteios" accent="ativos" text="Uma chance por membro ativo, com resultado que qualquer um pode conferir." />
           {giveaways.items.length ? (
@@ -138,13 +138,13 @@ export default async function Home({ searchParams }: { searchParams: Promise<Rec
           ) : (
             <Empty text="Nenhum sorteio aberto agora. Fique de olho nos avisos!" />
           )}
-          <PageNav page={giveawaysPage} pageCount={Math.ceil(giveaways.total / GIVEAWAYS_PAGE)} path="/" params={params} param="sorteios" anchor="sorteios-ativos" />
+          <PageNav page={giveawaysPage} pageCount={Math.ceil(giveaways.total / GIVEAWAYS_PAGE)} path="/" params={params} param="sorteios" anchor="sorteios" />
           <SeeAll href="/sorteios" label="Todos os sorteios" />
         </div>
       </section>
 
       {/* Ranking da temporada */}
-      <section id="top" className="py-20 border-t border-white/5 scroll-mt-16 bg-gradient-to-b from-[#0c0614]/80 to-transparent">
+      <section id="top" data-section className="py-20 border-t border-white/5 scroll-mt-16 bg-gradient-to-b from-[#0c0614]/80 to-transparent">
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
           <BandHeader
             eyebrow={season?.name ?? "Ranking"}
@@ -170,7 +170,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<Rec
       </section>
 
       {/* Mural */}
-      <section id="mural" className="py-20 border-t border-white/5 scroll-mt-16">
+      <section id="mural" data-section className="py-20 border-t border-white/5 scroll-mt-16">
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
           <BandHeader eyebrow="Mural do clã" title="Avisos &" accent="novidades" text="Regras, eventos, hunts e novidades do servidor." />
           {posts.items.length ? (
