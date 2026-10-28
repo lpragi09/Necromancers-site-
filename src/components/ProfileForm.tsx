@@ -36,7 +36,7 @@ export default function ProfileForm({ charName, level, isNew }: { charName: stri
       </div>
       <div>
         <label className="label">Level</label>
-        <input type="number" min={1} max={1000} value={lvl} onChange={(e) => setLvl(e.target.value)} placeholder="Ex.: 250" className="field" />
+        <input type="number" min={1} value={lvl} onChange={(e) => setLvl(e.target.value)} placeholder="Ex.: 250" className="field" />
       </div>
       <div className="sm:col-span-2">
         <button disabled={busy} className="btn-neon">

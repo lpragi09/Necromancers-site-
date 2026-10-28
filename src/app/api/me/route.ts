@@ -12,7 +12,7 @@ export async function POST(request: Request) {
   const body = await request.json().catch(() => null);
   const charName = cleanText(body?.charName, 30);
   const levelRaw = Number(body?.level);
-  const level = Number.isFinite(levelRaw) && levelRaw > 0 ? Math.min(1000, Math.floor(levelRaw)) : null;
+  const level = Number.isFinite(levelRaw) && levelRaw > 0 ? Math.min(2147483647, Math.floor(levelRaw)) : null;
   if (charName.length < 2) return fail("Informe o nome do seu personagem.");
 
   const db = supabaseAdmin;

@@ -536,7 +536,7 @@ export async function POST(request: Request) {
       if (ROLE_ORDER.includes(m.role)) fields.role = m.role;
       if (["pending", "active", "inactive"].includes(m.status)) fields.status = m.status;
       if (typeof m.char_name === "string" && m.char_name.trim()) fields.char_name = cleanText(m.char_name, 30);
-      if (m.level !== undefined) fields.level = Number(m.level) > 0 ? Math.min(1000, Math.floor(Number(m.level))) : null;
+      if (m.level !== undefined) fields.level = Number(m.level) > 0 ? Math.min(2147483647, Math.floor(Number(m.level))) : null;
       // Ninguém tira o próprio acesso sem querer
       if (viewer.member?.id === m.id && (fields.status && fields.status !== "active")) return fail("Você não pode desativar a si mesmo.");
       if (viewer.member?.id === m.id && fields.role && !ADMIN_ROLES.includes(fields.role as string) && !isAdminId(viewer.discordId)) {
