@@ -3,9 +3,10 @@
 /* eslint-disable @next/next/no-img-element */
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Coins, ImagePlus, Loader2, Send, ShoppingBag } from "lucide-react";
+import { ImagePlus, Loader2, Send, ShoppingBag } from "lucide-react";
 import { api } from "@/lib/api";
 import { compressImage } from "@/lib/image";
+import Coin from "@/components/Coin";
 import { useDialog } from "@/components/Dialog";
 import Pagination, { usePagination } from "@/components/Pagination";
 import { fmtDateTime, timeAgo } from "@/lib/format";
@@ -17,7 +18,7 @@ const nowLocal = () => {
   return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
 };
 
-/** Pedido de moedas: atividade + dia e hora + print (clicar, arrastar ou Ctrl+V). */
+/** Pedido de Evaldocoins: atividade + dia e hora + print (clicar, arrastar ou Ctrl+V). */
 export function ClaimForm({ activities }: { activities: ActivityType[] }) {
   const router = useRouter();
   const dialog = useDialog();
@@ -58,7 +59,7 @@ export function ClaimForm({ activities }: { activities: ActivityType[] }) {
       await api("/api/loja", { action: "claim", activityId, happenedAt: new Date(happenedAt).toISOString(), note, proof });
       setProof(null);
       setNote("");
-      await dialog.alert({ title: "Pedido enviado!", message: "A liderança vai conferir o print. Assim que aprovar, as moedas caem no seu saldo.", tone: "success" });
+      await dialog.alert({ title: "Pedido enviado!", message: "A liderança vai conferir o print. Assim que aprovar, as Evaldocoins caem no seu saldo.", tone: "success" });
       router.refresh();
     } catch (err) {
       dialog.error(err, "Não foi possível enviar");
@@ -67,7 +68,7 @@ export function ClaimForm({ activities }: { activities: ActivityType[] }) {
     setBusy(false);
   };
 
-  if (!activities.length) return <p className="text-sm italic text-bone/50">A liderança ainda não cadastrou as atividades que valem moedas.</p>;
+  if (!activities.length) return <p className="text-sm italic text-bone/50">A liderança ainda não cadastrou as atividades que valem Evaldocoins.</p>;
 
   return (
     <form onSubmit={submit} className="grid md:grid-cols-[1fr_220px] gap-5">
@@ -75,7 +76,7 @@ export function ClaimForm({ activities }: { activities: ActivityType[] }) {
         <div>
           <label className="label">Atividade</label>
           <select value={activityId} onChange={(e) => setActivityId(e.target.value)} className="field">
-            {activities.map((a) => <option key={a.id} value={a.id}>{a.name} · {a.coins} moedas</option>)}
+            {activities.map((a) => <option key={a.id} value={a.id}>{a.name} · {a.coins} Evaldocoins</option>)}
           </select>
         </div>
         <div className="grid sm:grid-cols-2 gap-3">
@@ -88,7 +89,7 @@ export function ClaimForm({ activities }: { activities: ActivityType[] }) {
             <input value={note} onChange={(e) => setNote(e.target.value)} maxLength={200} placeholder="Ex.: castle de sábado" className="field" />
           </div>
         </div>
-        <p className="text-sm text-bone/55 flex items-center gap-1.5">Vale <b className="text-amber-300 inline-flex items-center gap-1"><Coins className="w-4 h-4" /> {activity?.coins ?? 0} moedas</b> se aprovado.</p>
+        <p className="text-sm text-bone/55 flex items-center gap-1.5">Vale <b className="text-amber-300 inline-flex items-center gap-1"><Coin className="w-5 h-5" /> {activity?.coins ?? 0} Evaldocoins</b> se aprovado.</p>
         <button disabled={busy} className="btn-neon">{busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />} Enviar para aprovação</button>
       </div>
 
@@ -127,7 +128,7 @@ export function BuyButton({ item, balance, canBuy }: { item: ShopItem; balance: 
     if (lock.current) return;
     const confirmed = await dialog.confirm({
       title: `Resgatar ${item.name}?`,
-      message: `Vão sair ${item.price} moedas do seu saldo. A liderança entrega o item no jogo e marca como entregue.`,
+      message: `Vão sair ${item.price} Evaldocoins do seu saldo. A liderança entrega o item no jogo e marca como entregue.`,
       confirmText: "Resgatar",
     });
     if (!confirmed) return;
@@ -146,7 +147,7 @@ export function BuyButton({ item, balance, canBuy }: { item: ShopItem; balance: 
 
   if (soldOut) return <span className="btn-ghost w-full !opacity-50 !cursor-not-allowed">Esgotado</span>;
   if (!canBuy) return <span className="btn-ghost w-full !opacity-60 !cursor-not-allowed">Só membros resgatam</span>;
-  if (missing > 0) return <span className="btn-ghost w-full !opacity-70 !cursor-not-allowed"><Coins className="w-4 h-4 text-amber-300" /> Faltam {missing}</span>;
+  if (missing > 0) return <span className="btn-ghost w-full !opacity-70 !cursor-not-allowed"><Coin className="w-5 h-5 text-amber-300" /> Faltam {missing}</span>;
   return (
     <button onClick={buy} disabled={busy} className="btn-neon w-full">
       {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <ShoppingBag className="w-4 h-4" />} Resgatar
@@ -167,14 +168,14 @@ const ORDER_STATUS: Record<ShopOrder["status"], { label: string; cls: string }> 
 };
 const pill = "px-2 py-0.5 rounded-md border text-[10px] font-black italic uppercase tracking-widest whitespace-nowrap";
 
-/** Histórico do membro no ciclo atual: pedidos de moedas e resgates. */
+/** Histórico do membro no ciclo atual: pedidos de Evaldocoins e resgates. */
 export function ShopHistory({ claims, orders }: { claims: CoinClaim[]; orders: ShopOrder[] }) {
   const claimsPag = usePagination(claims, 8);
   const ordersPag = usePagination(orders, 8);
   return (
     <div className="grid lg:grid-cols-2 gap-6">
       <div className="crypt-card p-5 sm:p-6">
-        <h3 className="font-title text-lg mb-3">Meus pedidos de moedas</h3>
+        <h3 className="font-title text-lg mb-3">Meus pedidos de Evaldocoins</h3>
         {claims.length === 0 ? <p className="text-sm italic text-bone/45">Nenhum pedido ainda.</p> : (
           <div className="divide-y divide-white/5">
             {claimsPag.pageItems.map((c) => (
@@ -183,7 +184,7 @@ export function ShopHistory({ claims, orders }: { claims: CoinClaim[]; orders: S
                   <p className="font-bold truncate">{c.activity_name}</p>
                   <p className="text-xs text-bone/40">{fmtDateTime(c.happened_at)}</p>
                 </div>
-                <span className="text-sm font-black text-amber-300 tabular-nums inline-flex items-center gap-1"><Coins className="w-3.5 h-3.5" /> +{c.coins}</span>
+                <span className="text-sm font-black text-amber-300 tabular-nums inline-flex items-center gap-1"><Coin className="w-4 h-4" /> +{c.coins}</span>
                 <span className={`${pill} ${CLAIM_STATUS[c.status].cls}`}>{CLAIM_STATUS[c.status].label}</span>
               </div>
             ))}
@@ -201,7 +202,7 @@ export function ShopHistory({ claims, orders }: { claims: CoinClaim[]; orders: S
                   <p className="font-bold truncate">{o.item_name}</p>
                   <p className="text-xs text-bone/40">{timeAgo(o.created_at)}</p>
                 </div>
-                <span className="text-sm font-black text-bone/70 tabular-nums inline-flex items-center gap-1"><Coins className="w-3.5 h-3.5 text-amber-300" /> −{o.price}</span>
+                <span className="text-sm font-black text-bone/70 tabular-nums inline-flex items-center gap-1"><Coin className="w-4 h-4 text-amber-300" /> −{o.price}</span>
                 <span className={`${pill} ${ORDER_STATUS[o.status].cls}`}>{ORDER_STATUS[o.status].label}</span>
               </div>
             ))}

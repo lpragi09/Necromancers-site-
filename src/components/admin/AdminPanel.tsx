@@ -102,7 +102,7 @@ export default function AdminPanel() {
     { id: "torneios", label: "Torneios", hint: "Presença semanal", icon: Swords },
     { id: "dungeons", label: "Dungeons", hint: "Lista e grupos", icon: Mountain },
     { id: "games", label: "Games", hint: "Salas dos minigames", icon: Gamepad2 },
-    { id: "loja", label: "Lojinha", hint: "Moedas e resgates", icon: Store },
+    { id: "loja", label: "Lojinha", hint: "Evaldocoins e resgates", icon: Store },
   ];
   const stats: { label: string; value: number; icon: LucideIcon; tab: Tab; alert?: boolean }[] = [
     { label: "Drops na fila", value: data.pendingDrops.length, icon: ClipboardCheck, tab: "drops", alert: data.pendingDrops.length > 0 },

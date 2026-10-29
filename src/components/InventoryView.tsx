@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { ArrowRight, Coins, Gem, Gift, Mountain, Store, Swords, Trophy, type LucideIcon } from "lucide-react";
+import { ArrowRight, Gem, Gift, Mountain, Store, Swords, Trophy, type LucideIcon } from "lucide-react";
+import Coin from "@/components/Coin";
 import MyDrops from "@/components/MyDrops";
 import InventoryGiveaways, { InventoryOrders, InventoryRuns } from "@/components/InventoryGiveaways";
 import type { Inventory } from "@/lib/data";
@@ -21,9 +22,9 @@ export default function InventoryView({ inv }: { inv: Inventory }) {
   const activeEntries = inv.giveaways.filter((g) => !g.rejected && g.status !== "drawn").length;
   const wins = inv.giveaways.filter((g) => g.won).length;
 
-  const stats: { href: string; icon: LucideIcon; label: string; value: string; sub: string; tone: string }[] = [
+  const stats: { href: string; icon: React.ComponentType<{ className?: string }>; label: string; value: string; sub: string; tone: string }[] = [
     {
-      href: "/loja", icon: Coins, label: "Moedas", value: inv.coins.balance.toLocaleString("pt-BR"),
+      href: "/loja", icon: ({ className }) => <Coin className={`${className} scale-150`} />, label: "Evaldocoins", value: inv.coins.balance.toLocaleString("pt-BR"),
       sub: inv.coins.pending ? `+${inv.coins.pending} esperando aprovação` : "prontas para gastar", tone: "text-amber-300 border-amber-300/30 bg-amber-400/10",
     },
     {
@@ -61,11 +62,11 @@ export default function InventoryView({ inv }: { inv: Inventory }) {
 
         <Box icon={Store} title="Lojinha" href="/loja" link="Ir à loja">
           <div className="flex items-end gap-3">
-            <Coins className="w-9 h-9 text-amber-300 drop-shadow-[0_0_12px_rgba(251,191,36,0.55)]" />
+            <Coin className="w-12 h-12 drop-shadow-[0_0_12px_rgba(251,191,36,0.55)]" />
             <span className="font-title text-5xl text-amber-200 tabular-nums leading-none">{inv.coins.balance.toLocaleString("pt-BR")}</span>
-            <span className="pb-1 text-xs italic text-bone/45">moedas</span>
+            <span className="pb-1 text-xs italic text-bone/45">Evaldocoins</span>
           </div>
-          {inv.coins.pending > 0 && <p className="mt-2 text-xs italic text-amber-200/70">+{inv.coins.pending} moedas esperando a liderança aprovar.</p>}
+          {inv.coins.pending > 0 && <p className="mt-2 text-xs italic text-amber-200/70">+{inv.coins.pending} Evaldocoins esperando a liderança aprovar.</p>}
           <p className="mt-5 label">Itens para receber</p>
           <InventoryOrders list={inv.coins.toReceive} />
         </Box>

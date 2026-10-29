@@ -10,6 +10,7 @@ import { adminApi } from "@/lib/api";
 import { useDialog } from "@/components/Dialog";
 import Pagination, { usePagination } from "@/components/Pagination";
 import Avatar from "@/components/Avatar";
+import Coin from "@/components/Coin";
 import { EmptyLine, Field, IconBtn, ImageField, isUploading, Panel, Pill, Row, Segmented, Toggle, useAction } from "@/components/admin/kit";
 import { fmtDateTime, timeAgo } from "@/lib/format";
 import type { ActivityType, CoinClaim, ShopItem, ShopOrder } from "@/lib/types";
@@ -35,7 +36,7 @@ const EMPTY_ITEM = { id: "", name: "", description: "", image_url: "", price: ""
 const EMPTY_ACTIVITY = { id: "", name: "", coins: "", active: true };
 
 function CoinTag({ value, sign = "" }: { value: number; sign?: string }) {
-  return <span className="inline-flex items-center gap-1 font-black text-amber-300 tabular-nums"><Coins className="w-4 h-4" /> {sign}{value.toLocaleString("pt-BR")}</span>;
+  return <span className="inline-flex items-center gap-1 font-black text-amber-300 tabular-nums"><Coin className="w-5 h-5" /> {sign}{value.toLocaleString("pt-BR")}</span>;
 }
 
 export default function ShopAdmin() {
@@ -73,9 +74,9 @@ export default function ShopAdmin() {
 
   const resetCoins = async () => {
     const ok1 = await dialog.confirm({
-      title: "Zerar as moedas de todo mundo?",
-      message: "O saldo de todos os membros volta a zero e os pedidos de moedas que ainda não foram conferidos expiram. O histórico continua guardado. Resgates já feitos continuam na fila de entrega.",
-      tone: "danger", confirmText: "Zerar moedas",
+      title: "Zerar as Evaldocoins de todo mundo?",
+      message: "O saldo de todos os membros volta a zero e os pedidos de Evaldocoins que ainda não foram conferidos expiram. O histórico continua guardado. Resgates já feitos continuam na fila de entrega.",
+      tone: "danger", confirmText: "Zerar Evaldocoins",
     });
     if (ok1) run("resetCoins");
   };
@@ -104,13 +105,13 @@ export default function ShopAdmin() {
       ]} />
 
       {tab === "pendentes" && pending === 0 && (
-        <Panel icon={CheckCircle2} title="Tudo em dia" subtitle="Quando alguém pedir moedas ou resgatar um item, aparece aqui.">
-          <EmptyLine text="Nenhum pedido de moedas nem resgate esperando." />
+        <Panel icon={CheckCircle2} title="Tudo em dia" subtitle="Quando alguém pedir Evaldocoins ou resgatar um item, aparece aqui.">
+          <EmptyLine text="Nenhum pedido de Evaldocoins nem resgate esperando." />
         </Panel>
       )}
 
-      {/* Moedas para aprovar */}
-      {tab === "pendentes" && data.pendingClaims.length > 0 && <Panel icon={Coins} title={`Moedas para aprovar (${data.pendingClaims.length})`} subtitle="Confira o print com o dia e a hora da atividade.">
+      {/* Evaldocoins para aprovar */}
+      {tab === "pendentes" && data.pendingClaims.length > 0 && <Panel icon={Coins} title={`Evaldocoins para aprovar (${data.pendingClaims.length})`} subtitle="Confira o print com o dia e a hora da atividade.">
         {data.pendingClaims.length ? (
           <div className="grid sm:grid-cols-2 gap-4">
             {claimsPag.pageItems.map((c) => (
@@ -143,7 +144,7 @@ export default function ShopAdmin() {
       </Panel>}
 
       {/* Resgates para entregar */}
-      {tab === "pendentes" && data.pendingOrders.length > 0 && <Panel icon={PackageCheck} title={`Resgates para entregar (${data.pendingOrders.length})`} subtitle="Entregue o item no jogo e marque como entregue. Cancelar devolve as moedas.">
+      {tab === "pendentes" && data.pendingOrders.length > 0 && <Panel icon={PackageCheck} title={`Resgates para entregar (${data.pendingOrders.length})`} subtitle="Entregue o item no jogo e marque como entregue. Cancelar devolve as Evaldocoins.">
         {data.pendingOrders.length ? (
           <div className="space-y-2">
             {ordersPag.pageItems.map((o) => (
@@ -154,7 +155,7 @@ export default function ShopAdmin() {
                   <p className="text-[11px] text-bone/40">{timeAgo(o.created_at)}</p>
                 </div>
                 <CoinTag value={o.price} sign="−" />
-                <button disabled={busy} onClick={() => run("setOrderStatus", { id: o.id, status: "cancelled" }, { title: `Cancelar o resgate de ${o.char_name}?`, message: "As moedas voltam para o saldo dele e o item volta ao estoque." })} className="btn-ghost !py-2 !text-rose-300"><X className="w-4 h-4" /> Cancelar</button>
+                <button disabled={busy} onClick={() => run("setOrderStatus", { id: o.id, status: "cancelled" }, { title: `Cancelar o resgate de ${o.char_name}?`, message: "As Evaldocoins voltam para o saldo dele e o item volta ao estoque." })} className="btn-ghost !py-2 !text-rose-300"><X className="w-4 h-4" /> Cancelar</button>
                 <button disabled={busy} onClick={() => run("setOrderStatus", { id: o.id, status: "delivered" })} className="btn-neon !py-2"><Check className="w-4 h-4" /> Entregue</button>
               </Row>
             ))}
@@ -165,8 +166,8 @@ export default function ShopAdmin() {
 
       {/* Saldos */}
       {tab === "saldos" && <Panel icon={Wallet} title="Saldos do clã"
-        subtitle={data.lastReset ? `Zerado em ${fmtDateTime(data.lastReset.created_at)}${data.lastReset.created_by ? ` por ${data.lastReset.created_by}` : ""}.` : "As moedas nunca foram zeradas."}
-        action={<button disabled={busy} onClick={resetCoins} className="btn-ghost !py-2 !px-4 !text-xs !text-rose-300 hover:!border-rose-400/60 hover:!bg-rose-500/10"><RotateCcw className="w-4 h-4" /> Zerar moedas</button>}>
+        subtitle={data.lastReset ? `Zerado em ${fmtDateTime(data.lastReset.created_at)}${data.lastReset.created_by ? ` por ${data.lastReset.created_by}` : ""}.` : "As Evaldocoins nunca foram zeradas."}
+        action={<button disabled={busy} onClick={resetCoins} className="btn-ghost !py-2 !px-4 !text-xs !text-rose-300 hover:!border-rose-400/60 hover:!bg-rose-500/10"><RotateCcw className="w-4 h-4" /> Zerar Evaldocoins</button>}>
         {data.balances.length ? (
           <div className="space-y-2">
             {balancesPag.pageItems.map((b, i) => (
@@ -175,16 +176,16 @@ export default function ShopAdmin() {
                 <Avatar src={b.avatar_url} name={b.char_name} size={36} />
                 <p className="flex-1 min-w-0 font-black italic truncate">{b.char_name}</p>
                 <span className="hidden sm:block text-[11px] text-bone/40 tabular-nums">ganhou {b.earned} · gastou {b.spent}</span>
-                <span className="font-title text-xl text-amber-200 tabular-nums inline-flex items-center gap-1.5"><Coins className="w-4 h-4 text-amber-300" /> {b.balance}</span>
+                <span className="font-title text-xl text-amber-200 tabular-nums inline-flex items-center gap-1.5"><Coin className="w-5 h-5" /> {b.balance}</span>
               </Row>
             ))}
           </div>
-        ) : <EmptyLine text="Ninguém tem moedas neste ciclo ainda." />}
+        ) : <EmptyLine text="Ninguém tem Evaldocoins neste ciclo ainda." />}
         <Pagination {...balancesPag} />
       </Panel>}
 
       {/* Itens da loja */}
-      {tab === "itens" && <Panel icon={Package} title={`Itens da loja (${data.items.length})`} subtitle="O que os membros trocam pelas moedas."
+      {tab === "itens" && <Panel icon={Package} title={`Itens da loja (${data.items.length})`} subtitle="O que os membros trocam pelas Evaldocoins."
         action={!item && <button onClick={() => setItem(EMPTY_ITEM)} className="btn-neon !py-2 !px-4 !text-xs"><Plus className="w-4 h-4" /> Novo item</button>}>
         {item && (
           <form onSubmit={saveItem} className="mb-6 rounded-xl border border-spirit/30 bg-spirit/[0.05] p-4 sm:p-5 grid gap-4 animate-fade-in">
@@ -196,7 +197,7 @@ export default function ShopAdmin() {
               <Field label="Preço">
                 <div className="relative">
                   <input type="number" min={1} value={item.price} onChange={(e) => setItem({ ...item, price: e.target.value })} required placeholder="80" className="field !pr-9" />
-                  <Coins className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-amber-300" />
+                  <Coin className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5" />
                 </div>
               </Field>
               <Field label="Estoque">
@@ -242,7 +243,7 @@ export default function ShopAdmin() {
       </Panel>}
 
       {/* Atividades */}
-      {tab === "atividades" && <Panel icon={Sparkles} title={`Atividades (${data.activities.length})`} subtitle="Quanto cada atividade do clã vale em moedas."
+      {tab === "atividades" && <Panel icon={Sparkles} title={`Atividades (${data.activities.length})`} subtitle="Quanto cada atividade do clã vale em Evaldocoins."
         action={!activity && <button onClick={() => setActivity(EMPTY_ACTIVITY)} className="btn-neon !py-2 !px-4 !text-xs"><Plus className="w-4 h-4" /> Nova atividade</button>}>
         {activity && (
           <form onSubmit={saveActivity} className="mb-6 rounded-xl border border-spirit/30 bg-spirit/[0.05] p-4 sm:p-5 grid gap-4 animate-fade-in">
@@ -251,10 +252,10 @@ export default function ShopAdmin() {
               <Field label="Atividade">
                 <input value={activity.name} onChange={(e) => setActivity({ ...activity, name: e.target.value })} maxLength={80} required autoFocus placeholder="Castle" className="field" />
               </Field>
-              <Field label="Moedas">
+              <Field label="Evaldocoins">
                 <div className="relative">
                   <input type="number" min={1} value={activity.coins} onChange={(e) => setActivity({ ...activity, coins: e.target.value })} required placeholder="30" className="field !pr-9" />
-                  <Coins className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-amber-300" />
+                  <Coin className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5" />
                 </div>
               </Field>
             </div>
@@ -267,7 +268,7 @@ export default function ShopAdmin() {
             </div>
           </form>
         )}
-        {data.activities.length === 0 && !activity && <EmptyLine text="Cadastre as atividades que valem moedas." />}
+        {data.activities.length === 0 && !activity && <EmptyLine text="Cadastre as atividades que valem Evaldocoins." />}
         <div className="space-y-2">
           {activitiesPag.pageItems.map((a) => (
             <Row key={a.id} className={a.active ? "" : "opacity-50"}>
@@ -288,10 +289,10 @@ export default function ShopAdmin() {
       </Panel>}
 
       {/* Histórico */}
-      {tab === "historico" && <Panel icon={History} title="Histórico" subtitle="Últimos pedidos de moedas conferidos e resgates resolvidos.">
+      {tab === "historico" && <Panel icon={History} title="Histórico" subtitle="Últimos pedidos de Evaldocoins conferidos e resgates resolvidos.">
         <div className="grid xl:grid-cols-2 gap-6">
           <div>
-            <p className="label">Moedas conferidas</p>
+            <p className="label">Evaldocoins conferidas</p>
             {data.reviewedClaims.length === 0 && <EmptyLine text="Nada ainda." />}
             <div className="space-y-2">
               {historyPag.pageItems.map((c) => (
@@ -302,7 +303,7 @@ export default function ShopAdmin() {
                   </div>
                   <Pill tone={c.status === "approved" ? "green" : c.status === "rejected" ? "red" : "gray"}>{c.status === "approved" ? `+${c.coins}` : c.status === "rejected" ? "Recusado" : "Expirado"}</Pill>
                   {c.status !== "expired" && <IconBtn title="Voltar para análise" disabled={busy} onClick={() => run("reviewClaim", { id: c.id, status: "pending" })}><RotateCcw className="w-4 h-4" /></IconBtn>}
-                  <IconBtn title="Excluir" danger disabled={busy} onClick={() => run("deleteClaim", { id: c.id }, { title: "Excluir este pedido de moedas?", message: "O print também é apagado." })}><Trash2 className="w-4 h-4" /></IconBtn>
+                  <IconBtn title="Excluir" danger disabled={busy} onClick={() => run("deleteClaim", { id: c.id }, { title: "Excluir este pedido de Evaldocoins?", message: "O print também é apagado." })}><Trash2 className="w-4 h-4" /></IconBtn>
                 </Row>
               ))}
             </div>

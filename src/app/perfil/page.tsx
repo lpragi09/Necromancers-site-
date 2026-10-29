@@ -56,7 +56,7 @@ export default async function PerfilPage() {
               <span className="w-11 h-11 shrink-0 rounded-xl flex items-center justify-center bg-spirit/10 border border-spirit/30 text-spirit"><Backpack className="w-5 h-5" /></span>
               <span className="min-w-0 flex-1">
                 <span className="block font-title">Meu inventário</span>
-                <span className="block text-sm text-bone/50">Moedas, sorteios, torneios, dungeons e seus drops.</span>
+                <span className="block text-sm text-bone/50">Evaldocoins, sorteios, torneios, dungeons e seus drops.</span>
               </span>
               <ArrowRight className="w-5 h-5 text-spirit group-hover:translate-x-1 transition-transform" />
             </Link>

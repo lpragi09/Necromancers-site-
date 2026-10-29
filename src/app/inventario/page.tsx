@@ -16,7 +16,7 @@ export default async function InventarioPage() {
 
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6">
-      <PageHeader icon={Backpack} eyebrow="Tudo seu no clã" title="Meu" accent="inventário" text="Suas moedas, sorteios, torneios, dungeons e drops num lugar só." />
+      <PageHeader icon={Backpack} eyebrow="Tudo seu no clã" title="Meu" accent="inventário" text="Suas Evaldocoins, sorteios, torneios, dungeons e drops num lugar só." />
       <InventoryView inv={inv} />
     </div>
   );

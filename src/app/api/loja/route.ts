@@ -57,7 +57,7 @@ export async function POST(request: Request) {
   if (body?.action === "buy") {
     const { data, error } = await db.rpc("buy_shop_item", { p_member: memberId, p_item: String(body?.itemId ?? "") });
     if (error) {
-      if (/SALDO_INSUFICIENTE/.test(error.message)) return fail("Moedas insuficientes para esse item.");
+      if (/SALDO_INSUFICIENTE/.test(error.message)) return fail("Evaldocoins insuficientes para esse item.");
       if (/SEM_ESTOQUE/.test(error.message)) return fail("Esse item acabou no estoque.");
       if (/ITEM_INDISPONIVEL/.test(error.message)) return fail("Esse item não está mais disponível.");
       return fail(error.message, 500);
