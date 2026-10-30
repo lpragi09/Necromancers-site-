@@ -189,7 +189,7 @@ export default function TournamentAdmin() {
 
             {/* Sorteio: só entra quem tem 30% de presença */}
             <div className="mt-5 rounded-xl border border-amber-300/25 bg-amber-400/[0.05] p-4 flex flex-col sm:flex-row sm:items-center gap-3 justify-between">
-              <p className="text-xs italic text-bone/55">São {TOURNAMENTS_PER_WEEK} torneios por semana. Entra no sorteio quem tiver {MIN_PRESENCE_PERCENT}% de presença: {minPresences(week)} torneios na semana ou {minPresences(null)} no mês. Cada ida vale 1 chance.</p>
+              <p className="text-xs italic text-bone/55">São {TOURNAMENTS_PER_WEEK} torneios por semana. Entra no sorteio quem tiver {MIN_PRESENCE_PERCENT}% de presença: {minPresences(week)} torneios na semana ou {minPresences(null)} no mês. Cada pessoa tem 1 chance.</p>
               <div className="flex flex-wrap gap-2 shrink-0">
                 <button type="button" disabled={weekDraw.people === 0} onClick={() => setDrawing({ week })} className="btn-neon !py-2 !text-xs"><Dices className="w-4 h-4" /> Sortear semana {week} ({weekDraw.people} {weekDraw.people === 1 ? "pessoa" : "pessoas"})</button>
                 <button type="button" disabled={monthDraw.people === 0} onClick={() => setDrawing({ week: null })} className="btn-ghost !py-2 !text-xs"><Dices className="w-4 h-4" /> Sortear o mês ({monthDraw.people})</button>
