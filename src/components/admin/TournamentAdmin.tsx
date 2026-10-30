@@ -8,7 +8,7 @@ import { adminApi } from "@/lib/api";
 import { useDialog } from "@/components/Dialog";
 import Pagination, { usePagination } from "@/components/Pagination";
 import { EmptyLine, IconBtn, Panel, Segmented } from "@/components/admin/kit";
-import { inTournamentDraw, MIN_PRESENCE_PERCENT, minPresences, monthFrequency, tournamentsIn, TOURNAMENTS_PER_WEEK } from "@/lib/tournament";
+import { inTournamentDraw, MIN_PRESENCE_PERCENT, MIN_WEEK_PRESENCES, monthFrequency, TOURNAMENTS_PER_WEEK } from "@/lib/tournament";
 import type { TournamentMonth, TournamentScore } from "@/lib/types";
 
 interface Data { months: TournamentMonth[]; monthId: string; scores: TournamentScore[]; prior: string | null; names: string[]; photos: [string, string][] }
@@ -55,16 +55,7 @@ export default function TournamentAdmin() {
   const weekTotal = rows.reduce((s, r) => s + r.count, 0);
   // Calculado aqui para acompanhar cada clique no "+"
   const prize = useMemo(() => monthFrequency(data?.scores ?? [], data?.prior ?? null).prizes[week] ?? null, [data, week]);
-  const weekDraw = { people: rows.filter((r) => inTournamentDraw(r.count, week)).length };
-  // No mês soma as 4 semanas de cada pessoa (a comparação ignora maiúsculas, como no servidor)
-  const monthDraw = useMemo(() => {
-    const totals = new Map<string, number>();
-    for (const s of data?.scores ?? []) {
-      const key = s.player_name.trim().toLowerCase();
-      totals.set(key, (totals.get(key) ?? 0) + s.count);
-    }
-    return { people: [...totals.values()].filter((n) => inTournamentDraw(n, null)).length };
-  }, [data]);
+  const weekDraw = { people: rows.filter((r) => inTournamentDraw(r.count)).length };
   // Fotos pelo nome (a comparação ignora maiúsculas) para a roleta
   const photos = useMemo(() => {
     const byKey = new Map((data?.photos ?? []).map(([n, url]) => [n.trim().toLowerCase(), url]));
@@ -191,10 +182,9 @@ export default function TournamentAdmin() {
 
             {/* Sorteio: só entra quem tem 30% de presença */}
             <div className="mt-5 rounded-xl border border-amber-300/25 bg-amber-400/[0.05] p-4 flex flex-col sm:flex-row sm:items-center gap-3 justify-between">
-              <p className="text-xs italic text-bone/55">São {TOURNAMENTS_PER_WEEK} torneios por semana. Entra no sorteio quem tiver {MIN_PRESENCE_PERCENT}% de presença: {minPresences(week)} torneios na semana ou {minPresences(null)} no mês. Cada pessoa tem 1 chance.</p>
+              <p className="text-xs italic text-bone/55">São {TOURNAMENTS_PER_WEEK} torneios por semana. Entra no sorteio quem tiver {MIN_PRESENCE_PERCENT}% de presença: {MIN_WEEK_PRESENCES} torneios na semana. Cada pessoa tem 1 chance.</p>
               <div className="flex flex-wrap gap-2 shrink-0">
                 <button type="button" disabled={weekDraw.people === 0} onClick={() => setDrawing({ week })} className="btn-neon !py-2 !text-xs"><Dices className="w-4 h-4" /> Sortear semana {week} ({weekDraw.people} {weekDraw.people === 1 ? "pessoa" : "pessoas"})</button>
-                <button type="button" disabled={monthDraw.people === 0} onClick={() => setDrawing({ week: null })} className="btn-ghost !py-2 !text-xs"><Dices className="w-4 h-4" /> Sortear o mês ({monthDraw.people})</button>
               </div>
             </div>
 
@@ -203,7 +193,7 @@ export default function TournamentAdmin() {
               <Crown className="w-5 h-5 shrink-0 text-amber-300" />
               <div className="min-w-0">
                 <p className="text-sm font-black italic">{prize ? `Prêmio de frequência: ${prize.name} (${prize.count} presenças)` : "Prêmio de frequência: ninguém ainda"}</p>
-                <p className="mt-0.5 text-[11px] italic text-bone/50">{prize?.passedFrom ? `${prize.passedFrom} ganhou na semana passada e passou o prêmio. Continua no sorteio normal.` : `Vai para quem mais foi, com pelo menos ${minPresences(week)} presenças. Quem ganhou numa semana passa o prêmio na seguinte.`}</p>
+                <p className="mt-0.5 text-[11px] italic text-bone/50">{prize?.passedFrom ? `${prize.passedFrom} ganhou na semana passada e passou o prêmio. Continua no sorteio normal.` : `Vai para quem mais foi, com pelo menos ${MIN_WEEK_PRESENCES} presenças. Quem ganhou numa semana passa o prêmio na seguinte.`}</p>
               </div>
             </div>
 
@@ -218,7 +208,7 @@ export default function TournamentAdmin() {
                 <div key={r.id} className="flex items-center gap-3 p-2.5 sm:p-3 rounded-xl border border-white/5 bg-white/[0.015] hover:border-spirit/30 transition-colors">
                   <div className="flex-1 min-w-0 pl-1">
                     <p className="font-black italic truncate">{r.player_name}</p>
-                    <p className={`text-[11px] font-bold tabular-nums ${inTournamentDraw(r.count, week) ? "text-emerald-300" : "text-bone/40"}`}>{r.count}/{tournamentsIn(week)} · {inTournamentDraw(r.count, week) ? "no sorteio" : "fora do sorteio"}</p>
+                    <p className={`text-[11px] font-bold tabular-nums ${inTournamentDraw(r.count) ? "text-emerald-300" : "text-bone/40"}`}>{r.count}/{TOURNAMENTS_PER_WEEK} · {inTournamentDraw(r.count) ? "no sorteio" : "fora do sorteio"}</p>
                   </div>
                   <button type="button" onClick={() => bump(r, -1)} disabled={r.count <= 0} aria-label={`Tirar 1 de ${r.player_name}`}
                     className="w-10 h-10 rounded-xl border border-white/10 bg-white/[0.03] flex items-center justify-center text-bone/70 hover:text-white hover:border-rose-400/50 hover:bg-rose-500/10 disabled:opacity-30 transition-colors">

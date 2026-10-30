@@ -6,7 +6,7 @@ import PageNav, { pageFrom, slicePage } from "@/components/PageNav";
 import { Empty, PageHeader } from "@/components/ui";
 import { getTournamentDraws, getTournamentFrequency, getTournamentMonths, getTournamentRanking } from "@/lib/data";
 import { fmtDateTime } from "@/lib/format";
-import { inTournamentDraw, MIN_PRESENCE_PERCENT, minPresences, tournamentsIn, TOURNAMENTS_PER_WEEK } from "@/lib/tournament";
+import { inTournamentDraw, MIN_PRESENCE_PERCENT, MIN_WEEK_PRESENCES, TOURNAMENTS_PER_WEEK } from "@/lib/tournament";
 import { canSeeContent, getViewer } from "@/lib/viewer";
 
 export const dynamic = "force-dynamic";
@@ -97,7 +97,7 @@ export default async function TorneiosPage({ searchParams }: { searchParams: Pro
                 ))}
               </div>
             )}
-            <p className="mt-3 text-xs italic text-bone/45">Quem mais foi na semana, com pelo menos {minPresences(1)} presenças, tem 1 prêmio garantido e ainda concorre no sorteio: se ganhar, leva 2. Na semana seguinte, quem ganhou passa esse prêmio para o próximo da lista, mas continua no sorteio normal.</p>
+            <p className="mt-3 text-xs italic text-bone/45">Quem mais foi na semana, com pelo menos {MIN_WEEK_PRESENCES} presenças, tem 1 prêmio garantido e ainda concorre no sorteio: se ganhar, leva 2. Na semana seguinte, quem ganhou passa esse prêmio para o próximo da lista, mas continua no sorteio normal.</p>
           </div>
 
           {draws.length > 0 && (
@@ -140,7 +140,7 @@ export default async function TorneiosPage({ searchParams }: { searchParams: Pro
                         <p className={`mt-3 font-title text-sm uppercase tracking-[0.2em] ${p.text}`}>{i + 1}º lugar</p>
                         <p className="font-title text-xl truncate">{r.player_name}</p>
                         <p className="mt-1 font-title text-3xl text-spirit tabular-nums">{r.count}<span className="ml-1.5 text-xs text-bone/40 not-italic">{r.count === 1 ? "torneio" : "torneios"}</span></p>
-                        <p className={`mt-1 text-xs font-bold tabular-nums ${inTournamentDraw(r.count, week) ? "text-emerald-300" : "text-bone/40"}`}>{r.count}/{tournamentsIn(week)} · {inTournamentDraw(r.count, week) ? "no sorteio" : "fora do sorteio"}</p>
+                        {week !== null && <p className={`mt-1 text-xs font-bold tabular-nums ${inTournamentDraw(r.count) ? "text-emerald-300" : "text-bone/40"}`}>{r.count}/{TOURNAMENTS_PER_WEEK} · {inTournamentDraw(r.count) ? "no sorteio" : "fora do sorteio"}</p>}
                       </div>
                     </div>
                   );
@@ -157,7 +157,7 @@ export default async function TorneiosPage({ searchParams }: { searchParams: Pro
                         <Avatar src={r.avatar_url} name={r.player_name} size={36} />
                         <div className="flex-1 min-w-0">
                           <p className="font-bold truncate">{r.player_name}</p>
-                          <p className={`text-[11px] font-bold tabular-nums ${inTournamentDraw(r.count, week) ? "text-emerald-300" : "text-bone/40"}`}>{r.count}/{tournamentsIn(week)} · {inTournamentDraw(r.count, week) ? "no sorteio" : "fora do sorteio"}</p>
+                          {week !== null && <p className={`text-[11px] font-bold tabular-nums ${inTournamentDraw(r.count) ? "text-emerald-300" : "text-bone/40"}`}>{r.count}/{TOURNAMENTS_PER_WEEK} · {inTournamentDraw(r.count) ? "no sorteio" : "fora do sorteio"}</p>}
                         </div>
                         <span className="font-black text-spirit tabular-nums">{r.count}<span className="ml-1 text-[10px] text-bone/40">{r.count === 1 ? "torneio" : "torneios"}</span></span>
                       </div>

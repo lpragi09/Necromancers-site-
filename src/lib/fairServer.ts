@@ -10,7 +10,7 @@ export const FAIR_COLUMNS =
 
 type Pool = { title: string; entries: FairEntry[]; owners: Map<string, string> };
 
-// Torneio: só quem tem 30% de presença no período entra, com 1 chance cada. Nomes iguais a membros guardam o id.
+// Torneio: só quem tem 30% de presença na semana entra, com 1 chance cada. Nomes iguais a membros guardam o id.
 async function buildTournamentPool(monthId: string, week: number | null): Promise<Pool | null> {
   const db = supabaseAdmin;
   const { data: month } = await db.from("tournament_months").select("name").eq("id", monthId).maybeSingle();
@@ -29,7 +29,7 @@ async function buildTournamentPool(monthId: string, week: number | null): Promis
     totals.set(key, row);
   }
   const ids = new Map((members ?? []).map((m) => [m.char_name.trim().toLowerCase(), m.id]));
-  const entries = [...totals.values()].filter((e) => inTournamentDraw(e.weight, week)).map((e) => ({ ...e, weight: 1 })).sort((a, b) => (a.label.toLowerCase() < b.label.toLowerCase() ? -1 : a.label.toLowerCase() > b.label.toLowerCase() ? 1 : 0));
+  const entries = [...totals.values()].filter((e) => inTournamentDraw(e.weight)).map((e) => ({ ...e, weight: 1 })).sort((a, b) => (a.label.toLowerCase() < b.label.toLowerCase() ? -1 : a.label.toLowerCase() > b.label.toLowerCase() ? 1 : 0));
   const owners = new Map(entries.flatMap((e) => { const id = ids.get(e.label.toLowerCase()); return id ? [[e.label, id] as [string, string]] : []; }));
   return { title: `Torneio · ${month.name} · ${week ? `Semana ${week}` : "Mês todo"}`, entries, owners };
 }
@@ -66,7 +66,7 @@ export async function runFairDraw(kind: FairKind, targetId: string, week: number
   const db = supabaseAdmin;
   const pool = kind === "torneio" ? await buildTournamentPool(targetId, week) : await buildPool(targetId);
   if (!pool) return { error: "Sorteio não encontrado.", status: 404 };
-  if (pool.entries.length === 0) return { error: kind === "torneio" ? "Ninguém chegou a 30% de presença nesse período." : "Ninguém se inscreveu neste sorteio ainda.", status: 400 };
+  if (pool.entries.length === 0) return { error: kind === "torneio" ? "Ninguém chegou a 30% de presença nessa semana." : "Ninguém se inscreveu neste sorteio ainda.", status: 400 };
 
   const entriesHash = await sha256Hex(entriesText(pool.entries));
   // Duas rodadas à frente da última publicada: o número ainda não existe quando a lista é gravada.

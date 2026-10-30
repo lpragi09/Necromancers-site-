@@ -184,7 +184,8 @@ export async function POST(request: Request) {
       const targetId = str(body?.targetId);
       if (body?.kind === "torneio") {
         const w = Math.floor(Number(body?.week));
-        const result = await runFairDraw("torneio", targetId, w >= 1 && w <= 4 ? w : null);
+        if (!(w >= 1 && w <= 4)) return fail("Escolha a semana do sorteio.");
+        const result = await runFairDraw("torneio", targetId, w);
         if (result.error) return fail(result.error, result.status ?? 500);
         return ok({ data: result.draw });
       }

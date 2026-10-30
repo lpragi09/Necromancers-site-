@@ -1,7 +1,7 @@
 import { hasSupabase, supabaseAdmin } from "@/lib/supabaseAdmin";
 import { MEMBER_COLUMNS } from "@/lib/viewer";
 import { DEMO_ACTIVITIES, DEMO_DUNGEONS, DEMO_DUNGEON_RUNS, DEMO_GAMES, DEMO_TOURNAMENT_MONTHS, DEMO_TOURNAMENT_SCORES, DEMO_GIVEAWAYS, DEMO_ITEMS, DEMO_MEMBERS, DEMO_POSTS, DEMO_RANKING, DEMO_SEASON, DEMO_SHOP_ITEMS } from "@/lib/demo";
-import { minPresences, monthFrequency, type FrequencyPrize } from "@/lib/tournament";
+import { MIN_WEEK_PRESENCES, monthFrequency, type FrequencyPrize } from "@/lib/tournament";
 import type { ActivityType, CoinClaim, Drop, DropItem, Giveaway, Member, Post, RankingRow, Rarity, Season, ShopItem, ShopOrder, TournamentMonth, TournamentRow, TournamentScore, Dungeon, DungeonPlayer, DungeonRun, GameMode, GamePlayer, GameRoom } from "@/lib/types";
 
 // Leituras usadas pelas páginas (sempre no servidor, pela service role).
@@ -226,7 +226,7 @@ export async function getTournamentFrequency(monthId: string) {
   if (isDemo()) scores = DEMO_TOURNAMENT_SCORES;
   else {
     // Só quem bateu o mínimo disputa, então os mais recentes bastam para a corrente
-    const { data } = await supabaseAdmin.from("tournament_scores").select(TOURNAMENT_SCORE_COLUMNS).gte("count", minPresences(1)).order("updated_at", { ascending: false }).limit(1000);
+    const { data } = await supabaseAdmin.from("tournament_scores").select(TOURNAMENT_SCORE_COLUMNS).gte("count", MIN_WEEK_PRESENCES).order("updated_at", { ascending: false }).limit(1000);
     scores = (data as TournamentScore[]) ?? [];
   }
   let prior: string | null = null;
