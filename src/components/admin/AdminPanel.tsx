@@ -94,14 +94,14 @@ export default function AdminPanel() {
   const activeMembers = data.members.filter((m) => m.status === "active").length;
   const openGiveaways = data.giveaways.filter((g) => g.status === "open").length;
   const tabs: { id: Tab; label: string; hint: string; icon: LucideIcon; badge?: number }[] = [
-    { id: "drops", label: "Drops", hint: "Aprovar prints", icon: Gem, badge: data.pendingDrops.length },
-    { id: "membros", label: "Membros", hint: "Cargos e pedidos", icon: Users, badge: pendingMembers },
     { id: "avisos", label: "Avisos", hint: "Mural do clã", icon: Megaphone },
-    { id: "sorteios", label: "Sorteios", hint: "Criar e sortear", icon: Gift },
-    { id: "ranking", label: "Temporadas", hint: "Prêmios e itens", icon: Trophy },
+    { id: "membros", label: "Membros", hint: "Cargos e pedidos", icon: Users, badge: pendingMembers },
     { id: "torneios", label: "Torneios", hint: "Presença semanal", icon: Swords },
     { id: "dungeons", label: "Dungeons", hint: "Lista e grupos", icon: Mountain },
     { id: "games", label: "Games", hint: "Salas dos minigames", icon: Gamepad2 },
+    { id: "sorteios", label: "Sorteios", hint: "Criar e sortear", icon: Gift },
+    { id: "drops", label: "Drops", hint: "Aprovar prints", icon: Gem, badge: data.pendingDrops.length },
+    { id: "ranking", label: "Temporadas", hint: "Prêmios e itens", icon: Trophy },
     { id: "loja", label: "Lojinha", hint: "Evaldocoins e resgates", icon: Store },
   ];
   const stats: { label: string; value: number; icon: LucideIcon; tab: Tab; alert?: boolean }[] = [
