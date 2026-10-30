@@ -6,6 +6,7 @@ import PageNav, { pageFrom, slicePage } from "@/components/PageNav";
 import { Empty, PageHeader } from "@/components/ui";
 import { getTournamentDraws, getTournamentMonths, getTournamentRanking } from "@/lib/data";
 import { fmtDateTime } from "@/lib/format";
+import { inTournamentDraw, MIN_PRESENCE_PERCENT, tournamentsIn, TOURNAMENTS_PER_WEEK } from "@/lib/tournament";
 import { canSeeContent, getViewer } from "@/lib/viewer";
 
 export const dynamic = "force-dynamic";
@@ -50,7 +51,7 @@ export default async function TorneiosPage({ searchParams }: { searchParams: Pro
 
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6">
-      <PageHeader icon={Swords} eyebrow="Presença nos torneios" title="Ranking dos" accent="torneios" text="Quem mais foi aos torneios do clã, semana a semana. A liderança atualiza a cada torneio." />
+      <PageHeader icon={Swords} eyebrow="Presença nos torneios" title="Ranking dos" accent="torneios" text={`São ${TOURNAMENTS_PER_WEEK} torneios por semana. Quem tiver ${MIN_PRESENCE_PERCENT}% de presença entra no sorteio do torneio; quem não tiver fica de fora.`} />
 
       {!month ? (
         <Empty text="Nenhum mês de torneios criado ainda." />
@@ -123,6 +124,7 @@ export default async function TorneiosPage({ searchParams }: { searchParams: Pro
                         <p className={`mt-3 font-title text-sm uppercase tracking-[0.2em] ${p.text}`}>{i + 1}º lugar</p>
                         <p className="font-title text-xl truncate">{r.player_name}</p>
                         <p className="mt-1 font-title text-3xl text-spirit tabular-nums">{r.count}<span className="ml-1.5 text-xs text-bone/40 not-italic">{r.count === 1 ? "torneio" : "torneios"}</span></p>
+                        <p className={`mt-1 text-xs font-bold tabular-nums ${inTournamentDraw(r.count, week) ? "text-emerald-300" : "text-bone/40"}`}>{r.count}/{tournamentsIn(week)} · {inTournamentDraw(r.count, week) ? "no sorteio" : "fora do sorteio"}</p>
                       </div>
                     </div>
                   );
@@ -137,7 +139,10 @@ export default async function TorneiosPage({ searchParams }: { searchParams: Pro
                       <div key={r.player_name} className="flex items-center gap-3 sm:gap-4 px-4 sm:px-5 py-3 hover:bg-white/[0.02] transition-colors">
                         <span className="w-8 text-center font-title text-bone/40 tabular-nums">{pos}º</span>
                         <Avatar src={r.avatar_url} name={r.player_name} size={36} />
-                        <p className="flex-1 min-w-0 font-bold truncate">{r.player_name}</p>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-bold truncate">{r.player_name}</p>
+                          <p className={`text-[11px] font-bold tabular-nums ${inTournamentDraw(r.count, week) ? "text-emerald-300" : "text-bone/40"}`}>{r.count}/{tournamentsIn(week)} · {inTournamentDraw(r.count, week) ? "no sorteio" : "fora do sorteio"}</p>
+                        </div>
                         <span className="font-black text-spirit tabular-nums">{r.count}<span className="ml-1 text-[10px] text-bone/40">{r.count === 1 ? "torneio" : "torneios"}</span></span>
                       </div>
                     );
