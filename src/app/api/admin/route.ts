@@ -389,6 +389,11 @@ export async function POST(request: Request) {
       if (data?.proof_path) await db.storage.from("provas").remove([data.proof_path]);
       return ok();
     }
+    case "deleteOrder": {
+      // Só cancelado: resgate entregue conta no saldo, apagar devolveria as Evaldocoins ao membro
+      const { error } = await db.from("shop_orders").delete().eq("id", id).eq("status", "cancelled");
+      return error ? fail(error.message, 500) : ok();
+    }
     case "setOrderStatus": {
       const status = body?.status === "delivered" ? "delivered" : body?.status === "cancelled" ? "cancelled" : "pending";
       const { data: order } = await db.from("shop_orders").select("status, item_id").eq("id", id).maybeSingle();

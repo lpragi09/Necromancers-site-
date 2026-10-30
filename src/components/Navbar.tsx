@@ -11,13 +11,13 @@ import { SECTION_EVENT } from "@/components/ScrollHash";
 const LINKS = [
   { href: "/", label: "Início", icon: Home },
   { href: "/avisos", label: "Avisos", icon: Megaphone },
-  { href: "/sorteios", label: "Sorteios", icon: Gift },
-  { href: "/loja", label: "Loja", icon: Store },
+  { href: "/membros", label: "Membros", icon: Users },
   { href: "/torneios", label: "Torneios", icon: Swords },
   { href: "/dungeons", label: "Dungeons", icon: Mountain },
   { href: "/games", label: "Games", icon: Gamepad2 },
+  { href: "/sorteios", label: "Sorteios", icon: Gift },
   { href: "/ranking", label: "Ranking", icon: Trophy },
-  { href: "/membros", label: "Membros", icon: Users },
+  { href: "/loja", label: "Loja", icon: Store },
 ];
 
 const HOME_SECTIONS: Record<string, string> = { sorteios: "/sorteios", top: "/ranking", mural: "/avisos" };

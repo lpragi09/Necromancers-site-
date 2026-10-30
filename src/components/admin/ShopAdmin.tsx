@@ -320,6 +320,7 @@ export default function ShopAdmin() {
                     <p className="text-[11px] text-bone/35">{o.delivered_at ? `entregue ${timeAgo(o.delivered_at)}` : timeAgo(o.created_at)}</p>
                   </div>
                   <Pill tone={o.status === "delivered" ? "green" : "red"}>{o.status === "delivered" ? "Entregue" : "Cancelado"}</Pill>
+                  {o.status === "cancelled" && <IconBtn title="Excluir" danger disabled={busy} onClick={() => run("deleteOrder", { id: o.id }, { title: "Excluir este resgate cancelado?", message: "Ele sai do histórico. O saldo do membro não muda." })}><Trash2 className="w-4 h-4" /></IconBtn>}
                 </Row>
               ))}
             </div>
