@@ -4,9 +4,9 @@ import MembersGate from "@/components/MembersGate";
 import Avatar from "@/components/Avatar";
 import PageNav, { pageFrom, slicePage } from "@/components/PageNav";
 import { Empty, PageHeader } from "@/components/ui";
-import { getTournamentDraws, getTournamentMonths, getTournamentRanking } from "@/lib/data";
+import { getTournamentDraws, getTournamentFrequency, getTournamentMonths, getTournamentRanking } from "@/lib/data";
 import { fmtDateTime } from "@/lib/format";
-import { inTournamentDraw, MIN_PRESENCE_PERCENT, tournamentsIn, TOURNAMENTS_PER_WEEK } from "@/lib/tournament";
+import { inTournamentDraw, MIN_PRESENCE_PERCENT, minPresences, tournamentsIn, TOURNAMENTS_PER_WEEK } from "@/lib/tournament";
 import { canSeeContent, getViewer } from "@/lib/viewer";
 
 export const dynamic = "force-dynamic";
@@ -38,7 +38,8 @@ export default async function TorneiosPage({ searchParams }: { searchParams: Pro
   const rawWeek = typeof params.semana === "string" ? params.semana : undefined;
   // Sem filtro: mês atual abre na semana de hoje; meses antigos abrem no total do mês
   const week: number | null = rawWeek === "todo" ? null : rawWeek && /^[1-4]$/.test(rawWeek) ? Number(rawWeek) : isNewest ? currentWeek() : null;
-  const [ranking, draws] = month ? await Promise.all([getTournamentRanking(month.id, week), getTournamentDraws(month.id)]) : [[], []];
+  const [ranking, draws, frequency] = month ? await Promise.all([getTournamentRanking(month.id, week), getTournamentDraws(month.id), getTournamentFrequency(month.id)]) : [[], [], null];
+  const prizeWeeks = (week ? [week] : [...WEEKS]).flatMap((w) => { const p = frequency?.prizes[w]; return p ? [{ week: w, ...p }] : []; });
   const rest = slicePage(ranking.slice(3), pageFrom(params), PAGE_SIZE);
   const top = ranking.slice(0, 3);
 
@@ -82,6 +83,21 @@ export default async function TorneiosPage({ searchParams }: { searchParams: Pro
                 );
               })}
             </div>
+          </div>
+
+          <div className="mb-6 rounded-[0.9rem] border border-spirit/30 bg-gradient-to-r from-spirit/[0.1] via-crypt to-crypt p-5">
+            <p className="flex items-center gap-2 text-[11px] font-black italic uppercase tracking-[0.25em] text-ecto"><Crown className="w-4 h-4 text-amber-300" /> Prêmio de frequência</p>
+            {prizeWeeks.length > 0 && (
+              <div className="mt-3 grid sm:grid-cols-2 gap-2">
+                {prizeWeeks.map((p) => (
+                  <div key={p.week} className="rounded-lg border border-white/5 bg-black/30 px-3.5 py-2.5">
+                    <p className="font-black italic truncate">{p.name} <span className="font-bold not-italic text-xs text-bone/45">· semana {p.week} · {p.count} presenças</span></p>
+                    {p.passedFrom && <p className="text-[11px] italic text-bone/45">{p.passedFrom} ganhou na semana anterior e passou o prêmio.</p>}
+                  </div>
+                ))}
+              </div>
+            )}
+            <p className="mt-3 text-xs italic text-bone/45">Quem mais foi na semana, com pelo menos {minPresences(1)} presenças, tem 1 prêmio garantido e ainda concorre no sorteio: se ganhar, leva 2. Na semana seguinte, quem ganhou passa esse prêmio para o próximo da lista, mas continua no sorteio normal.</p>
           </div>
 
           {draws.length > 0 && (

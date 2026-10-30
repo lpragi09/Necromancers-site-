@@ -2,16 +2,16 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { CalendarPlus, Dices, Loader2, Minus, Plus, Swords, Trash2, UserPlus } from "lucide-react";
+import { CalendarPlus, Crown, Dices, Loader2, Minus, Plus, Swords, Trash2, UserPlus } from "lucide-react";
 import GiveawayDraw from "@/components/admin/GiveawayDraw";
 import { adminApi } from "@/lib/api";
 import { useDialog } from "@/components/Dialog";
 import Pagination, { usePagination } from "@/components/Pagination";
 import { EmptyLine, IconBtn, Panel, Segmented } from "@/components/admin/kit";
-import { inTournamentDraw, MIN_PRESENCE_PERCENT, minPresences, tournamentsIn, TOURNAMENTS_PER_WEEK } from "@/lib/tournament";
+import { inTournamentDraw, MIN_PRESENCE_PERCENT, minPresences, monthFrequency, tournamentsIn, TOURNAMENTS_PER_WEEK } from "@/lib/tournament";
 import type { TournamentMonth, TournamentScore } from "@/lib/types";
 
-interface Data { months: TournamentMonth[]; monthId: string; scores: TournamentScore[]; names: string[]; photos: [string, string][] }
+interface Data { months: TournamentMonth[]; monthId: string; scores: TournamentScore[]; prior: string | null; names: string[]; photos: [string, string][] }
 
 const MONTHS = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
 const currentWeek = () => Math.min(4, Math.ceil(new Date().getDate() / 7));
@@ -53,6 +53,8 @@ export default function TournamentAdmin() {
   );
   const pag = usePagination(rows, 15);
   const weekTotal = rows.reduce((s, r) => s + r.count, 0);
+  // Calculado aqui para acompanhar cada clique no "+"
+  const prize = useMemo(() => monthFrequency(data?.scores ?? [], data?.prior ?? null).prizes[week] ?? null, [data, week]);
   const weekDraw = { people: rows.filter((r) => inTournamentDraw(r.count, week)).length };
   // No mês soma as 4 semanas de cada pessoa (a comparação ignora maiúsculas, como no servidor)
   const monthDraw = useMemo(() => {
@@ -193,6 +195,15 @@ export default function TournamentAdmin() {
               <div className="flex flex-wrap gap-2 shrink-0">
                 <button type="button" disabled={weekDraw.people === 0} onClick={() => setDrawing({ week })} className="btn-neon !py-2 !text-xs"><Dices className="w-4 h-4" /> Sortear semana {week} ({weekDraw.people} {weekDraw.people === 1 ? "pessoa" : "pessoas"})</button>
                 <button type="button" disabled={monthDraw.people === 0} onClick={() => setDrawing({ week: null })} className="btn-ghost !py-2 !text-xs"><Dices className="w-4 h-4" /> Sortear o mês ({monthDraw.people})</button>
+              </div>
+            </div>
+
+            {/* Prêmio garantido de quem mais foi */}
+            <div className="mt-3 rounded-xl border border-spirit/30 bg-spirit/[0.06] p-4 flex items-start gap-3">
+              <Crown className="w-5 h-5 shrink-0 text-amber-300" />
+              <div className="min-w-0">
+                <p className="text-sm font-black italic">{prize ? `Prêmio de frequência: ${prize.name} (${prize.count} presenças)` : "Prêmio de frequência: ninguém ainda"}</p>
+                <p className="mt-0.5 text-[11px] italic text-bone/50">{prize?.passedFrom ? `${prize.passedFrom} ganhou na semana passada e passou o prêmio. Continua no sorteio normal.` : `Vai para quem mais foi, com pelo menos ${minPresences(week)} presenças. Quem ganhou numa semana passa o prêmio na seguinte.`}</p>
               </div>
             </div>
 

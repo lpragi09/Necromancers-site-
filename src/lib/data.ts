@@ -1,6 +1,7 @@
 import { hasSupabase, supabaseAdmin } from "@/lib/supabaseAdmin";
 import { MEMBER_COLUMNS } from "@/lib/viewer";
 import { DEMO_ACTIVITIES, DEMO_DUNGEONS, DEMO_DUNGEON_RUNS, DEMO_GAMES, DEMO_TOURNAMENT_MONTHS, DEMO_TOURNAMENT_SCORES, DEMO_GIVEAWAYS, DEMO_ITEMS, DEMO_MEMBERS, DEMO_POSTS, DEMO_RANKING, DEMO_SEASON, DEMO_SHOP_ITEMS } from "@/lib/demo";
+import { minPresences, monthFrequency, type FrequencyPrize } from "@/lib/tournament";
 import type { ActivityType, CoinClaim, Drop, DropItem, Giveaway, Member, Post, RankingRow, Rarity, Season, ShopItem, ShopOrder, TournamentMonth, TournamentRow, TournamentScore, Dungeon, DungeonPlayer, DungeonRun, GameMode, GamePlayer, GameRoom } from "@/lib/types";
 
 // Leituras usadas pelas páginas (sempre no servidor, pela service role).
@@ -216,6 +217,25 @@ export async function getTournamentMonths(): Promise<TournamentMonth[]> {
   if (isDemo()) return DEMO_TOURNAMENT_MONTHS;
   const { data } = await supabaseAdmin.from("tournament_months").select("id, name, created_at").order("created_at", { ascending: false });
   return (data as TournamentMonth[]) ?? [];
+}
+
+/** Prêmio de frequência de cada semana de um mês. A corrente vem desde o primeiro mês, porque quem ganhou uma semana passa a seguinte. */
+export async function getTournamentFrequency(monthId: string) {
+  const months = [...await getTournamentMonths()].reverse();
+  let scores: TournamentScore[];
+  if (isDemo()) scores = DEMO_TOURNAMENT_SCORES;
+  else {
+    // Só quem bateu o mínimo disputa, então os mais recentes bastam para a corrente
+    const { data } = await supabaseAdmin.from("tournament_scores").select(TOURNAMENT_SCORE_COLUMNS).gte("count", minPresences(1)).order("updated_at", { ascending: false }).limit(1000);
+    scores = (data as TournamentScore[]) ?? [];
+  }
+  let prior: string | null = null;
+  for (const m of months) {
+    const result = monthFrequency(scores.filter((s) => s.month_id === m.id), prior);
+    if (m.id === monthId) return { prizes: result.prizes, prior };
+    prior = result.last;
+  }
+  return { prizes: {} as Record<number, FrequencyPrize | null>, prior: null };
 }
 
 /** Ranking de um mês: de uma semana (1 a 4) ou do mês todo (soma das semanas). Nomes iguais a um membro ganham a foto dele. */
