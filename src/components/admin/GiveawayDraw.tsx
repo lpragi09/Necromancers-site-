@@ -21,7 +21,7 @@ type Phase = "countdown" | "spinning" | "result";
 // Sorteio entre os membros inscritos (ou entre quem foi aos torneios). Quem ganha sai do servidor
 // (provably fair); a roleta só mostra. Confirmar grava o ganhador.
 export default function GiveawayDraw({ giveaway, tournament, onClose, onConfirmed }: {
-  giveaway: { id: string; title: string; prize: string };
+  giveaway: { id: string; title: string; prize: string; winners_count?: number; winners?: unknown[] };
   /** Sorteio do torneio: id do mês em giveaway.id, semana (null = mês todo) e fotos de quem é membro */
   tournament?: { week: number | null; photos: Map<string, string> };
   onClose: () => void;
@@ -32,6 +32,8 @@ export default function GiveawayDraw({ giveaway, tournament, onClose, onConfirme
   const [draw, setDraw] = useState<FairDraw | null>(null);
   const [items, setItems] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
+  const total = giveaway.winners_count ?? 1;
+  const [round, setRound] = useState((giveaway.winners?.length ?? 0) + 1);
   const reelRef = useRef<HTMLDivElement>(null);
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
   const spinId = useRef(0);
@@ -121,9 +123,18 @@ export default function GiveawayDraw({ giveaway, tournament, onClose, onConfirme
     if (!draw) return;
     setBusy(true);
     try {
-      if (tournament) await adminApi("fairStatus", { id: draw.id, status: "confirmed" });
-      else await adminApi("confirmGiveawayWinner", { drawId: draw.id });
-      onConfirmed();
+      if (tournament) {
+        await adminApi("fairStatus", { id: draw.id, status: "confirmed" });
+        onConfirmed();
+      } else {
+        const { done } = await adminApi<{ done: boolean }>("confirmGiveawayWinner", { drawId: draw.id });
+        if (done) onConfirmed();
+        else {
+          // Ainda falta ganhador: gira de novo sem quem já ganhou
+          setRound((r) => r + 1);
+          start();
+        }
+      }
     } catch (err) {
       dialog.error(err, "Não foi possível salvar o ganhador");
     }
@@ -179,12 +190,12 @@ export default function GiveawayDraw({ giveaway, tournament, onClose, onConfirme
                 <button onClick={cancel} title="Fechar (o giro fica como descartado)" className="absolute top-4 right-4 text-bone/40 hover:text-bone"><X className="w-5 h-5" /></button>
                 <Avatar src={photos.get(draw.winner_label ?? "")} name={draw.winner_label ?? "?"} size={92} className="mx-auto mb-4 ring-4 ring-ecto/60 shadow-[0_0_30px_rgba(192,132,252,0.45)]" />
                 <h3 className="font-title text-3xl font-bold text-bone truncate">{draw.winner_label}</h3>
-                <p className="text-bone/50 mt-1 mb-2 text-xs uppercase tracking-widest">Ganhou · {giveaway.prize}</p>
+                <p className="text-bone/50 mt-1 mb-2 text-xs uppercase tracking-widest">Ganhou · {giveaway.prize}{total > 1 ? ` · Ganhador ${round} de ${total}` : ""}</p>
                 <a href={`/provably-fair?id=${draw.id}`} target="_blank" className="inline-flex items-center gap-1.5 mb-6 text-[11px] font-bold text-spirit hover:text-ecto uppercase tracking-widest">
                   <ShieldCheck className="w-3.5 h-3.5" /> Ver prova do sorteio
                 </a>
                 <div className="flex gap-3">
-                  <button onClick={confirm} disabled={busy} className="btn-neon flex-1 !text-xs uppercase tracking-widest"><Trophy className="w-4 h-4" /> Confirmar</button>
+                  <button onClick={confirm} disabled={busy} className="btn-neon flex-1 !text-xs uppercase tracking-widest"><Trophy className="w-4 h-4" /> {round < total ? "Confirmar e girar" : "Confirmar"}</button>
                   <button onClick={discardAndRedraw} disabled={busy} className="btn-ghost flex-1 !text-xs uppercase tracking-widest"><RotateCcw className="w-4 h-4" /> Sortear de novo</button>
                 </div>
                 <p className="mt-4 text-[11px] text-bone/40">Confirmar grava o ganhador{tournament ? " e mostra na página de Torneios" : " no sorteio"}. &quot;Sortear de novo&quot; fica registrado como descartado.</p>

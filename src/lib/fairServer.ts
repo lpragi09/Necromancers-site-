@@ -37,13 +37,15 @@ async function buildTournamentPool(monthId: string, week: number | null): Promis
 // A lista sai sempre do banco (nunca do navegador): membros ativos inscritos, 1 chance cada.
 async function buildPool(targetId: string): Promise<Pool | null> {
   const db = supabaseAdmin;
-  const { data: g } = await db.from("giveaways").select("title, manual_entries").eq("id", targetId).maybeSingle();
+  const { data: g } = await db.from("giveaways").select("title, manual_entries, winners").eq("id", targetId).maybeSingle();
   if (!g) return null;
+  // Quem já ganhou neste sorteio não entra de novo
+  const won = new Set(((g.winners ?? []) as { name: string }[]).map((w) => w.name.toLowerCase()));
   // Sorteio manual: os nomes que a liderança digitou. Nome igual ao de um membro guarda o id.
   if (g.manual_entries) {
     const { data: members } = await db.from("members").select("id, char_name").eq("status", "active");
     const ids = new Map((members ?? []).map((m) => [m.char_name.trim().toLowerCase(), m.id]));
-    const names = [...(g.manual_entries as string[])].sort((a, b) => (a.toLowerCase() < b.toLowerCase() ? -1 : a.toLowerCase() > b.toLowerCase() ? 1 : 0));
+    const names = (g.manual_entries as string[]).filter((n) => !won.has(n.toLowerCase())).sort((a, b) => (a.toLowerCase() < b.toLowerCase() ? -1 : a.toLowerCase() > b.toLowerCase() ? 1 : 0));
     const owners = new Map(names.flatMap((n) => { const id = ids.get(n.toLowerCase()); return id ? [[n, id] as [string, string]] : []; }));
     return { title: g.title, entries: names.map((label) => ({ label, weight: 1 })), owners };
   }
@@ -59,6 +61,7 @@ async function buildPool(targetId: string): Promise<Pool | null> {
     owners.set(r.members.char_name, r.member_id);
   }
   const entries = [...owners.keys()]
+    .filter((label) => !won.has(label.toLowerCase()))
     .sort((a, b) => (a.toLowerCase() < b.toLowerCase() ? -1 : a.toLowerCase() > b.toLowerCase() ? 1 : 0))
     .map((label) => ({ label, weight: 1 }));
   return { title: g.title, entries, owners };

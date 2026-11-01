@@ -84,7 +84,7 @@ export const DEMO_GIVEAWAYS: Giveaway[] = [
   {
     id: "demo-g2", title: "Sorteio de boas-vindas", prize: "Kit de 100 Ultra Balls", status: "drawn", ends_at: ago(6), created_at: ago(14),
     description: "Comemoração dos 30 membros do clã.",
-    image_url: null, winner_member_id: DEMO_MEMBERS[6].id, winner_name: DEMO_MEMBERS[6].char_name, fair_draw_id: null, entries_count: 30,
+    image_url: null, winner_member_id: DEMO_MEMBERS[6].id, winner_name: DEMO_MEMBERS[6].char_name, fair_draw_id: null, entries_count: 30, winners_count: 1, winners: [{ name: DEMO_MEMBERS[6].char_name, member_id: DEMO_MEMBERS[6].id, draw_id: null, drawn_at: ago(6) }],
   },
 ];
 

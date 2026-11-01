@@ -16,6 +16,8 @@ export default function GiveawayCard({ giveaway: g, canJoin }: { giveaway: Givea
   const st = STATUS[g.status];
   const expired = g.status === "open" && g.ends_at && new Date(g.ends_at).getTime() < Date.now();
   const done = g.status === "drawn";
+  const winners = g.winners ?? [];
+  const total = g.winners_count ?? 1;
   return (
     <div className={`w-full crypt-card crypt-card-hover overflow-hidden flex flex-col ${g.status === "open" && !expired ? "!border-spirit/40" : ""}`}>
       <div className="relative aspect-[16/9] overflow-hidden bg-gradient-to-br from-[#2a0f4a] via-[#120822] to-black">
@@ -40,6 +42,7 @@ export default function GiveawayCard({ giveaway: g, canJoin }: { giveaway: Givea
           <div>
             <p className="text-[10px] font-black italic uppercase tracking-widest text-bone/40">Prêmio</p>
             <p className="text-sm font-black italic text-spirit truncate">{g.prize}</p>
+            {total > 1 && <p className="text-[11px] italic text-bone/45">{total} ganhadores</p>}
           </div>
           <div className="text-right">
             <p className="text-[10px] font-black italic uppercase tracking-widest text-bone/40">{done ? "Participaram" : g.ends_at ? "Até" : "Inscritos"}</p>
@@ -49,25 +52,32 @@ export default function GiveawayCard({ giveaway: g, canJoin }: { giveaway: Givea
         {!done && g.ends_at && <p className="mt-2 text-[11px] italic text-bone/40">{g.entries_count ?? 0} inscritos até agora</p>}
 
         <div className="mt-auto pt-5">
-          {done && g.winner_name ? (
-            <div className="rounded-xl border border-amber-400/30 bg-amber-400/10 px-4 py-3">
-              <p className="text-[10px] font-black italic uppercase tracking-widest text-amber-200/70">Vencedor</p>
-              <p className="flex items-center gap-2 text-amber-200 font-black italic"><Trophy className="w-4 h-4" /> {g.winner_name}</p>
-              {g.drawn_at && <p className="mt-1 flex items-center gap-1.5 text-xs text-amber-100/60"><CalendarCheck className="w-3.5 h-3.5" /> Sorteado em {fmtDateTime(g.drawn_at)}</p>}
-              {g.fair_draw_id && (
-                <Link href={`/provably-fair?id=${g.fair_draw_id}`} className="mt-1 inline-flex items-center gap-1 text-[11px] font-black italic uppercase tracking-widest text-spirit hover:text-ecto">
-                  <ShieldCheck className="w-3.5 h-3.5" /> Ver prova do sorteio
-                </Link>
-              )}
+          {winners.length > 0 && (
+            <div className={`rounded-xl border border-amber-400/30 bg-amber-400/10 px-4 py-3 space-y-2.5 ${done ? "" : "mb-3"}`}>
+              <p className="text-[10px] font-black italic uppercase tracking-widest text-amber-200/70">{total > 1 ? `Vencedores (${winners.length}/${total})` : "Vencedor"}</p>
+              {winners.map((w) => (
+                <div key={w.name}>
+                  <p className="flex items-center gap-2 text-amber-200 font-black italic"><Trophy className="w-4 h-4 shrink-0" /> <span className="truncate">{w.name}</span></p>
+                  <p className="mt-0.5 flex flex-wrap items-center gap-x-3 text-xs text-amber-100/60">
+                    {w.drawn_at && <span className="inline-flex items-center gap-1.5"><CalendarCheck className="w-3.5 h-3.5" /> {fmtDateTime(w.drawn_at)}</span>}
+                    {w.draw_id && (
+                      <Link href={`/provably-fair?id=${w.draw_id}`} className="inline-flex items-center gap-1 text-[11px] font-black italic uppercase tracking-widest text-spirit hover:text-ecto">
+                        <ShieldCheck className="w-3.5 h-3.5" /> Prova
+                      </Link>
+                    )}
+                  </p>
+                </div>
+              ))}
             </div>
-          ) : g.status === "open" && !expired ? (
+          )}
+          {done ? null : g.status === "open" && !expired ? (
             g.rejected ? (
             <p className="rounded-xl border border-rose-400/30 bg-rose-500/10 px-4 py-2.5 text-center text-xs font-black italic uppercase text-rose-200">Removido deste sorteio pela liderança</p>
           ) : (
             <JoinButton giveawayId={g.id} joined={!!g.joined} canJoin={canJoin} />
           )
           ) : (
-            <p className="text-sm italic text-bone/50">A liderança vai sortear em breve. O resultado aparece aqui.</p>
+            <p className="text-sm italic text-bone/50">{winners.length ? `${total - winners.length === 1 ? "Falta 1 ganhador" : `Faltam ${total - winners.length} ganhadores`}.` : "A liderança vai sortear em breve. O resultado aparece aqui."}</p>
           )}
         </div>
       </div>

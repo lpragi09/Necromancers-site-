@@ -154,6 +154,7 @@ export async function POST(request: Request) {
         description: cleanText(g.description, 2000),
         image_url: imageUrl(g.image_url),
         ends_at: optionalDate(g.ends_at),
+        winners_count: Math.min(50, Math.max(1, Math.floor(Number(g.winners_count)) || 1)),
       };
       if (!fields.title || !fields.prize) return fail("Preencha título e prêmio.");
       // Sorteio manual: lista de nomes sem repetição e sem inscrição pelo site. O tipo não muda depois de criado.
@@ -221,13 +222,18 @@ export async function POST(request: Request) {
     case "confirmGiveawayWinner": {
       const { data: draw } = await db.from("fair_draws").select(FAIR_COLUMNS).eq("id", str(body?.drawId)).maybeSingle();
       if (!draw || draw.status !== "drawn") return fail("Giro não encontrado ou já resolvido.");
+      const { data: g } = await db.from("giveaways").select("winners, winners_count").eq("id", draw.target_id).maybeSingle();
+      if (!g) return fail("Sorteio não encontrado.", 404);
+      const winners = [...(g.winners ?? []), { name: draw.winner_label, member_id: draw.winner_username, draw_id: draw.id, drawn_at: draw.drawn_at }];
+      // Termina ao chegar na quantidade pedida ou quando não sobra ninguém para sortear
+      const done = winners.length >= g.winners_count || draw.entries.length <= 1;
       const { error } = await db
         .from("giveaways")
-        .update({ status: "drawn", winner_member_id: draw.winner_username, winner_name: draw.winner_label, fair_draw_id: draw.id })
+        .update({ status: done ? "drawn" : "closed", winners, winner_member_id: draw.winner_username, winner_name: draw.winner_label, fair_draw_id: draw.id })
         .eq("id", draw.target_id);
       if (error) return fail(error.message, 500);
       await setFairStatus(draw.id, "confirmed");
-      return ok();
+      return ok({ done });
     }
 
     // ---------- Temporadas ----------

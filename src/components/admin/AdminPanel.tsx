@@ -444,7 +444,7 @@ function PostsTab({ posts, reload, discordEnabled }: { posts: Post[]; reload: ()
 }
 
 // ======================= Sorteios =======================
-const EMPTY_GIVEAWAY = { id: "", title: "", prize: "", description: "", image_url: "", ends_at: "", manual: false, names: "" };
+const EMPTY_GIVEAWAY = { id: "", title: "", prize: "", description: "", image_url: "", ends_at: "", winners_count: 1, manual: false, names: "" };
 // Um nome por linha ou separados por vírgula
 const parseNames = (text: string) => text.split(/[\n,]/).map((n) => n.trim()).filter(Boolean);
 
@@ -459,7 +459,7 @@ function GiveawaysTab({ giveaways, reload }: { giveaways: Giveaway[]; reload: ()
   const entriesPag = usePagination(entries?.list ?? [], 40);
 
   const edit = (g: Giveaway) => {
-    setForm({ id: g.id, title: g.title, prize: g.prize, description: g.description, image_url: g.image_url ?? "", ends_at: toLocalInput(g.ends_at), manual: !!g.manual_entries, names: (g.manual_entries ?? []).join("\n") });
+    setForm({ id: g.id, title: g.title, prize: g.prize, description: g.description, image_url: g.image_url ?? "", ends_at: toLocalInput(g.ends_at), winners_count: g.winners_count ?? 1, manual: !!g.manual_entries, names: (g.manual_entries ?? []).join("\n") });
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
   const submit = async (e: React.FormEvent) => {
@@ -489,7 +489,7 @@ function GiveawaysTab({ giveaways, reload }: { giveaways: Giveaway[]; reload: ()
   const preview: Giveaway = {
     id: "preview", title: form.title || "Nome do sorteio", prize: form.prize || "Prêmio", description: form.description,
     image_url: form.image_url || null, status: form.manual ? "closed" : "open", ends_at: form.manual ? null : fromLocalInput(form.ends_at),
-    winner_member_id: null, winner_name: null, fair_draw_id: null, created_at: new Date().toISOString(), entries_count: form.manual ? parseNames(form.names).length : 0, joined: false,
+    winner_member_id: null, winner_name: null, fair_draw_id: null, created_at: new Date().toISOString(), entries_count: form.manual ? parseNames(form.names).length : 0, joined: false, winners_count: form.winners_count,
   };
 
   return (
@@ -507,6 +507,9 @@ function GiveawaysTab({ giveaways, reload }: { giveaways: Giveaway[]; reload: ()
             </div>
             <Field label="Descrição" hint="Regras, quem pode participar, quando sai o resultado.">
               <textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} rows={3} maxLength={2000} className="field resize-y" />
+            </Field>
+            <Field label="Quantidade de ganhadores" hint="Quem ganha sai da lista, então ninguém ganha duas vezes." className="sm:w-72">
+              <input type="number" min={1} max={50} value={form.winners_count} onChange={(e) => setForm({ ...form, winners_count: Number(e.target.value) })} required className="field" />
             </Field>
             {!form.id && <Toggle checked={form.manual} onChange={(manual) => setForm({ ...form, manual })} label="Colocar os participantes manualmente" hint="Você digita os nomes e ninguém se inscreve pelo site" />}
             {form.manual ? (
@@ -543,7 +546,7 @@ function GiveawaysTab({ giveaways, reload }: { giveaways: Giveaway[]; reload: ()
                     <span className="inline-flex items-center gap-1"><Gift className="w-3 h-3 text-spirit" /> {g.prize}</span>
                     <span className="inline-flex items-center gap-1"><Users className="w-3 h-3" /> {g.entries_count ?? 0} {g.manual_entries ? "participantes (manual)" : "inscritos"}</span>
                     {g.ends_at && g.status !== "drawn" && <span className="inline-flex items-center gap-1"><CalendarClock className="w-3 h-3" /> até {fmtDateTime(g.ends_at)}</span>}
-                    {g.status === "drawn" && g.winner_name && <span className="inline-flex items-center gap-1 text-amber-300"><Trophy className="w-3 h-3" /> {g.winner_name}{g.drawn_at ? ` · ${fmtDateTime(g.drawn_at)}` : ""}</span>}
+                    {(g.winners?.length ?? 0) > 0 && <span className="inline-flex items-center gap-1 text-amber-300"><Trophy className="w-3 h-3" /> {g.winners?.map((w) => w.name).join(", ")}{(g.winners_count ?? 1) > 1 ? ` (${g.winners?.length}/${g.winners_count})` : ""}</span>}
                   </p>
                 </div>
                 <span className="hidden sm:inline-flex"><Pill tone={g.status === "open" ? "green" : g.status === "closed" ? "amber" : "purple"}>
@@ -553,7 +556,7 @@ function GiveawaysTab({ giveaways, reload }: { giveaways: Giveaway[]; reload: ()
                   <IconBtn title={g.manual_entries ? "Ver participantes" : "Ver inscritos"} onClick={() => showEntries(g)}><Users className="w-4 h-4" /></IconBtn>
                   {g.status !== "drawn" && (
                     <>
-                      {!g.manual_entries && <IconBtn title={g.status === "open" ? "Fechar inscrições" : "Reabrir inscrições"} disabled={busy}
+                      {!g.manual_entries && !g.winners?.length && <IconBtn title={g.status === "open" ? "Fechar inscrições" : "Reabrir inscrições"} disabled={busy}
                         onClick={() => run("setGiveawayStatus", { id: g.id, status: g.status === "open" ? "closed" : "open" })}>
                         {g.status === "open" ? <Lock className="w-4 h-4" /> : <LockOpen className="w-4 h-4" />}
                       </IconBtn>}
@@ -562,7 +565,7 @@ function GiveawaysTab({ giveaways, reload }: { giveaways: Giveaway[]; reload: ()
                   )}
                   <IconBtn title="Excluir" danger disabled={busy} onClick={() => run("deleteGiveaway", { id: g.id }, { title: "Excluir este sorteio?" })}><Trash2 className="w-4 h-4" /></IconBtn>
                   {g.status !== "drawn" && (
-                    <button onClick={() => startDraw(g)} disabled={busy || !g.entries_count} title={g.entries_count ? "Sortear agora" : "Precisa de pelo menos 1 inscrito"} className="btn-neon !py-2 max-sm:flex-1"><Dices className="w-4 h-4" /> Sortear</button>
+                    <button onClick={() => startDraw(g)} disabled={busy || !g.entries_count} title={g.entries_count ? "Sortear agora" : "Precisa de pelo menos 1 inscrito"} className="btn-neon !py-2 max-sm:flex-1"><Dices className="w-4 h-4" /> Sortear{(g.winners_count ?? 1) > 1 ? ` (${g.winners?.length ?? 0}/${g.winners_count})` : ""}</button>
                   )}
                 </div>
               </Row>

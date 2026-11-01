@@ -8,7 +8,7 @@ import type { ActivityType, CoinClaim, Drop, DropItem, Giveaway, Member, Post, R
 // Sem Supabase configurado, devolvem os dados de exemplo de lib/demo.ts.
 
 export const POST_COLUMNS = "id, kind, title, body, image_url, event_at, pinned, published, created_at, popup, popup_public";
-export const GIVEAWAY_COLUMNS = "id, title, description, prize, image_url, status, ends_at, winner_member_id, winner_name, fair_draw_id, manual_entries, created_at";
+export const GIVEAWAY_COLUMNS = "id, title, description, prize, image_url, status, ends_at, winner_member_id, winner_name, fair_draw_id, manual_entries, winners_count, winners, created_at";
 export const SEASON_COLUMNS = "id, name, starts_at, ends_at, prizes, status, created_at";
 export const ITEM_COLUMNS = "id, name, points, rarity, image_url, active";
 export const DROP_COLUMNS = "id, season_id, member_id, item_id, item_name, rarity, points, quantity, proof_path, note, status, created_at, reviewed_at";
@@ -75,19 +75,19 @@ export async function getRecentWinners(limit = 6): Promise<GiveawayWinner[]> {
     return DEMO_GIVEAWAYS.filter((g) => g.status === "drawn" && g.winner_name).slice(0, limit)
       .map((g) => ({ id: g.id, prize: g.prize, winner_name: g.winner_name as string, avatar_url: null, drawn_at: g.drawn_at ?? g.created_at, fair_draw_id: g.fair_draw_id }));
   }
-  const { data } = await supabaseAdmin.from("giveaways").select(GIVEAWAY_COLUMNS).eq("status", "drawn").not("winner_name", "is", null).order("created_at", { ascending: false }).limit(50);
-  const list = (data as Giveaway[]) ?? [];
-  if (!list.length) return [];
-  const drawnAt = await getDrawnAt(list);
-  const memberIds = list.map((g) => g.winner_member_id).filter((id): id is string => !!id);
+  // Sorteio com vários ganhadores já aparece enquanto sai cada um
+  const { data } = await supabaseAdmin.from("giveaways").select(GIVEAWAY_COLUMNS).neq("status", "open").order("created_at", { ascending: false }).limit(50);
+  const rows = ((data as Giveaway[]) ?? []).flatMap((g) => (g.winners ?? []).map((w) => ({ g, w })));
+  if (!rows.length) return [];
+  const memberIds = rows.map((r) => r.w.member_id).filter((id): id is string => !!id);
   const { data: members } = memberIds.length ? await supabaseAdmin.from("members").select("id, avatar_url").in("id", memberIds) : { data: [] };
   const photos = new Map((members ?? []).map((m) => [m.id, m.avatar_url as string | null]));
-  return list
-    .map((g) => ({
-      id: g.id, prize: g.prize, winner_name: g.winner_name as string,
-      avatar_url: g.winner_member_id ? photos.get(g.winner_member_id) ?? null : null,
-      drawn_at: (g.fair_draw_id ? drawnAt.get(g.fair_draw_id) : null) ?? g.created_at,
-      fair_draw_id: g.fair_draw_id,
+  return rows
+    .map(({ g, w }) => ({
+      id: `${g.id}:${w.name}`, prize: g.prize, winner_name: w.name,
+      avatar_url: w.member_id ? photos.get(w.member_id) ?? null : null,
+      drawn_at: w.drawn_at ?? g.created_at,
+      fair_draw_id: w.draw_id,
     }))
     .sort((a, b) => (b.drawn_at ?? "").localeCompare(a.drawn_at ?? ""))
     .slice(0, limit);
@@ -427,13 +427,13 @@ async function getMyGiveaways(memberId: string): Promise<InventoryGiveaway[]> {
   }
   const { data } = await supabaseAdmin
     .from("giveaway_entries")
-    .select("status, created_at, giveaways!inner(id, title, prize, status, ends_at, winner_member_id)")
+    .select("status, created_at, giveaways!inner(id, title, prize, status, ends_at, winners)")
     .eq("member_id", memberId)
     .order("created_at", { ascending: false })
     .limit(500);
   const order = { open: 0, closed: 1, drawn: 2 } as const;
   return ((data ?? []) as unknown as { status: string; giveaways: Giveaway }[])
-    .map(({ status, giveaways: g }) => ({ id: g.id, title: g.title, prize: g.prize, status: g.status, ends_at: g.ends_at, won: g.winner_member_id === memberId, rejected: status === "rejected" }))
+    .map(({ status, giveaways: g }) => ({ id: g.id, title: g.title, prize: g.prize, status: g.status, ends_at: g.ends_at, won: (g.winners ?? []).some((w) => w.member_id === memberId), rejected: status === "rejected" }))
     .sort((a, b) => order[a.status] - order[b.status]);
 }
 

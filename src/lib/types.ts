@@ -31,6 +31,13 @@ export interface Post {
 
 export type GiveawayStatus = "open" | "closed" | "drawn";
 
+export interface GiveawayWinnerEntry {
+  name: string;
+  member_id: string | null;
+  draw_id: string | null;
+  drawn_at: string | null;
+}
+
 export interface Giveaway {
   id: string;
   title: string;
@@ -42,6 +49,8 @@ export interface Giveaway {
   winner_member_id: string | null;
   winner_name: string | null;
   fair_draw_id: string | null;
+  winners_count?: number;
+  winners?: GiveawayWinnerEntry[]; // quem já ganhou, na ordem
   manual_entries?: string[] | null; // preenchida: a liderança digitou os participantes, sem inscrição pelo site
   created_at: string;
   entries_count?: number;
