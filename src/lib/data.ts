@@ -8,7 +8,7 @@ import type { ActivityType, CoinClaim, Drop, DropItem, Giveaway, Member, Post, R
 // Sem Supabase configurado, devolvem os dados de exemplo de lib/demo.ts.
 
 export const POST_COLUMNS = "id, kind, title, body, image_url, event_at, pinned, published, created_at, popup, popup_public";
-export const GIVEAWAY_COLUMNS = "id, title, description, prize, image_url, status, ends_at, winner_member_id, winner_name, fair_draw_id, manual_entries, created_at";
+export const GIVEAWAY_COLUMNS = "id, title, description, prize, image_url, status, ends_at, winner_member_id, winner_name, fair_draw_id, created_at";
 export const SEASON_COLUMNS = "id, name, starts_at, ends_at, prizes, status, created_at";
 export const ITEM_COLUMNS = "id, name, points, rarity, image_url, active";
 export const DROP_COLUMNS = "id, season_id, member_id, item_id, item_name, rarity, points, quantity, proof_path, note, status, created_at, reviewed_at";
@@ -112,7 +112,7 @@ async function withEntries(list: Giveaway[], memberId?: string | null): Promise<
     if (memberId && e.member_id === memberId) joined.add(e.giveaway_id);
   }
   const drawnAt = await getDrawnAt(list);
-  return list.map((g) => ({ ...g, entries_count: g.manual_entries?.length ?? counts.get(g.id) ?? 0, joined: joined.has(g.id), rejected: rejected.has(g.id), drawn_at: g.fair_draw_id ? drawnAt.get(g.fair_draw_id) ?? null : null }));
+  return list.map((g) => ({ ...g, entries_count: counts.get(g.id) ?? 0, joined: joined.has(g.id), rejected: rejected.has(g.id), drawn_at: g.fair_draw_id ? drawnAt.get(g.fair_draw_id) ?? null : null }));
 }
 
 /** Dia e hora em que cada sorteio teve ganhador (o giro do Provably Fair guarda isso). */

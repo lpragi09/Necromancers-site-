@@ -92,7 +92,7 @@ export async function POST(request: Request) {
       return ok({
         discordEnabled: discordEnabled(),
         posts: posts.data,
-        giveaways: (giveaways.data ?? []).map((g) => ({ ...g, entries_count: g.manual_entries?.length ?? counts.get(g.id) ?? 0, drawn_at: g.fair_draw_id ? drawnAt.get(g.fair_draw_id) ?? null : null })),
+        giveaways: (giveaways.data ?? []).map((g) => ({ ...g, entries_count: counts.get(g.id) ?? 0, drawn_at: g.fair_draw_id ? drawnAt.get(g.fair_draw_id) ?? null : null })),
         seasons: seasons.data,
         items: items.data,
         members: members.data,
@@ -156,21 +156,12 @@ export async function POST(request: Request) {
         ends_at: optionalDate(g.ends_at),
       };
       if (!fields.title || !fields.prize) return fail("Preencha título e prêmio.");
-      // Sorteio manual: lista de nomes sem repetição e sem inscrição pelo site. O tipo não muda depois de criado.
-      const names = [...new Map((Array.isArray(g.manual_entries) ? g.manual_entries : []).map((n: unknown) => cleanText(n, 40)).filter(Boolean).map((n: string) => [n.toLowerCase(), n] as [string, string])).values()].slice(0, 500);
-      if (g.manual && !names.length) return fail("Coloque pelo menos 1 participante.");
-      const row: Record<string, unknown> = g.manual ? { ...fields, manual_entries: names, ends_at: null } : fields;
-      const { error } = !g.id
-        ? await db.from("giveaways").insert(g.manual ? { ...row, status: "closed" } : row)
-        : g.manual
-          ? await db.from("giveaways").update(row).eq("id", g.id).not("manual_entries", "is", null)
-          : await db.from("giveaways").update(row).eq("id", g.id).is("manual_entries", null);
+      const { error } = g.id ? await db.from("giveaways").update(fields).eq("id", g.id) : await db.from("giveaways").insert(fields);
       return error ? fail(error.message, 500) : ok();
     }
     case "setGiveawayStatus": {
       const status = body?.status === "closed" ? "closed" : "open";
-      // Sorteio manual não abre inscrição
-      const { error } = await db.from("giveaways").update({ status }).eq("id", id).neq("status", "drawn").is("manual_entries", null);
+      const { error } = await db.from("giveaways").update({ status }).eq("id", id).neq("status", "drawn");
       return error ? fail(error.message, 500) : ok();
     }
     case "deleteGiveaway": {
@@ -178,13 +169,6 @@ export async function POST(request: Request) {
       return error ? fail(error.message, 500) : ok();
     }
     case "giveawayEntries": {
-      const { data: manual } = await db.from("giveaways").select("manual_entries").eq("id", id).maybeSingle();
-      if (manual?.manual_entries) {
-        // Mesmo formato da lista de inscritos, com a foto de quem é membro
-        const { data: members } = await db.from("members").select("char_name, avatar_url").eq("status", "active");
-        const photos = new Map((members ?? []).map((m) => [m.char_name.trim().toLowerCase(), m.avatar_url]));
-        return ok({ entries: (manual.manual_entries as string[]).map((name) => ({ member_id: name, status: "ok", members: { char_name: name, avatar_url: photos.get(name.toLowerCase()) ?? null } })) });
-      }
       const { data } = await db.from("giveaway_entries").select("member_id, status, created_at, members(char_name, status, avatar_url)").eq("giveaway_id", id).order("created_at");
       return ok({ entries: data ?? [] });
     }

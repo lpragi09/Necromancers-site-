@@ -42,7 +42,6 @@ export interface Giveaway {
   winner_member_id: string | null;
   winner_name: string | null;
   fair_draw_id: string | null;
-  manual_entries?: string[] | null; // preenchida: a liderança digitou os participantes, sem inscrição pelo site
   created_at: string;
   entries_count?: number;
   joined?: boolean;
