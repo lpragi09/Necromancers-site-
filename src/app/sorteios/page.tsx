@@ -2,9 +2,10 @@ import Link from "next/link";
 import MembersGate from "@/components/MembersGate";
 import { Flame, Gift, ShieldCheck, Trophy } from "lucide-react";
 import GiveawayCard from "@/components/GiveawayCard";
+import RecentWinners from "@/components/RecentWinners";
 import PageNav, { pageFrom } from "@/components/PageNav";
 import { Empty, PageHeader, SectionTitle } from "@/components/ui";
-import { getGiveawaysPage } from "@/lib/data";
+import { getGiveawaysPage, getRecentWinners } from "@/lib/data";
 import { canSeeContent, getViewer, isActiveMember } from "@/lib/viewer";
 
 export const dynamic = "force-dynamic";
@@ -20,9 +21,10 @@ export default async function SorteiosPage({ searchParams }: { searchParams: Pro
   // Cada lista tem a sua página: ?pagina= (em andamento) e ?sorteados= (já sorteados)
   const page = pageFrom(params);
   const pastPage = pageFrom(params, "sorteados");
-  const [current, past] = await Promise.all([
+  const [current, past, winners] = await Promise.all([
     getGiveawaysPage("active", page, PAGE_SIZE, memberId),
     getGiveawaysPage("drawn", pastPage, PAGE_SIZE, memberId),
+    getRecentWinners(),
   ]);
   const canJoin = isActiveMember(viewer);
 
@@ -44,6 +46,7 @@ export default async function SorteiosPage({ searchParams }: { searchParams: Pro
           <Empty text="Nenhum sorteio aberto agora. Fique de olho nos avisos!" />
         )}
         <PageNav page={page} pageCount={Math.ceil(current.total / PAGE_SIZE)} path="/sorteios" params={params} />
+        <RecentWinners winners={winners} />
       </section>
 
       {past.total > 0 && (

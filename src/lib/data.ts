@@ -67,6 +67,32 @@ export async function getGiveawaysPage(kind: "active" | "drawn", page: number, s
   return { items: await withEntries((data as Giveaway[]) ?? [], memberId), total: count ?? 0 };
 }
 
+export type GiveawayWinner = { id: string; prize: string; winner_name: string; avatar_url: string | null; drawn_at: string | null; fair_draw_id: string | null };
+
+/** Últimos ganhadores de sorteios, do mais recente para o mais antigo. */
+export async function getRecentWinners(limit = 6): Promise<GiveawayWinner[]> {
+  if (isDemo()) {
+    return DEMO_GIVEAWAYS.filter((g) => g.status === "drawn" && g.winner_name).slice(0, limit)
+      .map((g) => ({ id: g.id, prize: g.prize, winner_name: g.winner_name as string, avatar_url: null, drawn_at: g.drawn_at ?? g.created_at, fair_draw_id: g.fair_draw_id }));
+  }
+  const { data } = await supabaseAdmin.from("giveaways").select(GIVEAWAY_COLUMNS).eq("status", "drawn").not("winner_name", "is", null).order("created_at", { ascending: false }).limit(50);
+  const list = (data as Giveaway[]) ?? [];
+  if (!list.length) return [];
+  const drawnAt = await getDrawnAt(list);
+  const memberIds = list.map((g) => g.winner_member_id).filter((id): id is string => !!id);
+  const { data: members } = memberIds.length ? await supabaseAdmin.from("members").select("id, avatar_url").in("id", memberIds) : { data: [] };
+  const photos = new Map((members ?? []).map((m) => [m.id, m.avatar_url as string | null]));
+  return list
+    .map((g) => ({
+      id: g.id, prize: g.prize, winner_name: g.winner_name as string,
+      avatar_url: g.winner_member_id ? photos.get(g.winner_member_id) ?? null : null,
+      drawn_at: (g.fair_draw_id ? drawnAt.get(g.fair_draw_id) : null) ?? g.created_at,
+      fair_draw_id: g.fair_draw_id,
+    }))
+    .sort((a, b) => (b.drawn_at ?? "").localeCompare(a.drawn_at ?? ""))
+    .slice(0, limit);
+}
+
 /** Junta a contagem de inscritos e se o membro está participando. */
 async function withEntries(list: Giveaway[], memberId?: string | null): Promise<Giveaway[]> {
   if (list.length === 0) return list;

@@ -2,10 +2,11 @@ import Link from "next/link";
 import { ArrowDown, ArrowRight, Gem, Gift, Megaphone, Trophy, Users } from "lucide-react";
 import PostCard from "@/components/PostCard";
 import GiveawayCard from "@/components/GiveawayCard";
+import RecentWinners from "@/components/RecentWinners";
 import HeroVideo from "@/components/HeroVideo";
 import RankingTable, { Podium } from "@/components/RankingTable";
 import { BandHeader, Empty } from "@/components/ui";
-import { getGiveawaysPage, getPosts, getPostsPage, getRanking, getSeasons, getStats, pickSeason } from "@/lib/data";
+import { getGiveawaysPage, getRecentWinners, getPosts, getPostsPage, getRanking, getSeasons, getStats, pickSeason } from "@/lib/data";
 import PageNav, { pageFrom, slicePage } from "@/components/PageNav";
 import { canSeeContent, getViewer, isActiveMember } from "@/lib/viewer";
 import MembersGate from "@/components/MembersGate";
@@ -71,12 +72,13 @@ export default async function Home({ searchParams }: { searchParams: Promise<Rec
   // Cada faixa tem a própria página na URL (?sorteios=2, ?top=2, ?avisos=2)
   const giveawaysPage = pageFrom(params, "sorteios");
   const postsPage = pageFrom(params, "avisos");
-  const [recent, posts, giveaways, seasons, stats] = await Promise.all([
+  const [recent, posts, giveaways, seasons, stats, winners] = await Promise.all([
     getPosts(10),
     getPostsPage(postsPage, POSTS_PAGE),
     getGiveawaysPage("active", giveawaysPage, GIVEAWAYS_PAGE, viewer?.member?.id),
     getSeasons(),
     getStats(),
+    getRecentWinners(),
   ]);
   const season = pickSeason(seasons);
   const ranking = await getRanking(season?.id);
@@ -139,6 +141,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<Rec
             <Empty text="Nenhum sorteio aberto agora. Fique de olho nos avisos!" />
           )}
           <PageNav page={giveawaysPage} pageCount={Math.ceil(giveaways.total / GIVEAWAYS_PAGE)} path="/" params={params} param="sorteios" anchor="sorteios" />
+          <RecentWinners winners={winners} />
           <SeeAll href="/sorteios" label="Todos os sorteios" />
         </div>
       </section>
