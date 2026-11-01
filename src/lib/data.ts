@@ -67,13 +67,13 @@ export async function getGiveawaysPage(kind: "active" | "drawn", page: number, s
   return { items: await withEntries((data as Giveaway[]) ?? [], memberId), total: count ?? 0 };
 }
 
-export type GiveawayWinner = { id: string; prize: string; winner_name: string; avatar_url: string | null; drawn_at: string | null; fair_draw_id: string | null };
+export type GiveawayWinner = { id: string; prize: string; image_url: string | null; winner_name: string; avatar_url: string | null; drawn_at: string | null; fair_draw_id: string | null };
 
 /** Últimos ganhadores de sorteios, do mais recente para o mais antigo. */
-export async function getRecentWinners(limit = 6): Promise<GiveawayWinner[]> {
+export async function getRecentWinners(limit = 12): Promise<GiveawayWinner[]> {
   if (isDemo()) {
     return DEMO_GIVEAWAYS.filter((g) => g.status === "drawn" && g.winner_name).slice(0, limit)
-      .map((g) => ({ id: g.id, prize: g.prize, winner_name: g.winner_name as string, avatar_url: null, drawn_at: g.drawn_at ?? g.created_at, fair_draw_id: g.fair_draw_id }));
+      .map((g) => ({ id: g.id, prize: g.prize, image_url: g.image_url, winner_name: g.winner_name as string, avatar_url: null, drawn_at: g.drawn_at ?? g.created_at, fair_draw_id: g.fair_draw_id }));
   }
   // Sorteio com vários ganhadores já aparece enquanto sai cada um
   const { data } = await supabaseAdmin.from("giveaways").select(GIVEAWAY_COLUMNS).neq("status", "open").order("created_at", { ascending: false }).limit(50);
@@ -84,7 +84,7 @@ export async function getRecentWinners(limit = 6): Promise<GiveawayWinner[]> {
   const photos = new Map((members ?? []).map((m) => [m.id, m.avatar_url as string | null]));
   return rows
     .map(({ g, w }) => ({
-      id: `${g.id}:${w.name}`, prize: g.prize, winner_name: w.name,
+      id: `${g.id}:${w.name}`, prize: g.prize, image_url: g.image_url, winner_name: w.name,
       avatar_url: w.member_id ? photos.get(w.member_id) ?? null : null,
       drawn_at: w.drawn_at ?? g.created_at,
       fair_draw_id: w.draw_id,
