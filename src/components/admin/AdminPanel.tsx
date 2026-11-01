@@ -444,7 +444,9 @@ function PostsTab({ posts, reload, discordEnabled }: { posts: Post[]; reload: ()
 }
 
 // ======================= Sorteios =======================
-const EMPTY_GIVEAWAY = { id: "", title: "", prize: "", description: "", image_url: "", ends_at: "" };
+const EMPTY_GIVEAWAY = { id: "", title: "", prize: "", description: "", image_url: "", ends_at: "", manual: false, names: "" };
+// Um nome por linha ou separados por vírgula
+const parseNames = (text: string) => text.split(/[\n,]/).map((n) => n.trim()).filter(Boolean);
 
 function GiveawaysTab({ giveaways, reload }: { giveaways: Giveaway[]; reload: () => Promise<void> }) {
   const { run, busy } = useAction(reload);
@@ -457,12 +459,12 @@ function GiveawaysTab({ giveaways, reload }: { giveaways: Giveaway[]; reload: ()
   const entriesPag = usePagination(entries?.list ?? [], 40);
 
   const edit = (g: Giveaway) => {
-    setForm({ id: g.id, title: g.title, prize: g.prize, description: g.description, image_url: g.image_url ?? "", ends_at: toLocalInput(g.ends_at) });
+    setForm({ id: g.id, title: g.title, prize: g.prize, description: g.description, image_url: g.image_url ?? "", ends_at: toLocalInput(g.ends_at), manual: !!g.manual_entries, names: (g.manual_entries ?? []).join("\n") });
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (await run("saveGiveaway", { giveaway: { ...form, id: form.id || undefined, ends_at: fromLocalInput(form.ends_at) } })) setForm(EMPTY_GIVEAWAY);
+    if (await run("saveGiveaway", { giveaway: { ...form, id: form.id || undefined, ends_at: fromLocalInput(form.ends_at), manual_entries: parseNames(form.names) } })) setForm(EMPTY_GIVEAWAY);
   };
   const showEntries = async (g: Giveaway) => {
     if (entries?.id === g.id) return setEntries(null);
@@ -471,7 +473,7 @@ function GiveawaysTab({ giveaways, reload }: { giveaways: Giveaway[]; reload: ()
   const loadEntries = async (g: Giveaway) => {
     try {
       const r = await adminApi<{ entries: { member_id: string; status: Entry["status"]; members: { char_name: string; avatar_url: string | null } | null }[] }>("giveawayEntries", { id: g.id });
-      setEntries({ id: g.id, drawn: g.status === "drawn", list: r.entries.map((e) => ({ member_id: e.member_id, name: e.members?.char_name ?? "?", avatar_url: e.members?.avatar_url ?? null, status: e.status ?? "ok" })) });
+      setEntries({ id: g.id, drawn: g.status === "drawn" || !!g.manual_entries, list: r.entries.map((e) => ({ member_id: e.member_id, name: e.members?.char_name ?? "?", avatar_url: e.members?.avatar_url ?? null, status: e.status ?? "ok" })) });
     } catch (err) {
       dialog.error(err);
     }
@@ -479,15 +481,15 @@ function GiveawaysTab({ giveaways, reload }: { giveaways: Giveaway[]; reload: ()
   const startDraw = async (g: Giveaway) => {
     const ok = await dialog.confirm({
       title: `Sortear "${g.title}"?`,
-      message: `As inscrições fecham e a lista de ${g.entries_count ?? 0} inscritos é congelada antes do número público sair.`,
+      message: `A lista de ${g.entries_count ?? 0} ${g.manual_entries ? "participantes" : "inscritos"} é congelada antes do número público sair.${g.manual_entries ? "" : " As inscrições fecham."}`,
       confirmText: "Sortear",
     });
     if (ok) setDrawing(g);
   };
   const preview: Giveaway = {
     id: "preview", title: form.title || "Nome do sorteio", prize: form.prize || "Prêmio", description: form.description,
-    image_url: form.image_url || null, status: "open", ends_at: fromLocalInput(form.ends_at),
-    winner_member_id: null, winner_name: null, fair_draw_id: null, created_at: new Date().toISOString(), entries_count: 0, joined: false,
+    image_url: form.image_url || null, status: form.manual ? "closed" : "open", ends_at: form.manual ? null : fromLocalInput(form.ends_at),
+    winner_member_id: null, winner_name: null, fair_draw_id: null, created_at: new Date().toISOString(), entries_count: form.manual ? parseNames(form.names).length : 0, joined: false,
   };
 
   return (
@@ -506,9 +508,16 @@ function GiveawaysTab({ giveaways, reload }: { giveaways: Giveaway[]; reload: ()
             <Field label="Descrição" hint="Regras, quem pode participar, quando sai o resultado.">
               <textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} rows={3} maxLength={2000} className="field resize-y" />
             </Field>
-            <Field label="Inscrições até" hint="Opcional. Sem data, fica aberto até você fechar." className="sm:w-72">
-              <input type="datetime-local" value={form.ends_at} onChange={(e) => setForm({ ...form, ends_at: e.target.value })} className="field" />
-            </Field>
+            {!form.id && <Toggle checked={form.manual} onChange={(manual) => setForm({ ...form, manual })} label="Colocar os participantes manualmente" hint="Você digita os nomes e ninguém se inscreve pelo site" />}
+            {form.manual ? (
+              <Field label={`Participantes (${new Set(parseNames(form.names).map((n) => n.toLowerCase())).size})`} hint="Um nome por linha ou separados por vírgula. Nomes repetidos contam uma vez só.">
+                <textarea value={form.names} onChange={(e) => setForm({ ...form, names: e.target.value })} rows={6} required placeholder={"Ragi o BruXo\nKuroshi\nEvaldo"} className="field resize-y" />
+              </Field>
+            ) : (
+              <Field label="Inscrições até" hint="Opcional. Sem data, fica aberto até você fechar." className="sm:w-72">
+                <input type="datetime-local" value={form.ends_at} onChange={(e) => setForm({ ...form, ends_at: e.target.value })} className="field" />
+              </Field>
+            )}
             <ImageField size="giveaway" value={form.image_url} onChange={(url) => setForm({ ...form, image_url: url })} />
             <FormFooter hint="Aparece na hora em Sorteios e na home.">
               {form.id && <button type="button" onClick={() => setForm(EMPTY_GIVEAWAY)} className="btn-ghost">Cancelar</button>}
@@ -532,7 +541,7 @@ function GiveawaysTab({ giveaways, reload }: { giveaways: Giveaway[]; reload: ()
                   <p className="font-black italic flex items-center gap-2 min-w-0"><span className="truncate">{g.title}</span><span className="sm:hidden shrink-0"><Pill tone={g.status === "open" ? "green" : g.status === "closed" ? "amber" : "purple"}>{g.status === "open" ? "Aberto" : g.status === "closed" ? "Fechado" : "Sorteado"}</Pill></span></p>
                   <p className="text-[11px] text-bone/45 truncate flex flex-wrap items-center gap-x-3">
                     <span className="inline-flex items-center gap-1"><Gift className="w-3 h-3 text-spirit" /> {g.prize}</span>
-                    <span className="inline-flex items-center gap-1"><Users className="w-3 h-3" /> {g.entries_count ?? 0} inscritos</span>
+                    <span className="inline-flex items-center gap-1"><Users className="w-3 h-3" /> {g.entries_count ?? 0} {g.manual_entries ? "participantes (manual)" : "inscritos"}</span>
                     {g.ends_at && g.status !== "drawn" && <span className="inline-flex items-center gap-1"><CalendarClock className="w-3 h-3" /> até {fmtDateTime(g.ends_at)}</span>}
                     {g.status === "drawn" && g.winner_name && <span className="inline-flex items-center gap-1 text-amber-300"><Trophy className="w-3 h-3" /> {g.winner_name}{g.drawn_at ? ` · ${fmtDateTime(g.drawn_at)}` : ""}</span>}
                   </p>
@@ -541,13 +550,13 @@ function GiveawaysTab({ giveaways, reload }: { giveaways: Giveaway[]; reload: ()
                   {g.status === "open" ? "Aberto" : g.status === "closed" ? "Fechado" : "Sorteado"}
                 </Pill></span>
                 <div className="flex flex-wrap items-center gap-2 max-sm:w-full">
-                  <IconBtn title="Ver inscritos" onClick={() => showEntries(g)}><Users className="w-4 h-4" /></IconBtn>
+                  <IconBtn title={g.manual_entries ? "Ver participantes" : "Ver inscritos"} onClick={() => showEntries(g)}><Users className="w-4 h-4" /></IconBtn>
                   {g.status !== "drawn" && (
                     <>
-                      <IconBtn title={g.status === "open" ? "Fechar inscrições" : "Reabrir inscrições"} disabled={busy}
+                      {!g.manual_entries && <IconBtn title={g.status === "open" ? "Fechar inscrições" : "Reabrir inscrições"} disabled={busy}
                         onClick={() => run("setGiveawayStatus", { id: g.id, status: g.status === "open" ? "closed" : "open" })}>
                         {g.status === "open" ? <Lock className="w-4 h-4" /> : <LockOpen className="w-4 h-4" />}
-                      </IconBtn>
+                      </IconBtn>}
                       <IconBtn title="Editar" onClick={() => edit(g)}><Pencil className="w-4 h-4" /></IconBtn>
                     </>
                   )}
@@ -560,7 +569,7 @@ function GiveawaysTab({ giveaways, reload }: { giveaways: Giveaway[]; reload: ()
               {entries?.id === g.id && (
                 <div className="mx-3 -mt-1 rounded-b-xl border border-t-0 border-white/5 bg-black/40 px-4 py-3">
                   <p className="text-[10px] font-black italic uppercase tracking-widest text-bone/40 mb-2">
-                    Inscritos ({entries.list.filter((e) => e.status === "ok").length})
+                    {g.manual_entries ? "Participantes" : "Inscritos"} ({entries.list.filter((e) => e.status === "ok").length})
                     {entries.list.some((e) => e.status === "rejected") && <span className="text-rose-300/80"> · {entries.list.filter((e) => e.status === "rejected").length} removidos</span>}
                   </p>
                   {entries.list.length ? (
