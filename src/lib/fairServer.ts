@@ -37,8 +37,16 @@ async function buildTournamentPool(monthId: string, week: number | null): Promis
 // A lista sai sempre do banco (nunca do navegador): membros ativos inscritos, 1 chance cada.
 async function buildPool(targetId: string): Promise<Pool | null> {
   const db = supabaseAdmin;
-  const { data: g } = await db.from("giveaways").select("title").eq("id", targetId).maybeSingle();
+  const { data: g } = await db.from("giveaways").select("title, manual_entries").eq("id", targetId).maybeSingle();
   if (!g) return null;
+  // Sorteio manual: os nomes que a liderança digitou. Nome igual ao de um membro guarda o id.
+  if (g.manual_entries) {
+    const { data: members } = await db.from("members").select("id, char_name").eq("status", "active");
+    const ids = new Map((members ?? []).map((m) => [m.char_name.trim().toLowerCase(), m.id]));
+    const names = [...(g.manual_entries as string[])].sort((a, b) => (a.toLowerCase() < b.toLowerCase() ? -1 : a.toLowerCase() > b.toLowerCase() ? 1 : 0));
+    const owners = new Map(names.flatMap((n) => { const id = ids.get(n.toLowerCase()); return id ? [[n, id] as [string, string]] : []; }));
+    return { title: g.title, entries: names.map((label) => ({ label, weight: 1 })), owners };
+  }
   const { data: rows } = await db
     .from("giveaway_entries")
     .select("member_id, members!inner(char_name, status)")
@@ -66,7 +74,7 @@ export async function runFairDraw(kind: FairKind, targetId: string, week: number
   const db = supabaseAdmin;
   const pool = kind === "torneio" ? await buildTournamentPool(targetId, week) : await buildPool(targetId);
   if (!pool) return { error: "Sorteio não encontrado.", status: 404 };
-  if (pool.entries.length === 0) return { error: kind === "torneio" ? "Ninguém chegou a 30% de presença nessa semana." : "Ninguém se inscreveu neste sorteio ainda.", status: 400 };
+  if (pool.entries.length === 0) return { error: kind === "torneio" ? "Ninguém chegou a 30% de presença nessa semana." : "Este sorteio ainda não tem participantes.", status: 400 };
 
   const entriesHash = await sha256Hex(entriesText(pool.entries));
   // Duas rodadas à frente da última publicada: o número ainda não existe quando a lista é gravada.
