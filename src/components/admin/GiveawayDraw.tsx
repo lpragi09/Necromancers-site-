@@ -18,6 +18,36 @@ const SPIN_MS = 9000;
 
 type Phase = "countdown" | "spinning" | "result";
 
+const shuffle = <T,>(list: T[]) => {
+  const a = [...list];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+};
+
+// Roleta só visual (o ganhador já veio do servidor): cada pessoa aparece o mesmo tanto de vezes,
+// em voltas embaralhadas, sem o mesmo nome colado um no outro
+function buildReel(names: string[], winner: string) {
+  const unique = [...new Set(names)];
+  const reel: string[] = [];
+  while (reel.length < REEL_SIZE) {
+    let round = shuffle(unique);
+    if (unique.length > 1 && round[0] === reel[reel.length - 1]) round = [...round.slice(1), round[0]];
+    reel.push(...round);
+  }
+  reel.length = REEL_SIZE;
+  reel[WINNER_INDEX] = winner;
+  // O ganhador também não fica colado com ele mesmo
+  for (const i of [WINNER_INDEX - 1, WINNER_INDEX + 1]) {
+    if (reel[i] !== winner) continue;
+    const other = unique.find((n) => n !== winner && n !== reel[i - 1] && n !== reel[i + 1]) ?? unique.find((n) => n !== winner);
+    if (other) reel[i] = other;
+  }
+  return reel;
+}
+
 // Sorteio entre os membros inscritos (ou entre quem foi aos torneios). Quem ganha sai do servidor
 // (provably fair); a roleta só mostra. Confirmar grava o ganhador.
 export default function GiveawayDraw({ giveaway, tournament, onClose, onConfirmed }: {
@@ -69,11 +99,7 @@ export default function GiveawayDraw({ giveaway, tournament, onClose, onConfirme
   }, []);
 
   const spin = (d: FairDraw) => {
-    // Quem tem mais chances aparece mais vezes na roleta (só visual: o ganhador já veio do servidor)
-    const bag = d.entries.flatMap((e) => Array.from({ length: Math.min(e.weight, 20) }, () => e.label));
-    const reel = Array.from({ length: REEL_SIZE }, () => bag[Math.floor(Math.random() * bag.length)]);
-    reel[WINNER_INDEX] = d.winner_label ?? "";
-    setItems(reel);
+    setItems(buildReel(d.entries.map((e) => e.label), d.winner_label ?? ""));
     setDraw(d);
     setPhase("spinning");
 
