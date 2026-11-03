@@ -11,7 +11,7 @@ export function PageHeader({ eyebrow, title, accent, text, icon: Icon }: { eyebr
         <Icon className="w-3.5 h-3.5 text-spirit" /> {eyebrow}
       </span>
       <h1 className="font-title text-4xl sm:text-6xl mt-4 text-bone">
-        {title} {accent && <span className="text-spirit text-glow">{accent}</span>}
+        {title} {accent && <span className="accent-text">{accent}</span>}
       </h1>
       {text && <p className="text-bone/55 italic mt-4 max-w-2xl mx-auto">{text}</p>}
     </div>
@@ -26,7 +26,7 @@ export function BandHeader({ eyebrow, title, accent, text }: { eyebrow: string; 
         <span className="w-1.5 h-1.5 rounded-full bg-blood shadow-[0_0_8px_rgba(239,68,68,0.9)]" /> {eyebrow}
       </p>
       <h2 className="font-title text-3xl sm:text-5xl mt-3 text-bone">
-        {title} {accent && <span className="text-spirit text-glow">{accent}</span>}
+        {title} {accent && <span className="accent-text">{accent}</span>}
       </h2>
       {text && <p className="text-bone/50 italic mt-3 max-w-xl mx-auto">{text}</p>}
     </div>

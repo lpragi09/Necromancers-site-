@@ -61,7 +61,7 @@ export default function AnnouncementPopup({ post, isMember }: { post: Post; isMe
           </div>
 
           <p className="mt-4 pt-4 border-t border-white/5 text-center text-[11px] italic text-bone/40">
-            Produzido por <b className="not-italic text-bone/70">Luiz Ragi</b> com muito carinho para a comunidade da <b className="not-italic text-spirit">Necromancers</b> 💜
+            Produzido por <b className="not-italic text-bone/70">Luiz Ragi</b> com muito carinho para a comunidade da <b className="not-italic text-flame">Alpha Red</b> × <b className="not-italic text-spirit">Necromancers</b> ❤️💜
           </p>
         </div>
       </div>

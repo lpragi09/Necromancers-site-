@@ -15,14 +15,14 @@ import { getPopupPost, isDemo } from "@/lib/data";
 const lato = Lato({ subsets: ["latin"], weight: ["400", "700", "900"], style: ["normal", "italic"], variable: "--font-lato" });
 
 const SITE_URL = process.env.NEXTAUTH_URL || "https://necromancers.vercel.app";
-const DESCRIPTION = "Portal do clã Necromancers de PokeTibia: avisos, sorteios comprovados, ranking de drops com prêmio e membros.";
+const DESCRIPTION = "Portal da parceria Alpha Red × Necromancers de PokeTibia: avisos, sorteios comprovados, ranking de drops com prêmio e membros.";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
-  title: { default: "Necromancers", template: "%s · Necromancers" },
+  title: { default: "Alpha Red × Necromancers", template: "%s · Alpha Red × Necromancers" },
   description: DESCRIPTION,
-  openGraph: { type: "website", siteName: "Necromancers", locale: "pt_BR", title: "Necromancers", description: DESCRIPTION },
-  twitter: { card: "summary_large_image", title: "Necromancers", description: DESCRIPTION },
+  openGraph: { type: "website", siteName: "Alpha Red × Necromancers", locale: "pt_BR", title: "Alpha Red × Necromancers", description: DESCRIPTION },
+  twitter: { card: "summary_large_image", title: "Alpha Red × Necromancers", description: DESCRIPTION },
 };
 
 export const viewport: Viewport = { themeColor: "#000000" };

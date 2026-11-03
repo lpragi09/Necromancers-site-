@@ -35,14 +35,14 @@ function Hero() {
 
       <div className="relative z-10 text-center px-4 rise-in">
         <div className="relative w-fit mx-auto">
-          <div className="absolute inset-[12%] rounded-full bg-spirit/40 blur-[70px]" />
+          <div className="absolute inset-[12%] rounded-full bg-gradient-to-r from-flame/45 to-spirit/45 blur-[70px]" />
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/logo.webp" alt="Necromancers" width={600} height={600}
-            className="logo-float relative w-60 h-60 sm:w-80 sm:h-80 drop-shadow-[0_0_35px_rgba(168,85,247,0.55)]" />
+          <img src="/logo.webp" alt="Alpha Red × Necromancers" width={600} height={600}
+            className="logo-float relative w-60 h-60 sm:w-80 sm:h-80 drop-shadow-[-18px_0_35px_rgba(239,68,68,0.45)] drop-shadow-[18px_0_35px_rgba(168,85,247,0.5)]" />
         </div>
-        <h1 className="sr-only">Necromancers</h1>
+        <h1 className="sr-only">Alpha Red × Necromancers</h1>
         <p className="mt-6 text-base sm:text-lg italic text-bone/60 max-w-xl mx-auto">
-          Onde os treinadores fantasmas se reúnem. Sorteios, ranking de drops e tudo que acontece no clã.
+          O fogo do dragão e os treinadores fantasmas juntos. Sorteios, ranking de drops e tudo que acontece no clã.
         </p>
         <div className="mt-9 flex flex-wrap gap-4 justify-center">
           <Link href="/sorteios" className="btn-neon"><Gift className="w-4 h-4" /> Ver sorteios</Link>

@@ -31,7 +31,7 @@ export default async function MembrosPage({ searchParams }: { searchParams: Prom
   const pageData = slicePage(sorted, pageFrom(params), PAGE_SIZE);
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6">
-      <PageHeader icon={Users} eyebrow={`${members.length} almas no clã`} title="Membros" accent="do clã" text="A família Necromancers, da liderança aos recrutas." />
+      <PageHeader icon={Users} eyebrow={`${members.length} almas no clã`} title="Membros" accent="do clã" text="A família Alpha Red × Necromancers, da liderança aos recrutas." />
       {members.length === 0 && <Empty text="Nenhum membro aprovado ainda." />}
       <div className="space-y-14">
         {ROLE_ORDER.map((role) => {

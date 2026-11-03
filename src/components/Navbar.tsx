@@ -72,7 +72,7 @@ export default function Navbar({ viewer }: { viewer: NavViewer | null }) {
         <Link href="/" onClick={toTop("/")} className="flex items-center gap-2 sm:gap-2.5 group min-w-0 sm:shrink-0">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/logo-160.webp" alt="" width={44} height={44} className="w-10 h-10 sm:w-11 sm:h-11 shrink-0 max-w-none drop-shadow-[0_0_10px_rgba(168,85,247,0.55)] group-hover:drop-shadow-[0_0_16px_rgba(168,85,247,0.85)] group-hover:rotate-[-6deg] transition-all duration-300" />
-          <span className="font-title text-base sm:text-lg truncate bg-gradient-to-r from-[#e879f9] via-spirit to-[#818cf8] bg-clip-text text-transparent">Necromancers</span>
+          <span className="font-title text-sm sm:text-lg truncate"><span className="bg-gradient-to-r from-[#f87171] to-[#fb923c] bg-clip-text text-transparent"><span className="sm:hidden xl:inline">AR</span><span className="hidden sm:inline xl:hidden">Alpha Red</span></span> <span className="text-bone/60">×</span> <span className="bg-gradient-to-r from-[#e879f9] via-spirit to-[#818cf8] bg-clip-text text-transparent">Necromancers</span></span>
         </Link>
 
         <div className="hidden xl:flex items-center">
