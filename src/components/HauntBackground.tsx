@@ -39,7 +39,7 @@ export default function HauntBackground() {
           className="ghost-float dragon-float"
           style={{ left: d.left, animationDuration: `${d.duration}s`, animationDelay: `-${d.delay}s` }}
         >
-          <DragonIcon className="block" style={{ width: d.size, height: d.size }} />
+          <DragonIcon className="block" style={{ width: d.size * 1.5, height: d.size * 0.96 }} />
         </span>
       ))}
     </div>
