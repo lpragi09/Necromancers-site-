@@ -113,7 +113,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<Rec
           <Link href={`/avisos/${pinned.id}`} className={`group block overflow-hidden rounded-[0.9rem] border border-spirit/40 bg-gradient-to-r from-spirit/15 via-crypt to-crypt hover:border-spirit/70 hover:shadow-[0_0_28px_rgba(168,85,247,0.2)] transition-all ${pinned.image_url ? "md:grid md:grid-cols-[1.15fr_1fr]" : ""}`}>
             {pinned.image_url && (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={pinned.image_url} alt="" className="w-full aspect-[16/7] object-cover md:h-full group-hover:scale-[1.02] transition-transform duration-500" />
+              <img src={pinned.image_url} alt="" className="w-full aspect-[16/7] object-cover md:self-center group-hover:scale-[1.02] transition-transform duration-500" />
             )}
             <div className="p-5 sm:p-7 flex flex-col justify-center">
               <p className="flex items-center gap-2 text-[11px] font-black italic uppercase tracking-[0.25em] text-spirit"><Megaphone className="w-4 h-4" /> Aviso importante</p>

@@ -106,6 +106,7 @@ body {
   color: rgba(168, 85, 247, 0.07);
   animation: ghost-rise linear infinite;
 }
+.dragon-float { color: rgba(239, 68, 68, 0.08); }
 @keyframes ghost-rise {
   0% { transform: translate(0, 0) rotate(-4deg); opacity: 0; }
   10% { opacity: 1; }

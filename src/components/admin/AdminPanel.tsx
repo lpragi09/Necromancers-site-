@@ -444,7 +444,7 @@ function PostsTab({ posts, reload, discordEnabled }: { posts: Post[]; reload: ()
 }
 
 // ======================= Sorteios =======================
-const EMPTY_GIVEAWAY = { id: "", title: "", prize: "", description: "", image_url: "", ends_at: "", winners_count: 1, manual: false, names: "" };
+const EMPTY_GIVEAWAY = { id: "", title: "", prize: "", description: "", image_url: "", ends_at: "", winners_count: 1, manual: false, names: "", drawn: false };
 // Um nome por linha ou separados por vírgula
 const parseNames = (text: string) => text.split(/[\n,]/).map((n) => n.trim()).filter(Boolean);
 
@@ -459,7 +459,7 @@ function GiveawaysTab({ giveaways, reload }: { giveaways: Giveaway[]; reload: ()
   const entriesPag = usePagination(entries?.list ?? [], 40);
 
   const edit = (g: Giveaway) => {
-    setForm({ id: g.id, title: g.title, prize: g.prize, description: g.description, image_url: g.image_url ?? "", ends_at: toLocalInput(g.ends_at), winners_count: g.winners_count ?? 1, manual: !!g.manual_entries, names: (g.manual_entries ?? []).join("\n") });
+    setForm({ id: g.id, title: g.title, prize: g.prize, description: g.description, image_url: g.image_url ?? "", ends_at: toLocalInput(g.ends_at), winners_count: g.winners_count ?? 1, manual: !!g.manual_entries, names: (g.manual_entries ?? []).join("\n"), drawn: g.status === "drawn" });
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
   const submit = async (e: React.FormEvent) => {
@@ -508,6 +508,9 @@ function GiveawaysTab({ giveaways, reload }: { giveaways: Giveaway[]; reload: ()
             <Field label="Descrição" hint="Regras, quem pode participar, quando sai o resultado.">
               <textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} rows={3} maxLength={2000} className="field resize-y" />
             </Field>
+            {form.drawn ? (
+              <p className="rounded-xl border border-amber-300/30 bg-amber-400/[0.07] px-4 py-3 text-xs italic text-amber-100/80">Este sorteio já foi feito: dá para mudar título, prêmio, descrição e imagem. Participantes e ganhadores ficam como saíram.</p>
+            ) : <>
             <Field label="Quantidade de ganhadores" hint="Quem ganha sai da lista, então ninguém ganha duas vezes." className="sm:w-72">
               <input type="number" min={1} max={50} value={form.winners_count} onChange={(e) => setForm({ ...form, winners_count: Number(e.target.value) })} required className="field" />
             </Field>
@@ -521,6 +524,7 @@ function GiveawaysTab({ giveaways, reload }: { giveaways: Giveaway[]; reload: ()
                 <input type="datetime-local" value={form.ends_at} onChange={(e) => setForm({ ...form, ends_at: e.target.value })} className="field" />
               </Field>
             )}
+            </>}
             <ImageField size="giveaway" value={form.image_url} onChange={(url) => setForm({ ...form, image_url: url })} />
             <FormFooter hint="Aparece na hora em Sorteios e na home.">
               {form.id && <button type="button" onClick={() => setForm(EMPTY_GIVEAWAY)} className="btn-ghost">Cancelar</button>}
@@ -560,9 +564,9 @@ function GiveawaysTab({ giveaways, reload }: { giveaways: Giveaway[]; reload: ()
                         onClick={() => run("setGiveawayStatus", { id: g.id, status: g.status === "open" ? "closed" : "open" })}>
                         {g.status === "open" ? <Lock className="w-4 h-4" /> : <LockOpen className="w-4 h-4" />}
                       </IconBtn>}
-                      <IconBtn title="Editar" onClick={() => edit(g)}><Pencil className="w-4 h-4" /></IconBtn>
                     </>
                   )}
+                  <IconBtn title="Editar" onClick={() => edit(g)}><Pencil className="w-4 h-4" /></IconBtn>
                   <IconBtn title="Excluir" danger disabled={busy} onClick={() => run("deleteGiveaway", { id: g.id }, { title: "Excluir este sorteio?" })}><Trash2 className="w-4 h-4" /></IconBtn>
                   {g.status !== "drawn" && (
                     <button onClick={() => startDraw(g)} disabled={busy || !g.entries_count} title={g.entries_count ? "Sortear agora" : "Precisa de pelo menos 1 inscrito"} className="btn-neon !py-2 max-sm:flex-1"><Dices className="w-4 h-4" /> Sortear{(g.winners_count ?? 1) > 1 ? ` (${g.winners?.length ?? 0}/${g.winners_count})` : ""}</button>

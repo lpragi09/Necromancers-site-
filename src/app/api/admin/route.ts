@@ -157,6 +157,14 @@ export async function POST(request: Request) {
         winners_count: Math.min(50, Math.max(1, Math.floor(Number(g.winners_count)) || 1)),
       };
       if (!fields.title || !fields.prize) return fail("Preencha título e prêmio.");
+      // Sorteio já feito: só muda o que aparece no card. Participantes e ganhadores ficam como saíram.
+      if (g.id) {
+        const { data: current } = await db.from("giveaways").select("status").eq("id", g.id).maybeSingle();
+        if (current?.status === "drawn") {
+          const { error } = await db.from("giveaways").update({ title: fields.title, prize: fields.prize, description: fields.description, image_url: fields.image_url }).eq("id", g.id);
+          return error ? fail(error.message, 500) : ok();
+        }
+      }
       // Sorteio manual: lista de nomes sem repetição e sem inscrição pelo site. O tipo não muda depois de criado.
       const names = [...new Map((Array.isArray(g.manual_entries) ? g.manual_entries : []).map((n: unknown) => cleanText(n, 40)).filter(Boolean).map((n: string) => [n.toLowerCase(), n] as [string, string])).values()].slice(0, 500);
       if (g.manual && !names.length) return fail("Coloque pelo menos 1 participante.");
