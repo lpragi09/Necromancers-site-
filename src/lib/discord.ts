@@ -25,14 +25,14 @@ function payload(post: Post, mentionEveryone: boolean) {
     url: `${SITE_URL}/avisos/${post.id}`,
     description: body || undefined,
     color: k.color,
-    footer: { text: "Alpha Red × Necromancers · ver no site", icon_url: `${SITE_URL}/apple-icon.png` },
+    footer: { text: "Alpha Red × Necromancers · ver no site", icon_url: `${SITE_URL}/apple-icon.png?v=alpha-red` },
     timestamp: post.created_at,
   };
   if (post.image_url) embed.image = { url: post.image_url };
   if (post.kind === "evento" && post.event_at) embed.fields = [{ name: "🗓️ Quando", value: fmtEvent(post.event_at) }];
   return {
     username: "Alpha Red × Necromancers",
-    avatar_url: `${SITE_URL}/apple-icon.png`,
+    avatar_url: `${SITE_URL}/apple-icon.png?v=alpha-red`,
     content: mentionEveryone ? "@everyone" : "",
     allowed_mentions: { parse: mentionEveryone ? ["everyone"] : [] },
     embeds: [embed],
