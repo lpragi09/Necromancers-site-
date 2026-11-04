@@ -2,8 +2,10 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { CalendarPlus, Crown, Dices, Loader2, Minus, Plus, Swords, Trash2, UserPlus } from "lucide-react";
+import { CalendarPlus, Crown, Dices, Loader2, Minus, Plus, ShieldCheck, Swords, Trash2, Trophy, UserPlus } from "lucide-react";
 import GiveawayDraw from "@/components/admin/GiveawayDraw";
+import Avatar from "@/components/Avatar";
+import { fmtDateTime } from "@/lib/format";
 import { adminApi } from "@/lib/api";
 import { useDialog } from "@/components/Dialog";
 import Pagination, { usePagination } from "@/components/Pagination";
@@ -11,7 +13,8 @@ import { EmptyLine, IconBtn, Panel, Segmented } from "@/components/admin/kit";
 import { inTournamentDraw, MIN_PRESENCE_PERCENT, MIN_WEEK_PRESENCES, monthFrequency, TOURNAMENTS_PER_WEEK } from "@/lib/tournament";
 import type { TournamentMonth, TournamentScore } from "@/lib/types";
 
-interface Data { months: TournamentMonth[]; monthId: string; scores: TournamentScore[]; prior: string | null; names: string[]; photos: [string, string][] }
+type TournamentDraw = { id: string; title: string; winner_label: string | null; drawn_at: string | null };
+interface Data { months: TournamentMonth[]; monthId: string; scores: TournamentScore[]; prior: string | null; draws: TournamentDraw[]; names: string[]; photos: [string, string][] }
 
 const MONTHS = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
 const currentWeek = () => Math.min(4, Math.ceil(new Date().getDate() / 7));
@@ -229,12 +232,36 @@ export default function TournamentAdmin() {
         )}
       </Panel>
 
+      {/* Quem já ganhou os sorteios deste mês */}
+      {month && (
+        <Panel icon={Trophy} title={`Vencedores · ${month.name}`} subtitle="Sorteios confirmados do torneio, do mais recente para o mais antigo.">
+          {data.draws.length === 0 ? <EmptyLine text="Nenhum sorteio confirmado neste mês ainda." /> : (
+            <div className="grid sm:grid-cols-2 gap-2">
+              {data.draws.map((d) => {
+                const name = d.winner_label ?? "?";
+                const week = d.title.match(/Semana \d/)?.[0] ?? "Mês todo";
+                return (
+                  <div key={d.id} className="flex items-center gap-3 rounded-xl border border-amber-300/25 bg-amber-400/[0.05] p-3">
+                    <Avatar src={photos.get(name.trim())} name={name} size={40} className="shrink-0 ring-2 ring-amber-300/40" />
+                    <div className="min-w-0 flex-1">
+                      <p className="font-black italic truncate text-amber-100">{name}</p>
+                      <p className="text-[11px] text-bone/50 truncate">{week}{d.drawn_at ? ` · ${fmtDateTime(d.drawn_at)}` : ""}</p>
+                    </div>
+                    <a href={`/provably-fair?id=${d.id}`} target="_blank" className="shrink-0 inline-flex items-center gap-1 text-[10px] font-black italic uppercase text-spirit hover:text-ecto"><ShieldCheck className="w-3.5 h-3.5" /> Prova</a>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </Panel>
+      )}
+
       {drawing && month && (
         <GiveawayDraw
           giveaway={{ id: month.id, title: month.name, prize: drawing.week ? `Torneio · Semana ${drawing.week}` : `Torneio · ${month.name}` }}
           tournament={{ week: drawing.week, photos }}
           onClose={() => setDrawing(null)}
-          onConfirmed={() => { setDrawing(null); router.refresh(); }}
+          onConfirmed={() => { setDrawing(null); load(data.monthId); router.refresh(); }}
         />
       )}
     </div>

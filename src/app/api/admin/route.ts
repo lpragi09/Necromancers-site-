@@ -3,7 +3,7 @@ import { ADMIN_ROLES, isAdminId } from "@/lib/admins";
 import { deletePost as deleteDiscordPost, discordEnabled, editPost as editDiscordPost, sendPost as sendDiscordPost } from "@/lib/discord";
 import { hasSupabase, supabaseAdmin } from "@/lib/supabaseAdmin";
 import { cleanText, decodeImage, DEMO_MESSAGE, fail, ok } from "@/lib/http";
-import { ACTIVITY_COLUMNS, CLAIM_COLUMNS, DROP_COLUMNS, getCoinEpoch, getDrawnAt, GIVEAWAY_COLUMNS, ITEM_COLUMNS, ORDER_COLUMNS, POST_COLUMNS, SEASON_COLUMNS, SHOP_ITEM_COLUMNS, TOURNAMENT_SCORE_COLUMNS, DUNGEON_RUN_COLUMNS, DUNGEON_GRACE_MS, getGames, getTournamentFrequency } from "@/lib/data";
+import { ACTIVITY_COLUMNS, CLAIM_COLUMNS, DROP_COLUMNS, getCoinEpoch, getDrawnAt, GIVEAWAY_COLUMNS, ITEM_COLUMNS, ORDER_COLUMNS, POST_COLUMNS, SEASON_COLUMNS, SHOP_ITEM_COLUMNS, TOURNAMENT_SCORE_COLUMNS, DUNGEON_RUN_COLUMNS, DUNGEON_GRACE_MS, getGames, getTournamentDraws, getTournamentFrequency } from "@/lib/data";
 import { FAIR_COLUMNS, runFairDraw, setFairStatus } from "@/lib/fairServer";
 import { ROLE_ORDER, type CoinClaim, type Drop, type Giveaway, type Post, type Rarity, type ShopOrder } from "@/lib/types";
 
@@ -459,13 +459,14 @@ export async function POST(request: Request) {
         return fail(/does not exist|schema cache/i.test(error.message) ? "Falta rodar o supabase/migracao-torneios.sql no SQL Editor do Supabase." : error.message, 500);
       }
       const monthId = str(body?.monthId) || months?.[0]?.id || "";
-      const [scores, members, frequency] = await Promise.all([
+      const [scores, members, frequency, draws] = await Promise.all([
         monthId ? db.from("tournament_scores").select(TOURNAMENT_SCORE_COLUMNS).eq("month_id", monthId).order("count", { ascending: false }).order("player_name") : Promise.resolve({ data: [] }),
         db.from("members").select("char_name, avatar_url").eq("status", "active").order("char_name"),
         monthId ? getTournamentFrequency(monthId) : Promise.resolve({ prior: null }),
+        monthId ? getTournamentDraws(monthId) : Promise.resolve([]),
       ]);
       return ok({
-        months: months ?? [], monthId, scores: scores.data ?? [], prior: frequency.prior,
+        months: months ?? [], monthId, scores: scores.data ?? [], prior: frequency.prior, draws,
         names: (members.data ?? []).map((m) => m.char_name),
         photos: (members.data ?? []).filter((m) => m.avatar_url).map((m) => [m.char_name, m.avatar_url]),
       });
