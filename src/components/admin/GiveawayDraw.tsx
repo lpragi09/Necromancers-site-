@@ -13,7 +13,7 @@ import Avatar from "@/components/Avatar";
 const ITEM_W = 160;
 const ITEM_STEP = ITEM_W + 16;
 const SPIN_MS = 9000;
-const MIN_SPIN_MS = 3000;
+const MIN_REEL = 45; // cards que passam antes de parar
 
 type Phase = "countdown" | "spinning" | "result";
 
@@ -26,12 +26,14 @@ const shuffle = <T,>(list: T[]) => {
   return a;
 };
 
-// Roleta só visual (o ganhador já veio do servidor): cada participante aparece uma vez só,
-// em ordem embaralhada, e a roleta para no ganhador perto do fim (sobra um nome depois dele)
+// Roleta só visual (o ganhador já veio do servidor): os participantes são embaralhados uma vez
+// e essa mesma ordem se repete em loop. Um nome só volta depois de todos os outros passarem.
+// A roleta para no ganhador numa das últimas voltas e ainda sobra uma volta depois dele.
 function buildReel(names: string[], winner: string) {
-  const others = shuffle([...new Set(names)].filter((n) => n !== winner));
-  const index = others.length >= 2 ? others.length - 1 : others.length;
-  const reel = [...others.slice(0, index), winner, ...others.slice(index)];
+  const order = shuffle([...new Set(names)]);
+  const loops = Math.max(3, Math.ceil(MIN_REEL / order.length));
+  const reel = Array.from({ length: loops + 1 }, () => order).flat();
+  const index = (loops - 1) * order.length + Math.max(0, order.indexOf(winner));
   return { reel, index };
 }
 
@@ -92,17 +94,15 @@ export default function GiveawayDraw({ giveaway, tournament, onClose, onConfirme
     setPhase("spinning");
 
     // Quadro a quadro (funciona com "efeitos de animação" do sistema desligados); o resultado é garantido pelo relógio.
-    // Com poucos nomes a roleta anda menos, então gira por menos tempo.
     const id = ++spinId.current;
     const target = winnerIndex * ITEM_STEP;
-    const spinMs = Math.min(SPIN_MS, Math.max(MIN_SPIN_MS, winnerIndex * 450));
     let startedAt = 0;
     let lastIndex = -1;
     const frame = (now: number) => {
       const el = reelRef.current;
       if (spinId.current !== id || !el) return;
       if (!startedAt) startedAt = now;
-      const t = Math.min(1, (now - startedAt) / spinMs);
+      const t = Math.min(1, (now - startedAt) / SPIN_MS);
       const x = target * (1 - Math.pow(1 - t, 4));
       el.style.transform = `translateX(${-x}px)`;
       const index = Math.round(x / ITEM_STEP);
@@ -119,7 +119,7 @@ export default function GiveawayDraw({ giveaway, tournament, onClose, onConfirme
         if (reelRef.current) reelRef.current.style.transform = `translateX(${-target}px)`;
         sounds.win();
         setPhase("result");
-      }, spinMs + 100),
+      }, SPIN_MS + 100),
     ];
   };
 
