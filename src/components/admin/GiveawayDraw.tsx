@@ -12,9 +12,8 @@ import Avatar from "@/components/Avatar";
 
 const ITEM_W = 160;
 const ITEM_STEP = ITEM_W + 16;
-const REEL_SIZE = 50;
-const WINNER_INDEX = 40;
 const SPIN_MS = 9000;
+const MIN_SPIN_MS = 3000;
 
 type Phase = "countdown" | "spinning" | "result";
 
@@ -27,25 +26,13 @@ const shuffle = <T,>(list: T[]) => {
   return a;
 };
 
-// Roleta só visual (o ganhador já veio do servidor): cada pessoa aparece o mesmo tanto de vezes,
-// em voltas embaralhadas, sem o mesmo nome colado um no outro
+// Roleta só visual (o ganhador já veio do servidor): cada participante aparece uma vez só,
+// em ordem embaralhada, e a roleta para no ganhador perto do fim (sobra um nome depois dele)
 function buildReel(names: string[], winner: string) {
-  const unique = [...new Set(names)];
-  const reel: string[] = [];
-  while (reel.length < REEL_SIZE) {
-    let round = shuffle(unique);
-    if (unique.length > 1 && round[0] === reel[reel.length - 1]) round = [...round.slice(1), round[0]];
-    reel.push(...round);
-  }
-  reel.length = REEL_SIZE;
-  reel[WINNER_INDEX] = winner;
-  // O ganhador também não fica colado com ele mesmo
-  for (const i of [WINNER_INDEX - 1, WINNER_INDEX + 1]) {
-    if (reel[i] !== winner) continue;
-    const other = unique.find((n) => n !== winner && n !== reel[i - 1] && n !== reel[i + 1]) ?? unique.find((n) => n !== winner);
-    if (other) reel[i] = other;
-  }
-  return reel;
+  const others = shuffle([...new Set(names)].filter((n) => n !== winner));
+  const index = others.length >= 2 ? others.length - 1 : others.length;
+  const reel = [...others.slice(0, index), winner, ...others.slice(index)];
+  return { reel, index };
 }
 
 // Sorteio entre os membros inscritos (ou entre quem foi aos torneios). Quem ganha sai do servidor
@@ -99,20 +86,23 @@ export default function GiveawayDraw({ giveaway, tournament, onClose, onConfirme
   }, []);
 
   const spin = (d: FairDraw) => {
-    setItems(buildReel(d.entries.map((e) => e.label), d.winner_label ?? ""));
+    const { reel, index: winnerIndex } = buildReel(d.entries.map((e) => e.label), d.winner_label ?? "");
+    setItems(reel);
     setDraw(d);
     setPhase("spinning");
 
-    // Quadro a quadro (funciona com "efeitos de animação" do sistema desligados); o resultado é garantido pelo relógio
+    // Quadro a quadro (funciona com "efeitos de animação" do sistema desligados); o resultado é garantido pelo relógio.
+    // Com poucos nomes a roleta anda menos, então gira por menos tempo.
     const id = ++spinId.current;
-    const target = WINNER_INDEX * ITEM_STEP;
+    const target = winnerIndex * ITEM_STEP;
+    const spinMs = Math.min(SPIN_MS, Math.max(MIN_SPIN_MS, winnerIndex * 450));
     let startedAt = 0;
     let lastIndex = -1;
     const frame = (now: number) => {
       const el = reelRef.current;
       if (spinId.current !== id || !el) return;
       if (!startedAt) startedAt = now;
-      const t = Math.min(1, (now - startedAt) / SPIN_MS);
+      const t = Math.min(1, (now - startedAt) / spinMs);
       const x = target * (1 - Math.pow(1 - t, 4));
       el.style.transform = `translateX(${-x}px)`;
       const index = Math.round(x / ITEM_STEP);
@@ -129,7 +119,7 @@ export default function GiveawayDraw({ giveaway, tournament, onClose, onConfirme
         if (reelRef.current) reelRef.current.style.transform = `translateX(${-target}px)`;
         sounds.win();
         setPhase("result");
-      }, SPIN_MS + 100),
+      }, spinMs + 100),
     ];
   };
 
